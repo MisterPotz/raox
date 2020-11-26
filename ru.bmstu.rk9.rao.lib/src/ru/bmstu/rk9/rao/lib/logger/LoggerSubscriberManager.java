@@ -3,7 +3,7 @@ package ru.bmstu.rk9.rao.lib.logger;
 import ru.bmstu.rk9.rao.lib.logger.LoggerSubscriberManager.LoggerSubscriberInfo;
 import ru.bmstu.rk9.rao.lib.notification.DefferedSubscriberManager;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class LoggerSubscriberManager extends DefferedSubscriberManager<LoggerSubscriberInfo> {
 	public static class LoggerSubscriberInfo {
@@ -19,14 +19,14 @@ public class LoggerSubscriberManager extends DefferedSubscriberManager<LoggerSub
 	@Override
 	protected void registerExecutionSubscribers() {
 		for (LoggerSubscriberInfo subscriberInfo : subscribersInfo)
-			CurrentSimulator.getLogger().getNotifier().addSubscriber(subscriberInfo.subscriber,
+			SimulatorWrapper.getLogger().getNotifier().addSubscriber(subscriberInfo.subscriber,
 					subscriberInfo.notificationCategory);
 	}
 
 	@Override
 	protected void unregisterExecutionSubscribers() {
 		for (LoggerSubscriberInfo subscriberInfo : subscribersInfo)
-			CurrentSimulator.getLogger().getNotifier().removeSubscriber(subscriberInfo.subscriber,
+			SimulatorWrapper.getLogger().getNotifier().removeSubscriber(subscriberInfo.subscriber,
 					subscriberInfo.notificationCategory);
 	}
 }

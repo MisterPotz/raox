@@ -32,7 +32,7 @@ import ru.bmstu.rk9.rao.lib.pattern.Pattern;
 import ru.bmstu.rk9.rao.lib.pattern.Rule;
 import ru.bmstu.rk9.rao.lib.resource.Resource;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class Database {
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
@@ -269,7 +269,7 @@ public class Database {
 	public final void addSystemEntry(final SystemEntryType type) {
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.SYSTEM.HEADER_SIZE);
 
-		header.put((byte) EntryType.SYSTEM.ordinal()).putDouble(CurrentSimulator.getTime()).put((byte) type.ordinal());
+		header.put((byte) EntryType.SYSTEM.ordinal()).putDouble(SimulatorWrapper.getTime()).put((byte) type.ordinal());
 
 		addEntry(new Entry(header, null));
 	}
@@ -338,7 +338,7 @@ public class Database {
 			else
 				actualStatus = status;
 
-			CurrentSimulator.getDatabase().addResourceEntry(resource, actualStatus, sender, dptName);
+			SimulatorWrapper.getDatabase().addResourceEntry(resource, actualStatus, sender, dptName);
 		}
 
 		memorizedResourceEntries.clear();
@@ -348,7 +348,7 @@ public class Database {
 			final String dptName) {
 		final String typeName = resource.getTypeName();
 		final CollectedDataNode resourceTypeNode = indexHelper.getResourceType(typeName);
-		int typeNumber = CurrentSimulator.getStaticModelData().getResourceTypeNumber(typeName);
+		int typeNumber = SimulatorWrapper.getStaticModelData().getResourceTypeNumber(typeName);
 
 		String name = resource.getName();
 		if (name != null) {
@@ -379,10 +379,10 @@ public class Database {
 			resourceIndex = new ResourceIndex(resource.getNumber());
 			resourceNode.setIndex(resourceIndex);
 
-			final int numberOfParameters = CurrentSimulator.getStaticModelData()
+			final int numberOfParameters = SimulatorWrapper.getStaticModelData()
 					.getNumberOfResourceTypeParameters(typeNumber);
 			for (int paramNum = 0; paramNum < numberOfParameters; paramNum++) {
-				final JSONObject parameter = CurrentSimulator.getStaticModelData().getResourceTypeParameter(typeNumber,
+				final JSONObject parameter = SimulatorWrapper.getStaticModelData().getResourceTypeParameter(typeNumber,
 						paramNum);
 				resourceNode.addChild(parameter.getString(ModelStructureConstants.NAME))
 						.setIndex(new ResourceParameterIndex(paramNum));
@@ -407,7 +407,7 @@ public class Database {
 		}
 
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.RESOURCE.HEADER_SIZE);
-		header.put((byte) EntryType.RESOURCE.ordinal()).putDouble(CurrentSimulator.getTime())
+		header.put((byte) EntryType.RESOURCE.ordinal()).putDouble(SimulatorWrapper.getTime())
 				.put((byte) status.ordinal()).putInt(typeNumber).putInt(resourceIndex.getNumber()).putInt(dptNumber);
 
 		final ByteBuffer data = resource.serialize();
@@ -451,7 +451,7 @@ public class Database {
 			return;
 
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.PATTERN.HEADER_SIZE);
-		header.put((byte) EntryType.PATTERN.ordinal()).putDouble(CurrentSimulator.getTime())
+		header.put((byte) EntryType.PATTERN.ordinal()).putDouble(SimulatorWrapper.getTime())
 				.put((byte) patternType.ordinal());
 
 		final CollectedDataNode dptNode = indexHelper.getLogic(dptName);
@@ -496,7 +496,7 @@ public class Database {
 		final PatternIndex index = (PatternIndex) patternNode.getIndex();
 
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.PATTERN.HEADER_SIZE);
-		header.put((byte) EntryType.PATTERN.ordinal()).putDouble(CurrentSimulator.getTime())
+		header.put((byte) EntryType.PATTERN.ordinal()).putDouble(SimulatorWrapper.getTime())
 				.put((byte) PatternType.OPERATION_END.ordinal());
 
 		final List<Integer> relevantResources = operation.getRelevantResourcesNumbers();
@@ -534,7 +534,7 @@ public class Database {
 		final EventIndex index = (EventIndex) indexHelper.getEvent(name).getIndex();
 
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.PATTERN.HEADER_SIZE);
-		header.put((byte) EntryType.EVENT.ordinal()).putDouble(CurrentSimulator.getTime());
+		header.put((byte) EntryType.EVENT.ordinal()).putDouble(SimulatorWrapper.getTime());
 
 		final ByteBuffer data = ByteBuffer.allocate(EntryType.EVENT.METADATA_SIZE);
 		data.putInt(index.getNumber()).putInt(index.incrementTimesExecuted());
@@ -560,7 +560,7 @@ public class Database {
 		SearchInfo info = null;
 
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.SEARCH.HEADER_SIZE);
-		header.put((byte) EntryType.SEARCH.ordinal()).put((byte) type.ordinal()).putDouble(CurrentSimulator.getTime())
+		header.put((byte) EntryType.SEARCH.ordinal()).put((byte) type.ordinal()).putDouble(SimulatorWrapper.getTime())
 				.putInt(index.getNumber()).putInt(index.getSearches().size());
 
 		switch (type) {
@@ -603,7 +603,7 @@ public class Database {
 		final ResultIndex index = (ResultIndex) indexHelper.getResult(name).getIndex();
 
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.RESULT.HEADER_SIZE);
-		header.put((byte) EntryType.RESULT.ordinal()).putInt(index.getNumber()).putDouble(CurrentSimulator.getTime());
+		header.put((byte) EntryType.RESULT.ordinal()).putInt(index.getNumber()).putDouble(SimulatorWrapper.getTime());
 
 		ByteBuffer data;
 		if (value instanceof Number) {
@@ -648,7 +648,7 @@ public class Database {
 
 	public final void addProcessEntry(final ProcessEntryType processEntryType, final int index, ByteBuffer data) {
 		final ByteBuffer header = ByteBuffer.allocate(EntryType.PROCESS.HEADER_SIZE);
-		header.put((byte) EntryType.PROCESS.ordinal()).putDouble(CurrentSimulator.getTime())
+		header.put((byte) EntryType.PROCESS.ordinal()).putDouble(SimulatorWrapper.getTime())
 				.put((byte) processEntryType.ordinal()).putInt(index);
 
 		Entry entry = new Entry(header, data);

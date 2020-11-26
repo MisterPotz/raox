@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 import ru.bmstu.rk9.rao.lib.notification.Subscription.SubscriptionType;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulatorState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulatorState;
 
 public abstract class DefferedSubscriberManager<T> {
 	private enum InitializationState {
@@ -29,14 +29,14 @@ public abstract class DefferedSubscriberManager<T> {
 		this.subscribersInfo.addAll(subscribersInfo);
 		this.subscriptionFlags.addAll(flags);
 
-		CurrentSimulator.getSimulatorStateNotifier().addSubscriber(initializationSubscriber, SimulatorState.INITIALIZED,
+		SimulatorWrapper.getSimulatorStateNotifier().addSubscriber(initializationSubscriber, SimulatorState.INITIALIZED,
 				EnumSet.of(SubscriptionType.IGNORE_ACCUMULATED));
-		CurrentSimulator.getSimulatorStateNotifier().addSubscriber(deinitializationSubscriber,
+		SimulatorWrapper.getSimulatorStateNotifier().addSubscriber(deinitializationSubscriber,
 				SimulatorState.DEINITIALIZED, EnumSet.of(SubscriptionType.IGNORE_ACCUMULATED));
 
 		initializationState = InitializationState.INITIALIZED;
 
-		if (!subscriptionFlags.contains(SubscriptionType.IGNORE_ACCUMULATED) && CurrentSimulator.isInitialized())
+		if (!subscriptionFlags.contains(SubscriptionType.IGNORE_ACCUMULATED) && SimulatorWrapper.isInitialized())
 			initializationSubscriber.fireChange();
 	}
 
@@ -46,12 +46,12 @@ public abstract class DefferedSubscriberManager<T> {
 					"DefferedSubscriberManager should be initialized, but " + "it's state is " + initializationState);
 		initializationState = InitializationState.UNDEFINED;
 
-		if (CurrentSimulator.isInitialized() && needFire)
+		if (SimulatorWrapper.isInitialized() && needFire)
 			deinitializationSubscriber.fireChange();
 
-		CurrentSimulator.getSimulatorStateNotifier().removeSubscriber(initializationSubscriber,
+		SimulatorWrapper.getSimulatorStateNotifier().removeSubscriber(initializationSubscriber,
 				SimulatorState.INITIALIZED);
-		CurrentSimulator.getSimulatorStateNotifier().removeSubscriber(deinitializationSubscriber,
+		SimulatorWrapper.getSimulatorStateNotifier().removeSubscriber(deinitializationSubscriber,
 				SimulatorState.DEINITIALIZED);
 
 		subscribersInfo.clear();

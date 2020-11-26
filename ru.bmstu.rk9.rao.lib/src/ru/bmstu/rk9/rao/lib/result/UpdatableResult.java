@@ -1,6 +1,6 @@
 package ru.bmstu.rk9.rao.lib.result;
 
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class UpdatableResult<T> extends AbstractResult<T> {
 
@@ -9,7 +9,7 @@ public class UpdatableResult<T> extends AbstractResult<T> {
 	}
 
 	public final void update(T value) {
-		double time = CurrentSimulator.getTime();
+		double time = SimulatorWrapper.getTime();
 		update(value, time);
 	};
 }

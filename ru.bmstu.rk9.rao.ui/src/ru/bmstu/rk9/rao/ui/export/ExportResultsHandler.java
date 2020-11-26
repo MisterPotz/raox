@@ -11,7 +11,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.ui.results.ResultsParser;
 
 public class ExportResultsHandler extends AbstractHandler {
@@ -30,7 +30,7 @@ public class ExportResultsHandler extends AbstractHandler {
 		if (!ready())
 			return;
 
-		List<AbstractResult<?>> results = CurrentSimulator.getResults();
+		List<AbstractResult<?>> results = SimulatorWrapper.getResults();
 
 		PrintWriter writer = ExportPrintWriter.initializeWriter(".res");
 		if (writer == null)
@@ -46,6 +46,6 @@ public class ExportResultsHandler extends AbstractHandler {
 	}
 
 	private final static boolean ready() {
-		return CurrentSimulator.isInitialized() && !CurrentSimulator.getDatabase().getAllEntries().isEmpty();
+		return SimulatorWrapper.isInitialized() && !SimulatorWrapper.getDatabase().getAllEntries().isEmpty();
 	}
 }

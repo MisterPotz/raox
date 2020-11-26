@@ -11,7 +11,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 
 import ru.bmstu.rk9.rao.lib.database.Database.Entry;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.ui.trace.LegacyTracer;
 import ru.bmstu.rk9.rao.ui.trace.Tracer;
 import ru.bmstu.rk9.rao.ui.trace.Tracer.TraceOutput;
@@ -72,13 +72,13 @@ public class ExportTraceHandler extends AbstractHandler {
 		if (!ready())
 			return;
 
-		Tracer tracer = new Tracer(CurrentSimulator.getStaticModelData());
+		Tracer tracer = new Tracer(SimulatorWrapper.getStaticModelData());
 
 		PrintWriter writer = ExportPrintWriter.initializeWriter(".trc");
 		if (writer == null)
 			return;
 
-		for (Entry entry : CurrentSimulator.getDatabase().getAllEntries()) {
+		for (Entry entry : SimulatorWrapper.getDatabase().getAllEntries()) {
 			TraceOutput output = tracer.parseSerializedData(entry);
 			if (output != null)
 				writer.println(output.content());
@@ -110,7 +110,7 @@ public class ExportTraceHandler extends AbstractHandler {
 	}
 
 	private final static boolean ready() {
-		return CurrentSimulator.isInitialized() && !CurrentSimulator.getDatabase().getAllEntries().isEmpty();
+		return SimulatorWrapper.isInitialized() && !SimulatorWrapper.getDatabase().getAllEntries().isEmpty();
 	}
 
 	public final static void reset() {

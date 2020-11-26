@@ -12,7 +12,7 @@ import ru.bmstu.rk9.rao.lib.database.Database.EntryType;
 import ru.bmstu.rk9.rao.lib.database.Database.TypeSize;
 import ru.bmstu.rk9.rao.lib.dpt.Search;
 import ru.bmstu.rk9.rao.lib.naming.NamingHelper;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.ui.trace.StringJoiner;
 import ru.bmstu.rk9.rao.ui.trace.StringJoiner.StringFormat;
 import ru.bmstu.rk9.rao.ui.trace.Tracer;
@@ -26,7 +26,7 @@ public class TreeBuilder {
 	private final boolean useShortNames;
 
 	public final boolean updateTree() {
-		List<Entry> entries = CurrentSimulator.getDatabase().getAllEntries();
+		List<Entry> entries = SimulatorWrapper.getDatabase().getAllEntries();
 		while (entryNumber < entries.size()) {
 			final Database.Entry entry = entries.get(entryNumber);
 			if (parseEntry(entry))
@@ -149,7 +149,7 @@ public class TreeBuilder {
 				node.g = g;
 				node.h = h;
 				node.ruleNumber = ruleNumber;
-				node.ruleName = CurrentSimulator.getStaticModelData().getEdgeName(dptNumber, ruleNumber);
+				node.ruleName = SimulatorWrapper.getStaticModelData().getEdgeName(dptNumber, ruleNumber);
 				node.ruleCost = ruleCost;
 				node.relevantResources = getRelevantResources(data, patternNumber);
 				node.depth = node.parent.depth + 1;
@@ -179,17 +179,17 @@ public class TreeBuilder {
 	}
 
 	private final String getRelevantResources(final ByteBuffer data, final int patternNumber) {
-		final int numberOfRelevantResources = CurrentSimulator.getStaticModelData()
+		final int numberOfRelevantResources = SimulatorWrapper.getStaticModelData()
 				.getNumberOfRelevantResources(patternNumber);
 
 		final StringJoiner relResStringJoiner = new StringJoiner(StringFormat.ENUMERATION);
 
 		for (int num = 0; num < numberOfRelevantResources; num++) {
 			final int resNum = data.getInt();
-			final String typeName = CurrentSimulator.getStaticModelData().getRelevantResourceTypeName(patternNumber,
+			final String typeName = SimulatorWrapper.getStaticModelData().getRelevantResourceTypeName(patternNumber,
 					num);
-			final int typeNum = CurrentSimulator.getStaticModelData().getResourceTypeNumber(typeName);
-			final String name = CurrentSimulator.getStaticModelData().getResourceName(typeNum, resNum);
+			final int typeNum = SimulatorWrapper.getStaticModelData().getResourceTypeNumber(typeName);
+			final String name = SimulatorWrapper.getStaticModelData().getResourceName(typeNum, resNum);
 			final String resourceName = name != null ? name : typeName + Tracer.encloseIndex(resNum);
 
 			relResStringJoiner.add(NamingHelper.convertName(resourceName, useShortNames));

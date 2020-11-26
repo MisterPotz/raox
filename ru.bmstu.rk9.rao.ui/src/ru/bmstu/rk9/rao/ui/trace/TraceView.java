@@ -61,9 +61,9 @@ import ru.bmstu.rk9.rao.lib.database.Database.Entry;
 import ru.bmstu.rk9.rao.lib.database.Database.EntryType;
 import ru.bmstu.rk9.rao.lib.database.Database.TypeSize;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulatorState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulatorState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.export.ExportTraceHandler;
@@ -85,7 +85,7 @@ public class TraceView extends ViewPart {
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
 	private FrameInfo determineSearchInfo(TraceOutput traceOutput, int stringNum) {
-		Entry entry = CurrentSimulator.getDatabase().getAllEntries().get(stringNum);
+		Entry entry = SimulatorWrapper.getDatabase().getAllEntries().get(stringNum);
 		final EntryType type = EntryType.values()[entry.getHeader().get(TypeSize.Internal.ENTRY_TYPE_OFFSET)];
 		final ByteBuffer header = Tracer.prepareBufferForReading(entry.getHeader());
 
@@ -117,7 +117,7 @@ public class TraceView extends ViewPart {
 			return null;
 		}
 
-		String dptName = CurrentSimulator.getStaticModelData().getSearchName(searchNumber);
+		String dptName = SimulatorWrapper.getStaticModelData().getSearchName(searchNumber);
 
 		return new FrameInfo(searchNumber, dptName);
 	}
@@ -220,13 +220,13 @@ public class TraceView extends ViewPart {
 				.initialize(Arrays.asList(new SimulatorSubscriberInfo(commonUpdater, ExecutionState.EXECUTION_STARTED),
 						new SimulatorSubscriberInfo(commonUpdater, ExecutionState.EXECUTION_COMPLETED)));
 		realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-		CurrentSimulator.getSimulatorStateNotifier().addSubscriber(tracerInitializer, SimulatorState.INITIALIZED);
+		SimulatorWrapper.getSimulatorStateNotifier().addSubscriber(tracerInitializer, SimulatorState.INITIALIZED);
 	}
 
 	private final void deinitializeSubscribers() {
 		simulatorSubscriberManager.deinitialize();
 		realTimeSubscriberManager.deinitialize();
-		CurrentSimulator.getSimulatorStateNotifier().removeSubscriber(tracerInitializer, SimulatorState.INITIALIZED);
+		SimulatorWrapper.getSimulatorStateNotifier().removeSubscriber(tracerInitializer, SimulatorState.INITIALIZED);
 	}
 
 	private final SimulatorSubscriberManager simulatorSubscriberManager = new SimulatorSubscriberManager();
@@ -398,7 +398,7 @@ public class TraceView extends ViewPart {
 		public void run() {
 			if (!readyForInput())
 				return;
-			final List<Entry> allEntries = CurrentSimulator.getDatabase().getAllEntries();
+			final List<Entry> allEntries = SimulatorWrapper.getDatabase().getAllEntries();
 			final int size = allEntries.size();
 
 			TraceView.viewer.setItemCount(size);
@@ -413,7 +413,7 @@ public class TraceView extends ViewPart {
 			if (!readyForInput())
 				return;
 
-			final List<Entry> allEntries = CurrentSimulator.getDatabase().getAllEntries();
+			final List<Entry> allEntries = SimulatorWrapper.getDatabase().getAllEntries();
 			final int size = allEntries.size();
 			PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 				@Override
@@ -433,7 +433,7 @@ public class TraceView extends ViewPart {
 	private static final Subscriber tracerInitializer = new Subscriber() {
 		@Override
 		public void fireChange() {
-			tracer = new Tracer(CurrentSimulator.getStaticModelData());
+			tracer = new Tracer(SimulatorWrapper.getStaticModelData());
 		}
 	};
 

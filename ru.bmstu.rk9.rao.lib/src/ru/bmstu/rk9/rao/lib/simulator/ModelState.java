@@ -92,7 +92,7 @@ public class ModelState {
 	}
 
 	public void deploy() {
-		CurrentSimulator.setModelState(this);
+		SimulatorWrapper.setModelState(this);
 	}
 
 	@SuppressWarnings("unchecked")

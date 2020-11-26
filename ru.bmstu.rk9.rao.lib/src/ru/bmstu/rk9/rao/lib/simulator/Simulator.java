@@ -15,8 +15,8 @@ import ru.bmstu.rk9.rao.lib.process.Process;
 import ru.bmstu.rk9.rao.lib.process.Process.ProcessStatus;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.result.ResultManager;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
 
 public class Simulator implements ISimulator {
 	@Override

@@ -5,7 +5,7 @@ import java.util.List;
 
 import ru.bmstu.rk9.rao.lib.database.Database;
 import ru.bmstu.rk9.rao.lib.database.SerializationConstants;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public abstract class Pattern {
 	public static enum ExecutedFrom {
@@ -33,7 +33,7 @@ public abstract class Pattern {
 	}
 
 	public final void addResourceEntriesToDatabase(Pattern.ExecutedFrom executedFrom, String dptName) {
-		CurrentSimulator.getDatabase().addMemorizedResourceEntries(
+		SimulatorWrapper.getDatabase().addMemorizedResourceEntries(
 				this.getTypeName() + "." + SerializationConstants.CREATED_RESOURCES, executedFrom, dptName);
 	}
 }

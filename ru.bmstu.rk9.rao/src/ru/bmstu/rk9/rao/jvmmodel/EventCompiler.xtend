@@ -58,7 +58,7 @@ class EventCompiler extends RaoEntityCompiler {
 
 				body = '''
 					«event.name» event = new «event.name»(«createEnumerationString(parameters, [name])»);
-					ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
+					ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.pushEvent(event);
 				'''
 			]
 		]

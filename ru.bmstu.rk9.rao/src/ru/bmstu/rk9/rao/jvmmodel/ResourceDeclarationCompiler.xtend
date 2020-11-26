@@ -80,7 +80,7 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 				if (!__initialized)
 					return «resourceInitialValueName(resource.name)»;
 				else
-					return («returnType.simpleName») ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().getResource(
+					return («returnType.simpleName») ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.getModelState().getResource(
 							«returnType.simpleName».class,
 							"«resourceQualifiedName»");
 			'''

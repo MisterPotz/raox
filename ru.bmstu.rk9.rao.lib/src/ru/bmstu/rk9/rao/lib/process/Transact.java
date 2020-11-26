@@ -3,7 +3,7 @@ package ru.bmstu.rk9.rao.lib.process;
 import java.nio.ByteBuffer;
 
 import ru.bmstu.rk9.rao.lib.resource.ComparableResource;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class Transact extends ComparableResource<Transact> {
 	private Transact() {
@@ -30,13 +30,13 @@ public class Transact extends ComparableResource<Transact> {
 
 	public static Transact create() {
 		Transact transact = new Transact();
-		CurrentSimulator.getModelState().addResource(transact);
+		SimulatorWrapper.getModelState().addResource(transact);
 		return transact;
 	}
 
 	@Override
 	public void erase() {
-		CurrentSimulator.getModelState().eraseResource(this);
+		SimulatorWrapper.getModelState().eraseResource(this);
 	}
 
 	@Override

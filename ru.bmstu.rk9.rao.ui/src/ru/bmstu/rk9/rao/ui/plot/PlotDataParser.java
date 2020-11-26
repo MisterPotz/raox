@@ -21,7 +21,7 @@ import ru.bmstu.rk9.rao.lib.database.Database.DataType;
 import ru.bmstu.rk9.rao.lib.database.Database.Entry;
 import ru.bmstu.rk9.rao.lib.database.Database.ResultType;
 import ru.bmstu.rk9.rao.lib.database.Database.TypeSize;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.ui.trace.Tracer;
 
 public class PlotDataParser {
@@ -134,7 +134,7 @@ public class PlotDataParser {
 	private ParseInfo parsePattern(final PatternIndex patternIndex, final int startItemNumber) {
 		final List<PlotItem> dataset = new ArrayList<PlotItem>();
 		final List<Integer> entriesNumbers = patternIndex.getEntryNumbers();
-		final List<Entry> allEntries = CurrentSimulator.getDatabase().getAllEntries();
+		final List<Entry> allEntries = SimulatorWrapper.getDatabase().getAllEntries();
 
 		if (patternCount == 0) {
 			dataset.add(new PlotItem(0, patternCount));
@@ -170,7 +170,7 @@ public class PlotDataParser {
 	private ParseInfo parseResult(final ResultIndex resultIndex, final int startItemNumber) {
 		final List<PlotItem> dataset = new ArrayList<PlotItem>();
 		final List<Integer> entriesNumbers = resultIndex.getEntryNumbers();
-		final List<Entry> allEntries = CurrentSimulator.getDatabase().getAllEntries();
+		final List<Entry> allEntries = SimulatorWrapper.getDatabase().getAllEntries();
 
 		AxisHelper axisHelper = new AxisHelper(false, null);
 
@@ -219,11 +219,11 @@ public class PlotDataParser {
 			final int parameterNumber, final int startItemNumber) {
 		final List<PlotItem> dataset = new ArrayList<PlotItem>();
 		final List<Integer> entriesNumbers = resourceIndex.getEntryNumbers();
-		final List<Entry> allEntries = CurrentSimulator.getDatabase().getAllEntries();
+		final List<Entry> allEntries = SimulatorWrapper.getDatabase().getAllEntries();
 
-		final int parameterOffset = CurrentSimulator.getStaticModelData().getResourceTypeParameterOffset(typeNumber,
+		final int parameterOffset = SimulatorWrapper.getStaticModelData().getResourceTypeParameterOffset(typeNumber,
 				parameterNumber);
-		final int finalOffset = CurrentSimulator.getStaticModelData().getResourceTypeFinalOffset(typeNumber);
+		final int finalOffset = SimulatorWrapper.getStaticModelData().getResourceTypeFinalOffset(typeNumber);
 
 		AxisHelper axisHelper = new AxisHelper(false, null);
 
@@ -239,7 +239,7 @@ public class PlotDataParser {
 			Tracer.skipPart(header, TypeSize.BYTE);
 			PlotItem item = null;
 
-			DataType dataType = CurrentSimulator.getStaticModelData().getResourceTypeParameterType(typeNumber,
+			DataType dataType = SimulatorWrapper.getStaticModelData().getResourceTypeParameterType(typeNumber,
 					parameterNumber);
 			switch (dataType) {
 			case INT:
@@ -257,7 +257,7 @@ public class PlotDataParser {
 				item = new PlotItem(time, boolValueEntry.value);
 				break;
 			case OTHER:
-				final int index = CurrentSimulator.getStaticModelData().getVariableWidthParameterIndex(typeNumber,
+				final int index = SimulatorWrapper.getStaticModelData().getVariableWidthParameterIndex(typeNumber,
 						parameterNumber);
 				final int stringPosition = data.getInt(finalOffset + index * TypeSize.INT);
 				final int length = data.getInt(stringPosition);

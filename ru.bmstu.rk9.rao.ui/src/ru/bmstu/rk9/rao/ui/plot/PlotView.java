@@ -45,8 +45,8 @@ import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.Index;
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.PatternIndex;
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
@@ -212,14 +212,14 @@ public class PlotView extends ViewPart {
 					List<XYDataItem> seriesitems = newSeries.getItems();
 
 					if (seriesitems.get(0).equals(seriesitems.get(1))) {
-						newSeries.add(CurrentSimulator.getTime(), seriesitems.get(1).getY());
+						newSeries.add(SimulatorWrapper.getTime(), seriesitems.get(1).getY());
 						plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
 						plotFrame.updateSliders();
 					}
 				} else if (newSeries.getItemCount() == 1) {
 					@SuppressWarnings("unchecked")
 					List<XYDataItem> seriesitems = newSeries.getItems();
-					newSeries.add(CurrentSimulator.getTime(), seriesitems.get(0).getY());
+					newSeries.add(SimulatorWrapper.getTime(), seriesitems.get(0).getY());
 					plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
 					plotFrame.updateSliders();
 				}
@@ -307,7 +307,7 @@ public class PlotView extends ViewPart {
 				case PATTERN:
 					PatternIndex patternIndex = (PatternIndex) index;
 					int patternNumber = patternIndex.getNumber();
-					String patternType = CurrentSimulator.getStaticModelData().getPatternType(patternNumber);
+					String patternType = SimulatorWrapper.getStaticModelData().getPatternType(patternNumber);
 					return patternType.equals(ModelStructureConstants.OPERATION);
 				default:
 					return false;
@@ -387,7 +387,7 @@ public class PlotView extends ViewPart {
 			case PATTERN:
 				PatternIndex patternIndex = (PatternIndex) index;
 				int patternNumber = patternIndex.getNumber();
-				String patternType = CurrentSimulator.getStaticModelData().getPatternType(patternNumber);
+				String patternType = SimulatorWrapper.getStaticModelData().getPatternType(patternNumber);
 				return patternType.equals(ModelStructureConstants.OPERATION);
 			default:
 				return false;

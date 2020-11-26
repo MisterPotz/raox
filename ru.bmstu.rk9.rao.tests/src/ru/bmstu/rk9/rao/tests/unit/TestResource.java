@@ -3,7 +3,7 @@ package ru.bmstu.rk9.rao.tests.unit;
 import java.nio.ByteBuffer;
 
 import ru.bmstu.rk9.rao.lib.resource.ComparableResource;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class TestResource extends ComparableResource<TestResource> {
 
@@ -19,12 +19,12 @@ public class TestResource extends ComparableResource<TestResource> {
 
 	@Override
 	public void erase() {
-		CurrentSimulator.getModelState().eraseResource(this);
+		SimulatorWrapper.getModelState().eraseResource(this);
 	}
 
 	public static TestResource create() {
 		TestResource resource = new TestResource();
-		CurrentSimulator.getModelState().addResource(resource);
+		SimulatorWrapper.getModelState().addResource(resource);
 		return resource;
 	}
 

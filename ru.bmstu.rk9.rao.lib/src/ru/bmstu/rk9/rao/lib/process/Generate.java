@@ -5,13 +5,13 @@ import java.util.function.Supplier;
 import ru.bmstu.rk9.rao.lib.database.Database.ProcessEntryType;
 import ru.bmstu.rk9.rao.lib.event.Event;
 import ru.bmstu.rk9.rao.lib.process.Process.BlockStatus;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class Generate implements Block {
 
 	public Generate(Supplier<Double> interval) {
 		this.interval = interval;
-		CurrentSimulator.pushEvent(new GenerateEvent(interval.get()));
+		SimulatorWrapper.pushEvent(new GenerateEvent(interval.get()));
 	}
 
 	private Supplier<Double> interval;
@@ -33,10 +33,10 @@ public class Generate implements Block {
 		}
 		Transact transact = Transact.create();
 		transactStorage.pushTransact(transact);
-		CurrentSimulator.getDatabase().addProcessEntry(ProcessEntryType.GENERATE, transact.getNumber(), null);
+		SimulatorWrapper.getDatabase().addProcessEntry(ProcessEntryType.GENERATE, transact.getNumber(), null);
 
-		Double time = CurrentSimulator.getTime() + interval.get();
-		CurrentSimulator.pushEvent(new GenerateEvent(time));
+		Double time = SimulatorWrapper.getTime() + interval.get();
+		SimulatorWrapper.pushEvent(new GenerateEvent(time));
 		ready = false;
 		return BlockStatus.SUCCESS;
 	}

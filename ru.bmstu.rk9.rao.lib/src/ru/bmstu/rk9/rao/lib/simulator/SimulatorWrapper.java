@@ -11,10 +11,10 @@ import ru.bmstu.rk9.rao.lib.modeldata.StaticModelData;
 import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 
-public class CurrentSimulator {
+public class SimulatorWrapper {
 	private static ISimulator currentSimulator = null;
-
-	public static void set(ISimulator simulator) {
+	
+	public SimulatorWrapper(ISimulator simulator) {
 		setCurrentSimulatorState(SimulatorState.DEINITIALIZED);
 		currentSimulator = simulator;
 	}
@@ -52,10 +52,10 @@ public class CurrentSimulator {
 	};
 
 	private static final void setCurrentSimulatorState(SimulatorState simulatorState) {
-		if (simulatorState == CurrentSimulator.currentSimulatorState)
+		if (simulatorState == SimulatorWrapper.currentSimulatorState)
 			return;
 
-		CurrentSimulator.currentSimulatorState = simulatorState;
+		SimulatorWrapper.currentSimulatorState = simulatorState;
 		simulatorStateNotifier.notifySubscribers(simulatorState);
 	}
 

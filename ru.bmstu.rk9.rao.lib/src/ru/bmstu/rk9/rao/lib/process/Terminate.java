@@ -2,7 +2,7 @@ package ru.bmstu.rk9.rao.lib.process;
 
 import ru.bmstu.rk9.rao.lib.database.Database.ProcessEntryType;
 import ru.bmstu.rk9.rao.lib.process.Process.BlockStatus;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class Terminate implements Block {
 
@@ -18,7 +18,7 @@ public class Terminate implements Block {
 		if (currentTransact == null)
 			return BlockStatus.NOTHING_TO_DO;
 
-		CurrentSimulator.getDatabase().addProcessEntry(ProcessEntryType.TERMINATE, currentTransact.getNumber(), null);
+		SimulatorWrapper.getDatabase().addProcessEntry(ProcessEntryType.TERMINATE, currentTransact.getNumber(), null);
 		Transact.eraseTransact(currentTransact);
 		return BlockStatus.SUCCESS;
 	}

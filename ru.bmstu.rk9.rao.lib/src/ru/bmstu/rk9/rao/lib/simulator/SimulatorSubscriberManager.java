@@ -6,26 +6,26 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscr
 
 public class SimulatorSubscriberManager extends DefferedSubscriberManager<SimulatorSubscriberInfo> {
 	public static class SimulatorSubscriberInfo {
-		public SimulatorSubscriberInfo(Subscriber subscriber, CurrentSimulator.ExecutionState notificationCategory) {
+		public SimulatorSubscriberInfo(Subscriber subscriber, SimulatorWrapper.ExecutionState notificationCategory) {
 			this.subscriber = subscriber;
 			this.notificationCategory = notificationCategory;
 		}
 
 		final Subscriber subscriber;
-		final CurrentSimulator.ExecutionState notificationCategory;
+		final SimulatorWrapper.ExecutionState notificationCategory;
 	}
 
 	@Override
 	protected void registerExecutionSubscribers() {
 		for (SimulatorSubscriberInfo subscriberInfo : subscribersInfo)
-			CurrentSimulator.getExecutionStateNotifier().addSubscriber(subscriberInfo.subscriber,
+			SimulatorWrapper.getExecutionStateNotifier().addSubscriber(subscriberInfo.subscriber,
 					subscriberInfo.notificationCategory);
 	}
 
 	@Override
 	protected void unregisterExecutionSubscribers() {
 		for (SimulatorSubscriberInfo subscriberInfo : subscribersInfo)
-			CurrentSimulator.getExecutionStateNotifier().removeSubscriber(subscriberInfo.subscriber,
+			SimulatorWrapper.getExecutionStateNotifier().removeSubscriber(subscriberInfo.subscriber,
 					subscriberInfo.notificationCategory);
 	}
 }

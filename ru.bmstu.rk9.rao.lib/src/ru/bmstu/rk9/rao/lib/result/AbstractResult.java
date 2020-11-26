@@ -2,7 +2,7 @@ package ru.bmstu.rk9.rao.lib.result;
 
 import ru.bmstu.rk9.rao.lib.json.JSONObject;
 import ru.bmstu.rk9.rao.lib.naming.RaoNameable;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class AbstractResult<T> extends RaoNameable {
 
@@ -19,7 +19,7 @@ public class AbstractResult<T> extends RaoNameable {
 
 	public final void update(T value, double time) {
 		statistics.update(value, time);
-		CurrentSimulator.getDatabase().addResultEntry(this, value);
+		SimulatorWrapper.getDatabase().addResultEntry(this, value);
 	};
 
 	public final void prepareData() {

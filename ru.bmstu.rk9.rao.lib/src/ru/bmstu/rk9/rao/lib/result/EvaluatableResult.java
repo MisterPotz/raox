@@ -1,6 +1,6 @@
 package ru.bmstu.rk9.rao.lib.result;
 
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class EvaluatableResult<T> extends AbstractResult<T> {
 
@@ -14,7 +14,7 @@ public class EvaluatableResult<T> extends AbstractResult<T> {
 		if (!dataSource.condition())
 			return;
 		final T value = dataSource.evaluate();
-		double time = CurrentSimulator.getTime();
+		double time = SimulatorWrapper.getTime();
 		update(value, time);
 	};
 

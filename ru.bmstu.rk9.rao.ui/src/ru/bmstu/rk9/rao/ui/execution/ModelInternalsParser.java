@@ -42,7 +42,7 @@ import ru.bmstu.rk9.rao.lib.pattern.Pattern;
 import ru.bmstu.rk9.rao.lib.process.Block;
 import ru.bmstu.rk9.rao.lib.resource.ComparableResource;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorInitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
 import ru.bmstu.rk9.rao.rao.PatternType;
@@ -105,7 +105,7 @@ public class ModelInternalsParser {
 
 		URL[] urls = new URL[] { modelURL };
 
-		classLoader = new URLClassLoader(urls, CurrentSimulator.class.getClassLoader());
+		classLoader = new URLClassLoader(urls, SimulatorWrapper.class.getClassLoader());
 
 		simulatorPreinitializationInfo.modelStructure.put(ModelStructureConstants.NAME, project.getName());
 		simulatorPreinitializationInfo.modelStructure.put(ModelStructureConstants.LOCATION,

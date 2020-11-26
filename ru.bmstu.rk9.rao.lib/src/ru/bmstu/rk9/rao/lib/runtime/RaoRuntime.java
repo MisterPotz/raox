@@ -1,9 +1,9 @@
 package ru.bmstu.rk9.rao.lib.runtime;
 
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class RaoRuntime {
 	public static final double getCurrentTime() {
-		return CurrentSimulator.getTime();
+		return SimulatorWrapper.getTime();
 	}
 }

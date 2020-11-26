@@ -4,16 +4,16 @@ import java.util.LinkedList;
 import java.util.List;
 
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class ResultManager {
 
 	public ResultManager(List<AbstractResult<?>> results) {
 		this.results.addAll(results);
-		CurrentSimulator.getExecutionStateNotifier().addSubscriber(this.stateChangedSubscriber,
-				CurrentSimulator.ExecutionState.STATE_CHANGED);
-		CurrentSimulator.getExecutionStateNotifier().addSubscriber(this.executionCompletedSubscriber,
-				CurrentSimulator.ExecutionState.EXECUTION_COMPLETED);
+		SimulatorWrapper.getExecutionStateNotifier().addSubscriber(this.stateChangedSubscriber,
+				SimulatorWrapper.ExecutionState.STATE_CHANGED);
+		SimulatorWrapper.getExecutionStateNotifier().addSubscriber(this.executionCompletedSubscriber,
+				SimulatorWrapper.ExecutionState.EXECUTION_COMPLETED);
 	}
 
 	private final Subscriber stateChangedSubscriber = new Subscriber() {

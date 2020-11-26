@@ -8,7 +8,7 @@ import org.apache.commons.math3.random.MersenneTwister;
 import ru.bmstu.rk9.rao.lib.database.Database.ProcessEntryType;
 import ru.bmstu.rk9.rao.lib.database.Database.TypeSize;
 import ru.bmstu.rk9.rao.lib.process.Process.BlockStatus;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 
 public class SelectPath implements Block {
 
@@ -81,7 +81,7 @@ public class SelectPath implements Block {
 			storage = falseOutputTransactStorage;
 			data.put((byte) SelectPathOutputs.FALSE.ordinal());
 		}
-		CurrentSimulator.getDatabase().addProcessEntry(ProcessEntryType.SELECT_PATH, transact.getNumber(), data);
+		SimulatorWrapper.getDatabase().addProcessEntry(ProcessEntryType.SELECT_PATH, transact.getNumber(), data);
 
 		if (!storage.pushTransact(transact))
 			return BlockStatus.CHECK_AGAIN;

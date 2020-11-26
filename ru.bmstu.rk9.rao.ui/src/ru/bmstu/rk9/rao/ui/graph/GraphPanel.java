@@ -44,8 +44,8 @@ import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.IndexType;
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
 import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.graph.GraphControl.FrameInfo;
@@ -138,7 +138,7 @@ public class GraphPanel extends JPanel implements GraphApi {
 
 		setProportions();
 
-		final boolean useShortNames = CurrentSimulator.getStaticModelData().getModelStructure()
+		final boolean useShortNames = SimulatorWrapper.getStaticModelData().getModelStructure()
 				.getInt(ModelStructureConstants.NUMBER_OF_MODELS) == 1;
 		treeBuilder = new TreeBuilder(dptNum, useShortNames);
 		isFinished = treeBuilder.updateTree();
