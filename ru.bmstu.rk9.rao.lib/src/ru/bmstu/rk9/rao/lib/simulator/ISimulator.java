@@ -10,8 +10,11 @@ import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public interface ISimulator {
+	public SimulatorId getSimulatorId();
+	
 	public void preinitilize(SimulatorPreinitializationInfo info);
 
 	public void initialize(SimulatorInitializationInfo initializationInfo);

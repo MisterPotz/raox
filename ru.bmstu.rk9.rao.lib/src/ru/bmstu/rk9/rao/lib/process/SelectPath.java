@@ -9,8 +9,33 @@ import ru.bmstu.rk9.rao.lib.database.Database.ProcessEntryType;
 import ru.bmstu.rk9.rao.lib.database.Database.TypeSize;
 import ru.bmstu.rk9.rao.lib.process.Process.BlockStatus;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
-public class SelectPath implements Block {
+public class SelectPath implements Block, SimulatorDependent {
+
+	private SimulatorId simulatorId;
+
+	@Override
+	public SimulatorId getSimulatorId() {
+		return simulatorId;
+	}
+
+	@Override
+	public void setSimulatorId(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+	}
+
+	private ISimulator getSimulator() {
+		return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+	}
+
+	private SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
 
 	private TransactStorage trueOutputTransactStorage = new TransactStorage();
 	private TransactStorage falseOutputTransactStorage = new TransactStorage();
@@ -81,7 +106,7 @@ public class SelectPath implements Block {
 			storage = falseOutputTransactStorage;
 			data.put((byte) SelectPathOutputs.FALSE.ordinal());
 		}
-		SimulatorWrapper.getDatabase().addProcessEntry(ProcessEntryType.SELECT_PATH, transact.getNumber(), data);
+		getSimulator().getDatabase().addProcessEntry(ProcessEntryType.SELECT_PATH, transact.getNumber(), data);
 
 		if (!storage.pushTransact(transact))
 			return BlockStatus.CHECK_AGAIN;

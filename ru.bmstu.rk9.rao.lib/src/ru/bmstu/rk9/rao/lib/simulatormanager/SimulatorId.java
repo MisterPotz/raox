@@ -6,6 +6,7 @@ package ru.bmstu.rk9.rao.lib.simulatormanager;
  *
  */
 public class SimulatorId {
+	public static SimulatorId FOR_UI = new SimulatorId(-100);
 	private final long id;
 
 	private SimulatorId(long id) {

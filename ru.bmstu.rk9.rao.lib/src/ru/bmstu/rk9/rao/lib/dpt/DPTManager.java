@@ -10,12 +10,22 @@ import java.util.TreeSet;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.lib.notification.Subscription.SubscriptionType;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
-public class DPTManager implements Subscriber {
-	public DPTManager(Collection<AbstractDecisionPoint> decisionPoints) {
-		SimulatorWrapper.getExecutionStateNotifier().addSubscriber(this,
+public class DPTManager implements Subscriber, SimulatorDependent {
+	private final SimulatorId simulatorId;
+
+	@Override
+	public SimulatorId getSimulatorId() {
+		return simulatorId;
+	}
+	
+	public DPTManager(Collection<AbstractDecisionPoint> decisionPoints, SimulatorId simulatorId) {
+		SimulatorManagerImpl.getInstance().getSimulator(simulatorId).getExecutionStateNotifier().addSubscriber(this,
 				SimulatorWrapper.ExecutionState.EXECUTION_ABORTED, EnumSet.of(SubscriptionType.ONE_SHOT));
-
+		this.simulatorId = simulatorId;
 		this.decisionPoints = new TreeSet<AbstractDecisionPoint>(prioritizer);
 		this.decisionPoints.addAll(decisionPoints);
 	}
@@ -57,4 +67,5 @@ public class DPTManager implements Subscriber {
 			return 0;
 		}
 	};
+
 }

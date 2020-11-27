@@ -20,11 +20,33 @@ import ru.bmstu.rk9.rao.lib.pattern.Rule;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulatorState;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.ModelState;
 
-public abstract class Search extends AbstractDecisionPoint {
-	public Search() {
-		SimulatorWrapper.getSimulatorStateNotifier().addSubscriber(simulatorInitializedListener,
+public abstract class Search extends AbstractDecisionPoint implements SimulatorDependent {
+	private final SimulatorId simulatorId;
+
+	@Override
+	public SimulatorId getSimulatorId() {
+		return simulatorId;
+	}
+	
+	private ISimulator getSimulator() {
+		return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+	}
+	
+	private SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
+
+	
+	public Search(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+
+		SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getSimulatorStateNotifier().addSubscriber(simulatorInitializedListener,
 				SimulatorState.INITIALIZED, EnumSet.of(SubscriptionType.IGNORE_ACCUMULATED, SubscriptionType.ONE_SHOT));
 		initializeEdges();
 		init();
@@ -42,6 +64,7 @@ public abstract class Search extends AbstractDecisionPoint {
 	public Logic getParent() {
 		return parent;
 	}
+	
 
 	protected void setParent(Logic parent) {
 		this.parent = parent;
@@ -51,9 +74,9 @@ public abstract class Search extends AbstractDecisionPoint {
 	private final Subscriber simulatorInitializedListener = new Subscriber() {
 		@Override
 		public void fireChange() {
-			SimulatorWrapper.getExecutionStateNotifier().addSubscriber(executionAbortedListener,
+			getSimulatorWrapper().getExecutionStateNotifier().addSubscriber(executionAbortedListener,
 					ExecutionState.EXECUTION_ABORTED, EnumSet.of(SubscriptionType.ONE_SHOT));
-			SimulatorWrapper.getExecutionStateNotifier().addSubscriber(executionStartedListener,
+			getSimulatorWrapper().getExecutionStateNotifier().addSubscriber(executionStartedListener,
 					ExecutionState.EXECUTION_STARTED, EnumSet.of(SubscriptionType.ONE_SHOT));
 		}
 	};
@@ -155,7 +178,7 @@ public abstract class Search extends AbstractDecisionPoint {
 		nodesClosed.clear();
 
 		head = new GraphNode(nodeIndex++, null);
-		head.state = SimulatorWrapper.getModelState();
+		head.state = getSimulator().getModelState();
 		nodesOpen.add(head);
 
 		while (!nodesOpen.isEmpty()) {
@@ -246,7 +269,7 @@ public abstract class Search extends AbstractDecisionPoint {
 
 			serializeTops(newChild, spawnStatus, value);
 
-			SimulatorWrapper.getExecutionStateNotifier().notifySubscribers(ExecutionState.SEARCH_STEP);
+			getSimulatorWrapper().getExecutionStateNotifier().notifySubscribers(ExecutionState.SEARCH_STEP);
 			parent.state.deploy();
 		}
 
@@ -335,7 +358,7 @@ public abstract class Search extends AbstractDecisionPoint {
 
 	private final boolean enoughSensitivity(SerializationLevel checkedType) {
 		for (SerializationLevel type : SerializationLevel.values()) {
-			if (SimulatorWrapper.getDatabase().sensitiveTo(getTypeName() + "." + type.toString()))
+			if (getSimulatorWrapper().getDatabase().sensitiveTo(getTypeName() + "." + type.toString()))
 				if (serializationLevelComparator.compare(type, checkedType) >= 0)
 					return true;
 		}
@@ -347,7 +370,7 @@ public abstract class Search extends AbstractDecisionPoint {
 		if (!enoughSensitivity(SerializationLevel.START_STOP))
 			return;
 
-		SimulatorWrapper.getDatabase().addSearchEntry(this, Database.SearchEntryType.BEGIN, null);
+		getSimulatorWrapper().getDatabase().addSearchEntry(this, Database.SearchEntryType.BEGIN, null);
 	}
 
 	private final void serializeStop(StopCode code, double finalCost) {
@@ -361,7 +384,7 @@ public abstract class Search extends AbstractDecisionPoint {
 				.putLong(memory - Runtime.getRuntime().freeMemory()).putDouble(finalCost).putInt(nodesClosed.size())
 				.putInt(nodesOpen.size()).putInt(countSpawned);
 
-		SimulatorWrapper.getDatabase().addSearchEntry(this, Database.SearchEntryType.END, data);
+		getSimulatorWrapper().getDatabase().addSearchEntry(this, Database.SearchEntryType.END, data);
 	}
 
 	private final void serializeOpen(GraphNode node) {
@@ -370,7 +393,7 @@ public abstract class Search extends AbstractDecisionPoint {
 
 			data.putInt(node.number).putInt(node.parent.number).putDouble(node.g).putDouble(node.h);
 
-			SimulatorWrapper.getDatabase().addSearchEntry(this, Database.SearchEntryType.OPEN, data);
+			getSimulatorWrapper().getDatabase().addSearchEntry(this, Database.SearchEntryType.OPEN, data);
 		}
 	}
 
@@ -386,13 +409,13 @@ public abstract class Search extends AbstractDecisionPoint {
 
 			data.put((byte) spawnStatus.ordinal()).putInt(node.number).putInt(node.parent.number).putDouble(node.g)
 					.putDouble(node.h).putInt(edgeNumber)
-					.putInt(SimulatorWrapper.getStaticModelData().getPatternNumber(rule.getTypeName()))
+					.putInt(getSimulatorWrapper().getStaticModelData().getPatternNumber(rule.getTypeName()))
 					.putDouble(value);
 
 			for (int num : relevantResourcesNumbers)
 				data.putInt(num);
 
-			SimulatorWrapper.getDatabase().addSearchEntry(this, Database.SearchEntryType.SPAWN, data);
+			getSimulator().getDatabase().addSearchEntry(this, Database.SearchEntryType.SPAWN, data);
 		}
 
 		if (enoughSensitivity(SerializationLevel.ALL)) {
@@ -414,12 +437,12 @@ public abstract class Search extends AbstractDecisionPoint {
 			ByteBuffer data = ByteBuffer.allocate(Database.TypeSize.INT * (3 + relevantResourcesNumbers.size()));
 
 			data.putInt(node.number).putInt(node.edgeInfo.number)
-					.putInt(SimulatorWrapper.getStaticModelData().getPatternNumber(node.edgeInfo.rule.getTypeName()));
+					.putInt(getSimulator().getStaticModelData().getPatternNumber(node.edgeInfo.rule.getTypeName()));
 
 			for (int num : relevantResourcesNumbers)
 				data.putInt(num);
 
-			SimulatorWrapper.getDatabase().addSearchEntry(this, Database.SearchEntryType.DECISION, data);
+			getSimulator().getDatabase().addSearchEntry(this, Database.SearchEntryType.DECISION, data);
 
 			if (enoughSensitivity(SerializationLevel.ALL)) {
 				rule.addResourceEntriesToDatabase(Pattern.ExecutedFrom.SOLUTION, this.getTypeName());

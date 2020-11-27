@@ -17,12 +17,25 @@ import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.result.ResultManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public class Simulator implements ISimulator {
+	private final SimulatorId simulatorId;
+	
+	@Override
+	public SimulatorId getSimulatorId() {
+	return simulatorId;
+	}
+
+	public Simulator() {
+		this.simulatorId = SimulatorId.generateSimulatorId();
+		eventScheduler = new EventScheduler(simulatorId);
+	}
+	
 	@Override
 	public void preinitilize(SimulatorPreinitializationInfo preinitializationInfo) {
-		modelState = new ModelState(preinitializationInfo.resourceClasses);
-		database = new Database(preinitializationInfo.modelStructure);
+		modelState = new ModelState(preinitializationInfo.resourceClasses, simulatorId);
+		database = new Database(preinitializationInfo.modelStructure, simulatorId);
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
 		logger = new Logger();
 
@@ -33,9 +46,9 @@ public class Simulator implements ISimulator {
 	@Override
 	public void initialize(SimulatorInitializationInfo initializationInfo) {
 		executionStateNotifier = new Notifier<ExecutionState>(ExecutionState.class);
-		dptManager = new DPTManager(initializationInfo.decisionPoints);
+		dptManager = new DPTManager(initializationInfo.decisionPoints, simulatorId);
 		processManager = new Process(initializationInfo.processBlocks);
-		resultManager = new ResultManager(initializationInfo.results);
+		resultManager = new ResultManager(initializationInfo.results, simulatorId);
 
 		for (Supplier<Boolean> terminateCondition : initializationInfo.terminateConditions)
 			terminateList.add(terminateCondition);
@@ -79,7 +92,7 @@ public class Simulator implements ISimulator {
 		return time;
 	}
 
-	private EventScheduler eventScheduler = new EventScheduler();
+	private final EventScheduler eventScheduler;
 
 	@Override
 	public void pushEvent(Event event) {

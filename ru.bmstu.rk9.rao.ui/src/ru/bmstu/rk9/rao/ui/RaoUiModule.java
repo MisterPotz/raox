@@ -31,4 +31,8 @@ public class RaoUiModule extends AbstractRaoUiModule {
 	public Class<? extends org.eclipse.xtext.ide.editor.syntaxcoloring.ISemanticHighlightingCalculator> bindIdeSemanticHighlightingCalculator() {
 		return RaoHighlightningCalculator.class;
 	}
+	
+	public Class<? extends TargetSimulatorManager> bindTargetSimulatorManager() {
+		return TargetSimulatorManagerImpl.class;
+	}
 }

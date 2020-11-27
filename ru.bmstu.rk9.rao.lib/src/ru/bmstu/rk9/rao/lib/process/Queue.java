@@ -5,9 +5,32 @@ import java.util.LinkedList;
 import ru.bmstu.rk9.rao.lib.database.Database.ProcessEntryType;
 import ru.bmstu.rk9.rao.lib.database.Database.TypeSize;
 import ru.bmstu.rk9.rao.lib.process.Process.BlockStatus;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
-public class Queue implements Block {
+public class Queue implements Block, SimulatorDependent {
+	private SimulatorId simulatorId;
+
+	@Override
+	public SimulatorId getSimulatorId() {
+		return simulatorId;
+	}
+
+	@Override
+	public void setSimulatorId(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+	}
+
+	private ISimulator getSimulator() {
+		return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+	}
+
+	private SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
 
 	private InputDock inputDock = new InputDock();
 	private OutputDock outputDock = () -> getCurrentTransact();
@@ -79,7 +102,7 @@ public class Queue implements Block {
 	private void addQueueEntryToDatabase(Transact transact, QueueAction queueAction) {
 		ByteBuffer data = ByteBuffer.allocate(TypeSize.BYTE);
 		data.put((byte) queueAction.ordinal());
-		SimulatorWrapper.getDatabase().addProcessEntry(ProcessEntryType.QUEUE, transact.getNumber(), data);
+		getSimulator().getDatabase().addProcessEntry(ProcessEntryType.QUEUE, transact.getNumber(), data);
 	}
 }
 

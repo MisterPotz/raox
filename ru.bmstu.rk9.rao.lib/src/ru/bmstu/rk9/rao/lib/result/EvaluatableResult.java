@@ -1,11 +1,16 @@
 package ru.bmstu.rk9.rao.lib.result;
 
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public class EvaluatableResult<T> extends AbstractResult<T> {
 
-	public EvaluatableResult(AbstractDataSource<T> dataSource, ResultMode resultMode, Statistics<T> statistics) {
-		super(statistics);
+	public EvaluatableResult(
+			AbstractDataSource<T> dataSource, 
+			ResultMode resultMode, 
+			Statistics<T> statistics,
+			SimulatorId simulatorId) {
+		super(statistics, simulatorId);
 		this.dataSource = dataSource;
 		this.resultMode = resultMode;
 	}
@@ -14,7 +19,7 @@ public class EvaluatableResult<T> extends AbstractResult<T> {
 		if (!dataSource.condition())
 			return;
 		final T value = dataSource.evaluate();
-		double time = SimulatorWrapper.getTime();
+		double time = getSimulator().getTime();
 		update(value, time);
 	};
 

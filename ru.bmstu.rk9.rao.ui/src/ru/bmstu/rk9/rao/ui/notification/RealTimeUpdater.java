@@ -12,21 +12,40 @@ import org.eclipse.ui.PlatformUI;
 import ru.bmstu.rk9.rao.lib.database.Database;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationModeDispatcher;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
 
-public class RealTimeUpdater {
 
+public class RealTimeUpdater implements SimulatorDependent {
+	private final SimulatorId simulatorId = SimulatorId.FOR_UI;
+	
+	@Override
+	public SimulatorId getSimulatorId() {
+	return simulatorId;
+	}
+
+	private ISimulator getSimulator() {
+	return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+	}
+
+	private SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
+	
 	public RealTimeUpdater() {
 		subscriberRegistrationManager.initialize(
 				Arrays.asList(new SimulatorSubscriberInfo(simulationStartSubscriber, ExecutionState.EXECUTION_STARTED),
 						new SimulatorSubscriberInfo(simulationStopSubscriber, ExecutionState.EXECUTION_COMPLETED)));
 	}
 
-	private final SimulatorSubscriberManager subscriberRegistrationManager = new SimulatorSubscriberManager();
+	private final SimulatorSubscriberManager subscriberRegistrationManager = new SimulatorSubscriberManager(simulatorId);
 
 	public final void deinitialize() {
 		subscriberRegistrationManager.deinitialize();
@@ -42,7 +61,7 @@ public class RealTimeUpdater {
 
 	private final void start() {
 		display = PlatformUI.getWorkbench().getDisplay();
-		SimulatorWrapper.getDatabase().getNotifier().addSubscriber(databaseSubscriber,
+		getSimulator().getDatabase().getNotifier().addSubscriber(databaseSubscriber,
 				Database.NotificationCategory.ENTRY_ADDED);
 
 		timer = new Timer();
