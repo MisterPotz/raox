@@ -5,11 +5,18 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.internal.compiler.ast.FalseLiteral;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import ru.bmstu.rk9.rao.lib.varconst.VarConst;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
@@ -77,6 +84,39 @@ public class ExecutionJobProvider {
 
 				display.syncExec(() -> AnimationView.initialize(parser.getAnimationFrames()));
 
+				/** TODO: generating varconsts list of varconst tuples */
+				List<VarConst> vcs = parser.getVarConsts();
+				List<List<Double>> vcsMtrx = new ArrayList<>();
+				List<List<Double>> allVCCominations = new ArrayList<>();
+
+				for (VarConst vc : vcs) {
+					vcsMtrx.add(vc.getRangeList());
+				}
+				
+				generateVCCombinations(vcsMtrx, allVCCominations);			
+
+				List<String> vcNames = new ArrayList<>();
+				HashMap<String, Double> vcMap = new HashMap<>();
+				for (VarConst vc : vcs)
+					vcNames.add(vc.getName());
+
+				List<List<Double>> finalVCCombs = new ArrayList<>();
+				boolean isChecked;
+
+				for (List<Double> row : allVCCominations) {
+					for (int i = 0; i < row.size(); i++)
+						vcMap.put(vcNames.get(i), row.get(i));
+					isChecked = true;
+					for (VarConst vc  : vcs) {
+						if (!vc.checkValue(vcMap)) {
+							isChecked = false;
+							break;
+						}
+					}
+					if (isChecked)
+						finalVCCombs.add(new ArrayList<>(row));
+				}
+				
 				try {
 					CurrentSimulator.initialize(parser.getSimulatorInitializationInfo());
 				} catch (Exception e) {
@@ -137,5 +177,26 @@ public class ExecutionJobProvider {
 
 		executionJob.setPriority(Job.LONG);
 		return executionJob;
+	}
+
+	private void generateVCCombinations(List<List<Double>> mtrx, 
+										List<List<Double>> set) {
+		generateVCCombinations(mtrx, set, 0, new ArrayList<>());
+	}
+
+	private void generateVCCombinations(List<List<Double>> mtrx, 
+										List<List<Double>> set, 
+										int depth,
+										List<Double> list) {
+		if (depth == mtrx.size()) {
+			set.add(new ArrayList<>(list));
+			return ;
+		}
+
+		for (Double nbr : mtrx.get(depth)) {
+			list.add(nbr);
+			generateVCCombinations(mtrx, set, depth + 1, list);
+			list.remove(list.size() - 1);
+		}
 	}
 }

@@ -45,6 +45,7 @@ import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorInitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
+import ru.bmstu.rk9.rao.lib.varconst.VarConst;
 import ru.bmstu.rk9.rao.rao.PatternType;
 import ru.bmstu.rk9.rao.rao.RaoEntity;
 import ru.bmstu.rk9.rao.rao.RaoModel;
@@ -59,6 +60,9 @@ public class ModelInternalsParser {
 	private final SimulatorPreinitializationInfo simulatorPreinitializationInfo = new SimulatorPreinitializationInfo();
 	private final SimulatorInitializationInfo simulatorInitializationInfo = new SimulatorInitializationInfo();
 	private final List<Class<?>> decisionPointClasses = new ArrayList<>();
+
+	private final List<Class<?>> varconstClasses = new ArrayList<>();
+	private final List<VarConst> varconsts = new ArrayList<>();
 
 	private final ModelContentsInfo modelContentsInfo = new ModelContentsInfo();
 
@@ -212,6 +216,12 @@ public class ModelInternalsParser {
 		for (RaoEntity entity : entities) {
 			String name = modelClassName + "." + entity.getName();
 
+			if (entity instanceof ru.bmstu.rk9.rao.rao.VarConst) {
+				simulatorPreinitializationInfo.modelStructure.getJSONArray(ModelStructureConstants.EVENTS)
+				.put(new JSONObject().put(ModelStructureConstants.NAME, name));
+				continue;
+			}
+
 			if (entity instanceof ru.bmstu.rk9.rao.rao.Event) {
 				simulatorPreinitializationInfo.modelStructure.getJSONArray(ModelStructureConstants.EVENTS)
 						.put(new JSONObject().put(ModelStructureConstants.NAME, name));
@@ -309,6 +319,11 @@ public class ModelInternalsParser {
 		}
 
 		for (Class<?> nestedModelClass : modelClass.getDeclaredClasses()) {
+			if (VarConst.class.isAssignableFrom(nestedModelClass)) {
+				varconstClasses.add(nestedModelClass);
+				continue;
+			}
+			
 			if (ComparableResource.class.isAssignableFrom(nestedModelClass)) {
 				simulatorPreinitializationInfo.resourceClasses.add(nestedModelClass);
 				continue;
@@ -368,6 +383,12 @@ public class ModelInternalsParser {
 
 	public final void postprocess() throws IllegalArgumentException, IllegalAccessException, InstantiationException,
 			InvocationTargetException, ClassNotFoundException, IOException, CoreException {
+
+		for (Class<?> varconstClass : varconstClasses) {
+			VarConst varconst = (VarConst) varconstClass.newInstance();
+			varconsts.add(varconst);
+		}
+
 		for (Field resultField : resultFields) {
 			resultField.setAccessible(true);
 			AbstractResult<?> result = (AbstractResult<?>) resultField.get(null);
@@ -394,6 +415,10 @@ public class ModelInternalsParser {
 			AnimationFrame frame = (AnimationFrame) animationClass.newInstance();
 			animationFrames.add(frame);
 		}
+	}
+
+	public final List<VarConst> getVarConsts() {
+		return varconsts;
 	}
 
 	public final List<AnimationFrame> getAnimationFrames() {

@@ -24,19 +24,12 @@ class VarConstCompiler extends RaoEntityCompiler {
 			superTypes += typeRef(ru.bmstu.rk9.rao.lib.varconst.VarConst)
 			
 			var tmp = new JvmFormalParameterImplCustom()
-			for (name : Arrays.asList("start", "stop", "step"))
-				members += tmp.toField(name, typeRef(Double))
-				
-			if (varconst.lambda !== null)
-				members += varconst.lambda.toField("lambda", typeRef(ru.bmstu.rk9.rao.lib.lambdaexpression.LambdaExpression))
 
 			members += varconst.toConstructor [
 				visibility = JvmVisibility.PUBLIC
 				
 				body = '''
-					start = «Double.valueOf(varconst.start)»;
-					stop = «Double.valueOf(varconst.stop)»;
-					step = «Double.valueOf(varconst.step)»;
+					super(«Double.valueOf(varconst.start)», «Double.valueOf(varconst.stop)», «Double.valueOf(varconst.step)»);
 				'''
 			]
 			
@@ -45,11 +38,11 @@ class VarConstCompiler extends RaoEntityCompiler {
 				final = true
 				
 				body = '''
-					return "«vcQualifiedName»";
+					return "«varconst.name»";
 				'''
 			]
 			
-			members += varconst.toMethod("checkValue", typeRef(Boolean)) [
+			members += varconst.toMethod("checkValue", typeRef(boolean)) [
 				visibility = JvmVisibility.PUBLIC
 				
 				var mapArg = new JvmFormalParameterImplCustom()
@@ -60,7 +53,7 @@ class VarConstCompiler extends RaoEntityCompiler {
 				if (varconst.lambda !== null) {
 					body = '''
 						«FOR param : varconst.lambda.parameters»
-							Double «param.name»;
+							double «param.name»;
 						«ENDFOR»
 						
 						«FOR param : varconst.lambda.parameters»
@@ -77,13 +70,13 @@ class VarConstCompiler extends RaoEntityCompiler {
 			]
 			
 			if (varconst.lambda !== null) {
-				members += varconst.toMethod("checkLambda", typeRef(Boolean)) [
+				members += varconst.toMethod("checkLambda", typeRef(boolean)) [
 					visibility = JvmVisibility.PRIVATE
 					
 					for (param : varconst.lambda.parameters) {
 						var cur = new JvmFormalParameterImplCustom()
 						cur.name = param.name
-						cur.parameterType = typeRef(Double)
+						cur.parameterType = typeRef(double)
 						parameters += cur
 					}
 					body = varconst.lambda.body
