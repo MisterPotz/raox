@@ -33,7 +33,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				for (param : resourceType.parameters)
 					parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
 				if (isSimulatorIdOn) {
-					parameters += createSimulatorIdParameter();
+					parameters += createSimulatorIdParameter(resourceType);
 					body = '''
 					«FOR param : parameters»
 					«IF parameters.indexOf(param) < parameters.size - 1»
@@ -54,7 +54,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 			]
 
 			if (!resourceType.parameters.empty)
-				members += createSimulatorIdConstructor()
+				members += createSimulatorIdConstructor(resourceType)
 
 
 			// TODO: move this method to custom builder class
@@ -109,8 +109,8 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				]
 			}
 
-			members.addSimulatorIdField();
-			members.addSimulatorIdGetter();
+			members.addSimulatorIdField(resourceType);
+			members.addSimulatorIdGetter(resourceType);
 			
 			members += resourceType.toMethod("checkEqual", typeRef(boolean)) [ m |
 				m.visibility = JvmVisibility.PUBLIC

@@ -39,17 +39,36 @@ import static extension ru.bmstu.rk9.rao.jvmmodel.ResultCompiler.*
 import static extension ru.bmstu.rk9.rao.jvmmodel.VarConstCompiler.*
 import static extension ru.bmstu.rk9.rao.naming.RaoNaming.*
 import static extension ru.bmstu.rk9.rao.jvmmodel.BuilderCompiler.*
+import static extension ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.*
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.xtext.common.types.JvmField
 
 class RaoJvmModelInferrer extends AbstractModelInferrer {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
-
+	
+	def JvmField createSimIdField(EObject rao) {
+		return rao.toField("simId", typeRef(int)) [
+			final = true
+		]
+	}
+	
 	def dispatch void infer(RaoModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [
-			for (entity : element.objects) {
-				entity.compileRaoEntity(it, isPreIndexingPhase)
-			}
+		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [ context |
+			RaoEntityCompiler.cleanCachedResourceTypes();
+			initializeCurrent(jvmTypesBuilder, _typeReferenceBuilder);
 			
-			element.compileResourceInitialization(it, isPreIndexingPhase)
+			context.members += createSimulatorIdField(element)
+			context.members += element.createSimulatorIdGetter
+			
+			for (entity : element.objects) {
+				entity.compileRaoEntity(context, isPreIndexingPhase)
+				if (entity instanceof ResourceType) {
+					compileResourceBuilder(element, entity, context, isPreIndexingPhase)
+				}
+			}
+			context.members += element.createModelConstructor;
+			
+			element.compileResourceInitialization(context, isPreIndexingPhase)
 		]
 	}
 
@@ -75,9 +94,18 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 	}
 
 	def dispatch compileRaoEntity(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += resourceType.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-		members += resourceType.asBuilder(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-		members += resourceType.asBuilderField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		/*  that is required for the proper inflation of model constructor
+		 *  where fields of builders for each resource are initiated
+		 */
+		val clazz = resourceType.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += clazz
+		addResourceClass(resourceType, clazz);
+	}
+	
+	def compileResourceBuilder(RaoModel model, ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
+		RaoEntityCompiler.rememberResourceType(resourceType)
+		members += resourceType.asBuilder(model, jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += resourceType.asBuilderField(model, jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
 	}
 
 	def dispatch compileRaoEntity(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase) {
@@ -108,8 +136,8 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 		members += resource.asGetter(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
 		members += resource.asField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
 	}
-
 	def dispatch compileRaoEntity(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase) {
+
 		members += dataSource.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
 	}
 
