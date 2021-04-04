@@ -15,6 +15,11 @@ import org.eclipse.xtext.common.types.JvmField
 import org.eclipse.xtext.common.types.impl.JvmFieldImplCustom
 import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.xtext.common.types.impl.JvmOperationImpl
+import org.eclipse.xtext.common.types.JvmConstructor
+import org.eclipse.xtext.common.types.impl.JvmConstructorImplCustom
+import org.eclipse.xtext.common.types.JvmVisibility
+import org.eclipse.emf.common.util.EList
+import org.eclipse.xtext.common.types.JvmMember
 
 abstract class RaoEntityCompiler {
 	protected final static boolean isSimulatorIdOn = true;
@@ -49,12 +54,38 @@ abstract class RaoEntityCompiler {
 		]);
 	}
 	
+	def protected static JvmConstructor createSimulatorIdConstructor() {
+		return (new JvmConstructorImplCustom().toConstructor[
+			visibility = JvmVisibility.PUBLIC
+			if (isSimulatorIdOn) {
+				parameters += createSimulatorIdParameter()
+				body = '''
+					«FOR param : parameters»
+						this.«param.name» = «param.name»;
+					«ENDFOR»
+			'''
+			}
+		]);
+	}
+	
 	def protected static JvmOperation createSimulatorIdGetter() {
 		return  (new JvmFieldImplCustom()).toMethod("get" + getSimulatorIdFieldName().toFirstUpper(), typeRef(int)) [
 					body = '''
 						return this.«getSimulatorIdFieldName()»;
 					'''
 				]
+	}
+	
+	def protected static addSimulatorIdField(EList<JvmMember> list) {
+		if (isSimulatorIdOn) {
+			list += createSimulatorIdField()
+		}
+	}
+	
+	def protected static addSimulatorIdGetter(EList<JvmMember> list) {
+		if (isSimulatorIdOn) {
+			list += createSimulatorIdGetter()
+		}
 	}
 
 	def protected static String getSimulatorIdFieldName() {

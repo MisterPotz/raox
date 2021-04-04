@@ -38,6 +38,7 @@ import static extension ru.bmstu.rk9.rao.jvmmodel.SearchCompiler.*
 import static extension ru.bmstu.rk9.rao.jvmmodel.ResultCompiler.*
 import static extension ru.bmstu.rk9.rao.jvmmodel.VarConstCompiler.*
 import static extension ru.bmstu.rk9.rao.naming.RaoNaming.*
+import static extension ru.bmstu.rk9.rao.jvmmodel.BuilderCompiler.*
 
 class RaoJvmModelInferrer extends AbstractModelInferrer {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
@@ -75,6 +76,8 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 
 	def dispatch compileRaoEntity(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
 		members += resourceType.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += resourceType.asBuilder(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += resourceType.asBuilderField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
 	}
 
 	def dispatch compileRaoEntity(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase) {

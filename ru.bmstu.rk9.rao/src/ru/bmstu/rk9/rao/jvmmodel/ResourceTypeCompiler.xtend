@@ -32,32 +32,34 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				visibility = JvmVisibility.PRIVATE
 				for (param : resourceType.parameters)
 					parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
-				parameters += createSimulatorIdParameter();
-				body = '''
+				if (isSimulatorIdOn) {
+					parameters += createSimulatorIdParameter();
+					body = '''
 					«FOR param : parameters»
 					«IF parameters.indexOf(param) < parameters.size - 1»
 						this._«param.name» = «param.name»;
-					«ELSE»
+					«ELSE »
 						this.«param.name» = «param.name»;
 					«ENDIF»
 					«ENDFOR»
 				'''
+				}
+				else {
+					body = '''
+					«FOR param : parameters»
+						this._«param.name» = «param.name»;
+					«ENDFOR»
+				'''	
+				}
 			]
 
 			if (!resourceType.parameters.empty)
-				members += resourceType.toConstructor [
-					visibility = JvmVisibility.PRIVATE
-					parameters += createSimulatorIdParameter();
-					body = '''
-						«FOR param : parameters»
-							this.«param.name» = «param.name»;
-						«ENDFOR»
-				'''
-				]
+				members += createSimulatorIdConstructor()
 
 
 			// TODO: move this method to custom builder class
-			members += resourceType.toMethod("create", typeRef) [
+//			if (!isSimulatorIdOn) {
+				members += resourceType.toMethod("create", typeRef) [
 				visibility = JvmVisibility.PUBLIC
 				static = true
 				for (param : resourceType.parameters)
@@ -69,7 +71,8 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 							ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.CREATED);
 					return resource;
 				'''
-			]
+				]
+//			}			
 
 			members += resourceType.toMethod("erase", typeRef(void)) [
 				visibility = JvmVisibility.PUBLIC
@@ -106,8 +109,8 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				]
 			}
 
-			val simulatorIdField = createSimulatorIdField();
-			members += simulatorIdField
+			members.addSimulatorIdField();
+			members.addSimulatorIdGetter();
 			
 			members += resourceType.toMethod("checkEqual", typeRef(boolean)) [ m |
 				m.visibility = JvmVisibility.PUBLIC
