@@ -11,7 +11,6 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import java.nio.ByteBuffer
 import ru.bmstu.rk9.rao.rao.FieldDeclaration
 import ru.bmstu.rk9.rao.lib.database.Database.DataType
-import org.eclipse.xtext.common.types.impl.JvmFormalParameterImplCustom
 
 class ResourceTypeCompiler extends RaoEntityCompiler {
 	def static asClass(ResourceType resourceType, JvmTypesBuilder jvmTypesBuilder,
@@ -28,16 +27,19 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				typeRef
 			})
 			
-			val tmp = new JvmFormalParameterImplCustom()
 			
 			members += resourceType.toConstructor [
 				visibility = JvmVisibility.PRIVATE
 				for (param : resourceType.parameters)
 					parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
-				parameters += tmp.toParameter("simulatorId", typeRef(Double))
+				parameters += createSimulatorIdParameter();
 				body = '''
 					«FOR param : parameters»
+					«IF parameters.indexOf(param) < parameters.size - 1»
 						this._«param.name» = «param.name»;
+					«ELSE»
+						this.«param.name» = «param.name»;
+					«ENDIF»
 					«ENDFOR»
 				'''
 			]
@@ -45,8 +47,16 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 			if (!resourceType.parameters.empty)
 				members += resourceType.toConstructor [
 					visibility = JvmVisibility.PRIVATE
+					parameters += createSimulatorIdParameter();
+					body = '''
+						«FOR param : parameters»
+							this.«param.name» = «param.name»;
+						«ENDFOR»
+				'''
 				]
 
+
+			// TODO: move this method to custom builder class
 			members += resourceType.toMethod("create", typeRef) [
 				visibility = JvmVisibility.PUBLIC
 				static = true
@@ -96,6 +106,9 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				]
 			}
 
+			val simulatorIdField = createSimulatorIdField();
+			members += simulatorIdField
+			
 			members += resourceType.toMethod("checkEqual", typeRef(boolean)) [ m |
 				m.visibility = JvmVisibility.PUBLIC
 				m.parameters += resourceType.toParameter("other", typeRef)
@@ -120,7 +133,11 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				visibility = JvmVisibility.PUBLIC
 				annotations += ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.overrideAnnotation
 				body = '''
+				«IF isSimulatorIdOn»
+					«resourceType.name» copy = new «resourceType.name»(«getSimulatorIdFieldName()»);	
+				«ELSE»
 					«resourceType.name» copy = new «resourceType.name»();
+				«ENDIF»
 					copy.setNumber(this.number);
 					copy.setName(this.name);
 					«FOR param : resourceType.parameters»

@@ -8,8 +8,16 @@ import org.eclipse.xtext.common.types.JvmAnnotationType
 import java.util.List
 import java.util.function.Function
 import org.eclipse.xtext.common.types.JvmDeclaredType
+import org.eclipse.xtext.common.types.impl.JvmDeclaredTypeImplCustom
+import org.eclipse.xtext.common.types.JvmFormalParameter
+import org.eclipse.xtext.common.types.impl.JvmFormalParameterImplCustom
+import org.eclipse.xtext.common.types.JvmField
+import org.eclipse.xtext.common.types.impl.JvmFieldImplCustom
+import org.eclipse.xtext.common.types.JvmOperation
+import org.eclipse.xtext.common.types.impl.JvmOperationImpl
 
 abstract class RaoEntityCompiler {
+	protected final static boolean isSimulatorIdOn = true;
 	protected static extension JvmTypesBuilder currentJvmTypesBuilder;
 	protected static extension JvmTypeReferenceBuilder currentJvmTypeReferenceBuilder;
 
@@ -31,8 +39,25 @@ abstract class RaoEntityCompiler {
 		'''
 	}
 	
-	def protected static JvmDeclaredType createSimulatorIdParammeter() {
-		return (new JvmStatic ) 
+	def protected static JvmFormalParameter createSimulatorIdParameter() {
+		return (new JvmFormalParameterImplCustom().toParameter(getSimulatorIdFieldName(), typeRef(int)));
 	}
 
+	def protected static JvmField createSimulatorIdField() {
+		return (new JvmFieldImplCustom().toField(getSimulatorIdFieldName(), typeRef(int)) [
+			final = true
+		]);
+	}
+	
+	def protected static JvmOperation createSimulatorIdGetter() {
+		return  (new JvmFieldImplCustom()).toMethod("get" + getSimulatorIdFieldName().toFirstUpper(), typeRef(int)) [
+					body = '''
+						return this.«getSimulatorIdFieldName()»;
+					'''
+				]
+	}
+
+	def protected static String getSimulatorIdFieldName() {
+		return "simulatorId";
+	}
 }
