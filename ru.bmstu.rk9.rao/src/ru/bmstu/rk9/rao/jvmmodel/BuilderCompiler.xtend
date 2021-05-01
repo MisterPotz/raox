@@ -12,11 +12,25 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.JvmGenericType
 
 public class BuilderCompiler extends RaoEntityCompiler {
+	/**
+	*	this string will be appended to the generated builder class name
+	*/
 	public static String BUILDER_SUFFIX = "Builder";
-	public static String BUILDER_FIELD_SUFFIX = "Field";
+	/**
+	 * this string will be appended to the generated builder class
+	 * e.g. ResourceNameField (if suffix is Field)
+	 */
+	public static String BUILDER_FIELD_SUFFIX = "";
 
-	public def static JvmGenericType asBuilder(ResourceType resourceType, EObject raoModel, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, 
+	/**
+	* creates builder for passed [resourceType] 
+	*/ 
+	public def static JvmGenericType asBuilder(
+		ResourceType resourceType,
+		EObject raoModel,
+		JvmTypesBuilder jvmTypesBuilder,
+		JvmTypeReferenceBuilder typeReferenceBuilder,
+		JvmDeclaredType it, 
 		boolean isPreIndexingPhase) {
 
 		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
@@ -34,10 +48,7 @@ public class BuilderCompiler extends RaoEntityCompiler {
 				for (param : resourceType.parameters)
 					parameters += raoModel.toParameter(param.declaration.name, param.declaration.parameterType)
 				body = '''
-					«IF isSimulatorIdOn»
-						«resourceType.name» resource = new «resourceType.name»(«createEnumerationString(parameters, [name])», «simulatorIdFieldName»);
-					«ELSE»
-						«resourceType.name» resource = new «resourceType.name»(«createEnumerationString(parameters, [name])»);
+					«IF isSimulatorIdOn»entitiesToClasses» resource = new «resourceType.name»(«createEnumerationString(parameters, [name])»);
 					«ENDIF»
 						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
 						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(resource,
@@ -52,7 +63,9 @@ public class BuilderCompiler extends RaoEntityCompiler {
 		return builderClass;
 	}
 
-	public def static asBuilderField(ResourceType resourceType, EObject context, JvmTypesBuilder jvmTypesBuilder,
+	public def static asBuilderField(
+		ResourceType resourceType,
+		 EObject context, JvmTypesBuilder jvmTypesBuilder,
 		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)

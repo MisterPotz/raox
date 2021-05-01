@@ -27,13 +27,14 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 				visibility = JvmVisibility.PUBLIC
 				final = true
 				annotations += overrideAnnotation
+				// TODO uncomment when non static context for resources is ready
+//				body = '''
+//					«FOR resource : resources»
+//						«val resourceQualifiedName = QualifiedName.create(modelQualifiedNamePart, resource.name)»
+//						ru.bmstu.rk9.rao.lib.resource.Resource «resource.name» = «resourceInitialValueName(resource.name)»;
+//						«resource.name».setName("«resourceQualifiedName»");
+//					«ENDFOR»
 				body = '''
-					«FOR resource : resources»
-						«val resourceQualifiedName = QualifiedName.create(modelQualifiedNamePart, resource.name)»
-						ru.bmstu.rk9.rao.lib.resource.Resource «resource.name» = «resourceInitialValueName(resource.name)»;
-						«resource.name».setName("«resourceQualifiedName»");
-					«ENDFOR»
-
 					__initialized = true;
 				'''
 			]
@@ -48,6 +49,7 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 		return model.toField("__initialized", typeRef(boolean)) [
 			visibility = JvmVisibility.PRIVATE
 			final = false
+			// TODO remove for non static context
 			static = true
 			initializer = '''false'''
 		]
@@ -60,8 +62,6 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 
 		return resource.toField(resourceInitialValueName(resource.name), resource.constructor.inferredType) [
 			visibility = JvmVisibility.PRIVATE
-			final = true
-			static = true
 			initializer = resource.constructor
 		]
 	}
@@ -75,7 +75,6 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 		return resource.toMethod("get" + resource.name.toFirstUpper, resource.constructor.inferredType) [
 			visibility = JvmVisibility.PUBLIC
 			final = true
-			static = true
 			body = '''
 				if (!__initialized)
 					return «resourceInitialValueName(resource.name)»;

@@ -6,31 +6,27 @@ import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
+import java.util.ArrayList
+import org.eclipse.xtext.common.types.JvmFormalParameter
 
 class EventCompiler extends RaoEntityCompiler {
 	def static asClass(Event event, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
 		JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
 
 		val eventQualifiedName = QualifiedName.create(qualifiedName, event.name)
-
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, typeReferenceBuilder, associations, event, false, true);
+		
 		return event.toClass(eventQualifiedName) [
-			static = true
 			superTypes += typeRef(ru.bmstu.rk9.rao.lib.event.Event)
-
-			members += event.toConstructor [
-				visibility = JvmVisibility.PRIVATE
-				parameters += event.toParameter("time", typeRef(double))
-				for (param : event.parameters)
-					parameters += param.toParameter(param.name, param.parameterType)
-				body = '''
-					«FOR param : parameters»this.«param.name» = «param.name»;
-					«ENDFOR»
-				'''
-			]
-
-			for (param : event.parameters)
-				members += param.toField(param.name, param.parameterType)
+			
+			val parametersList = new ArrayList<JvmFormalParameter>(); 
+			
+			parametersList.add(event.toParameter("time", typeRef(double)));
+			parametersList.addAll(event.parameters.map[ it.toParameter(it.name, it.parameterType) ])
+			
+			members += pBH.createConstructor(parametersList);
+			val fields = pBH.createFields(parametersList);
+			members.addAll(fields)
 
 			members += event.toMethod("getName", typeRef(String)) [
 				visibility = JvmVisibility.PUBLIC
@@ -50,7 +46,6 @@ class EventCompiler extends RaoEntityCompiler {
 
 			members += event.toMethod("plan", typeRef(void)) [
 				visibility = JvmVisibility.PUBLIC
-				static = true
 				final = true
 				parameters += event.toParameter("time", typeRef(double))
 				for (param : event.parameters)
@@ -61,6 +56,8 @@ class EventCompiler extends RaoEntityCompiler {
 					ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
 				'''
 			]
+			
+			pBH.rememberFunctionsToProxy("plan");
 		]
 	}
 }

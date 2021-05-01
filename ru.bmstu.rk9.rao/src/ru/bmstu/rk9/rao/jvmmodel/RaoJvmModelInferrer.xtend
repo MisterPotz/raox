@@ -42,9 +42,13 @@ import static extension ru.bmstu.rk9.rao.jvmmodel.BuilderCompiler.*
 import static extension ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.*
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.JvmField
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import org.eclipse.xtext.common.types.JvmOperation
 
 class RaoJvmModelInferrer extends AbstractModelInferrer {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
+	@Inject IJvmModelAssociations associations
+	
 	
 	def JvmField createSimIdField(EObject rao) {
 		return rao.toField("simId", typeRef(int)) [
@@ -53,6 +57,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 	}
 	
 	def dispatch void infer(RaoModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
+		val ass = associations
 		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [ context |
 			RaoEntityCompiler.cleanCachedResourceTypes();
 			initializeCurrent(jvmTypesBuilder, _typeReferenceBuilder);
@@ -69,6 +74,24 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 			context.members += element.createModelConstructor;
 			
 			element.compileResourceInitialization(context, isPreIndexingPhase)
+			
+			val elems = ass.getJvmElements(element)
+			for (i : elems) {
+				println(i)
+			}
+			
+			for (i : element.objects) {
+				println(i)
+				if (i instanceof Event) {
+					val associate = ass.getJvmElements(i)
+						.filter[ it instanceof JvmOperation]
+					for (g : associate) {
+						val s = g as JvmOperation
+						
+						println("\t" + s.simpleName + "\t" + s.parameters + "\t" + s)
+					}
+				}
+			}
 		]
 	}
 

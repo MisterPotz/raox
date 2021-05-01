@@ -19,17 +19,24 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.impl.TypesFactoryImpl
 import org.eclipse.xtext.common.types.JvmGenericType
 import java.util.HashMap
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 
 abstract class RaoEntityCompiler {
 	protected final static boolean isSimulatorIdOn = true;
 	protected static extension JvmTypesBuilder currentJvmTypesBuilder;
 	protected static extension JvmTypeReferenceBuilder currentJvmTypeReferenceBuilder;
+	protected static extension IJvmModelAssociations associations;
+	
 	public static List<String> resourceTypes = new ArrayList();
 	public static HashMap<String, JvmGenericType>  entitiesToClasses = new HashMap();
 	
-	def protected static initializeCurrent(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder) {
+	def protected static initializeCurrent(JvmTypesBuilder jvmTypesBuilder,
+		JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations
+	) {
 		currentJvmTypesBuilder = jvmTypesBuilder;
 		currentJvmTypeReferenceBuilder = jvmTypeReferenceBuilder;
+		RaoEntityCompiler.associations = associations;
 	}
 
 	def protected static JvmAnnotationReference overrideAnnotation() {
@@ -39,7 +46,7 @@ abstract class RaoEntityCompiler {
 		return anno
 	}
 
-	def protected static <T> createEnumerationString(List<T> objects, Function<T, String> fun) {
+	def protected static <T> String createEnumerationString(List<T> objects, Function<T, String> fun) {
 		return '''
 			«FOR o : objects»«fun.apply(o)»«IF objects.indexOf(o) != objects.size - 1», «ENDIF»«ENDFOR»
 		'''
