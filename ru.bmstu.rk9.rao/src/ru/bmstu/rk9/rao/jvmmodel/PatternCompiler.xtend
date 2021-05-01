@@ -13,9 +13,8 @@ import static extension ru.bmstu.rk9.rao.jvmmodel.TupleInfoFactory.*
 import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper
 
 class PatternCompiler extends RaoEntityCompiler {
-	def static asClass(Pattern pattern, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
+	def static asClass(Pattern pattern,
 		JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
 
 		val patternQualifiedName = QualifiedName.create(qualifiedName, pattern.name)
 
@@ -51,8 +50,7 @@ class PatternCompiler extends RaoEntityCompiler {
 			for (param : pattern.parameters)
 				members += param.toField(param.name, param.parameterType)
 
-			val tupleInfoMap = pattern.relevantTuples.createTuplesInfo(currentJvmTypesBuilder,
-				currentJvmTypeReferenceBuilder)
+			val tupleInfoMap = pattern.relevantTuples.createTuplesInfo()
 
 			for (tuple : pattern.relevantTuples) {
 				val tupleInfo = tupleInfoMap.get(tuple)

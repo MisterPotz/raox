@@ -10,10 +10,7 @@ import ru.bmstu.rk9.rao.rao.RaoModel
 import org.eclipse.xtext.naming.QualifiedName
 
 class ResourceDeclarationCompiler extends RaoEntityCompiler {
-	def static asGlobalInitializationMethod(RaoModel model, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
+	def static asGlobalInitializationMethod(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val resources = model.objects.filter(typeof(ResourceDeclaration))
 		val modelQualifiedNamePart = qualifiedName
@@ -41,10 +38,8 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 		]
 	}
 
-	def static asGlobalInitializationState(RaoModel model, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	def static asGlobalInitializationState(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
 
 		return model.toField("__initialized", typeRef(boolean)) [
 			visibility = JvmVisibility.PRIVATE
@@ -55,10 +50,7 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 		]
 	}
 
-	def static asField(ResourceDeclaration resource, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
+	def static asField(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		return resource.toField(resourceInitialValueName(resource.name), resource.constructor.inferredType) [
 			visibility = JvmVisibility.PRIVATE
@@ -66,10 +58,8 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 		]
 	}
 
-	def static asGetter(ResourceDeclaration resource, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	def static asGetter(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
 		val resourceQualifiedName = QualifiedName.create(qualifiedName, resource.name)
 
 		return resource.toMethod("get" + resource.name.toFirstUpper, resource.constructor.inferredType) [

@@ -8,9 +8,7 @@ import ru.bmstu.rk9.rao.rao.Generator
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 
 class GeneratorCompiler extends RaoEntityCompiler {
-	def static asClass(Generator generator, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
+	def static asClass(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		return generator.toClass(QualifiedName.create(qualifiedName, generator.name)) [
 			static = true

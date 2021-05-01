@@ -49,7 +49,6 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
 	@Inject IJvmModelAssociations associations
 	
-	
 	def JvmField createSimIdField(EObject rao) {
 		return rao.toField("simId", typeRef(int)) [
 			final = true
@@ -60,7 +59,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 		val ass = associations
 		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [ context |
 			RaoEntityCompiler.cleanCachedResourceTypes();
-			initializeCurrent(jvmTypesBuilder, _typeReferenceBuilder);
+			initializeCurrent(jvmTypesBuilder, _typeReferenceBuilder, associations);
 			
 			context.members += createSimulatorIdField(element)
 			context.members += element.createSimulatorIdGetter
@@ -97,30 +96,30 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 
 	def dispatch compileRaoEntity(EntityCreation entity, JvmDeclaredType it, boolean isPreIndexingPhase) {
 		if (!isPreIndexingPhase && entity.constructor !== null)
-			members += entity.asField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+			members += entity.asField(it, isPreIndexingPhase)
 	}
 	
 	def dispatch compileRaoEntity(VarConst varconst, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += varconst.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += varconst.asClass(it, isPreIndexingPhase)
 	}
 
 	def dispatch compileRaoEntity(EnumDeclaration enumDeclaration, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += enumDeclaration.asType(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += enumDeclaration.asType(it, isPreIndexingPhase)
 	}
 
 	def dispatch compileRaoEntity(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += function.asMethod(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += function.asMethod(it, isPreIndexingPhase)
 	}
 
 	def dispatch compileRaoEntity(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += method.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += method.asClass(it, isPreIndexingPhase)
 	}
 
 	def dispatch compileRaoEntity(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
 		/*  that is required for the proper inflation of model constructor
 		 *  where fields of builders for each resource are initiated
 		 */
-		val clazz = resourceType.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		val clazz = resourceType.asClass(it, isPreIndexingPhase)
 		members += clazz
 		addResourceClass(resourceType, clazz);
 	}
@@ -132,7 +131,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 	}
 
 	def dispatch compileRaoEntity(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += generator.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += generator.asClass(it, isPreIndexingPhase)
 	}
 
 	def dispatch compileRaoEntity(Event event, JvmDeclaredType it, boolean isPreIndexingPhase) {
@@ -140,37 +139,37 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 	}
 
 	def dispatch compileRaoEntity(Pattern pattern, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += pattern.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+		members += pattern.asClass(it, isPreIndexingPhase);
 	}
 
 	def dispatch compileRaoEntity(Logic logic, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += logic.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+		members += logic.asClass(it, isPreIndexingPhase);
 	}
 
 	def dispatch compileRaoEntity(Search search, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += search.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+		members += search.asClass(it, isPreIndexingPhase);
 	}
 
 	def dispatch compileRaoEntity(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += frame.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+		members += frame.asClass(it, isPreIndexingPhase);
 	}
 
 	def dispatch compileRaoEntity(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += resource.asGetter(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-		members += resource.asField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += resource.asGetter(it, isPreIndexingPhase)
+		members += resource.asField(it, isPreIndexingPhase)
 	}
 	def dispatch compileRaoEntity(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
-		members += dataSource.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+		members += dataSource.asClass(it, isPreIndexingPhase);
 	}
 
 	def dispatch compileRaoEntity(Result result, JvmDeclaredType it, boolean isPreIndexingPhase) {
 		if (!isPreIndexingPhase && result.constructor !== null)
-			members += result.asField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+			members += result.asField(it, isPreIndexingPhase);
 	}
 
 	def compileResourceInitialization(RaoModel element, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += element.asGlobalInitializationMethod(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-		members += element.asGlobalInitializationState(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		members += element.asGlobalInitializationMethod(it, isPreIndexingPhase)
+		members += element.asGlobalInitializationState(it, isPreIndexingPhase)
 	}
 }

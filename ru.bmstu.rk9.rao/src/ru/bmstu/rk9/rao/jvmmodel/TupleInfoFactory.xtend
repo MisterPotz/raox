@@ -13,9 +13,7 @@ import java.util.Map
 import java.util.HashMap
 
 class TupleInfoFactory extends RaoEntityCompiler {
-	def static Map<RelevantResourceTuple, TupleInfo> createTuplesInfo(List<RelevantResourceTuple> tuples,
-		JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder) {
-		initializeCurrent(jvmTypesBuilder, jvmTypeReferenceBuilder);
+	def static Map<RelevantResourceTuple, TupleInfo> createTuplesInfo(List<RelevantResourceTuple> tuples) {
 
 		val tupleInfoMap = new HashMap<RelevantResourceTuple, TupleInfo>()
 		val tupleInfoManager = new TupleInfoManager

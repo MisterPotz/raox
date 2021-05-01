@@ -13,9 +13,8 @@ import java.util.HashMap
 
 class VarConstCompiler extends RaoEntityCompiler {
 	
-	def static asClass(VarConst varconst, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
+	def static asClass(VarConst varconst,
 		JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
 		
 		val vcQualifiedName = QualifiedName.create(qualifiedName, varconst.name + "VarConst")
 		

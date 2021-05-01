@@ -7,9 +7,7 @@ import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.common.types.JvmVisibility
 
 class EntityCreationCompiler extends RaoEntityCompiler {
-	def static asField(EntityCreation entityCreation, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, null)
+	def static asField(EntityCreation entityCreation, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		return entityCreation.toField(entityCreation.name, entityCreation.constructor.inferredType) [
 			visibility = JvmVisibility.PUBLIC

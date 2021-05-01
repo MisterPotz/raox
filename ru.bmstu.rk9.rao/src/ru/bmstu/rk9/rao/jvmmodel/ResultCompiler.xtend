@@ -2,8 +2,6 @@ package ru.bmstu.rk9.rao.jvmmodel
 
 import ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler
 import ru.bmstu.rk9.rao.rao.DataSource
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.common.types.JvmVisibility
@@ -12,10 +10,9 @@ import org.eclipse.xtext.common.types.JvmTypeReference
 import ru.bmstu.rk9.rao.rao.Result
 
 class ResultCompiler extends RaoEntityCompiler {
-	def static asClass(DataSource dataSource, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
+	def static asClass(DataSource dataSource,
 		JvmDeclaredType it, boolean isPreIndexingPhase) {
 
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
 
 		return dataSource.toClass(QualifiedName.create(qualifiedName, dataSource.name)) [
 			static = true
@@ -61,10 +58,7 @@ class ResultCompiler extends RaoEntityCompiler {
 		]
 	}
 
-	def static asField(Result result, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
-		JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
+	def static asField(Result result,JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		return result.toField(result.name, result.constructor.inferredType) [
 			visibility = JvmVisibility.PUBLIC

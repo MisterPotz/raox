@@ -8,9 +8,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.common.types.JvmVisibility
 
 class LogicCompiler extends RaoEntityCompiler {
-	def static asClass(Logic logic, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
-		JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
+	def static asClass(Logic logic, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val logicQualifiedName = QualifiedName.create(qualifiedName, logic.name)
 

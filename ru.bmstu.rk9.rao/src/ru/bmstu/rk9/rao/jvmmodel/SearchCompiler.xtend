@@ -1,16 +1,13 @@
 package ru.bmstu.rk9.rao.jvmmodel
 
 import ru.bmstu.rk9.rao.rao.Search
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.common.types.JvmVisibility
 
 class SearchCompiler extends RaoEntityCompiler {
-	def static asClass(Search search, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
+	def static asClass(Search search,
 		JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
 
 		val logicQualifiedName = QualifiedName.create(qualifiedName, search.name)
 

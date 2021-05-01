@@ -11,10 +11,7 @@ import ru.bmstu.rk9.rao.lib.animation.AnimationContext
 import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper
 
 class FrameCompiler extends RaoEntityCompiler {
-	def static asClass(Frame frame, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
-		JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
+	def static asClass(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val frameQualifiedName = QualifiedName.create(qualifiedName, frame.name)
 

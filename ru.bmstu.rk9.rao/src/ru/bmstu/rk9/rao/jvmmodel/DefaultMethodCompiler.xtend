@@ -9,9 +9,7 @@ import java.util.function.Supplier
 import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper
 
 class DefaultMethodCompiler extends RaoEntityCompiler {
-	def static asClass(DefaultMethod method, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
+	def static asClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		switch (method.name) {
 			case DefaultMethodsHelper.GlobalMethodInfo.INIT.name:

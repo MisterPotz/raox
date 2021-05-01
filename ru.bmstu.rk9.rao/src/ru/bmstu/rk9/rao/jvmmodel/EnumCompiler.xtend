@@ -7,9 +7,7 @@ import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 
 class EnumCompiler extends RaoEntityCompiler {
-	def static asType(EnumDeclaration enumDeclaration, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
+	def static asType(EnumDeclaration enumDeclaration, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		return enumDeclaration.toEnumerationType(enumDeclaration.name) [
 			visibility = JvmVisibility.PUBLIC

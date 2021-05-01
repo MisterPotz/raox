@@ -33,8 +33,6 @@ public class BuilderCompiler extends RaoEntityCompiler {
 		JvmDeclaredType it, 
 		boolean isPreIndexingPhase) {
 
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
-
 		val resourceClass = entitiesToClasses.get(resourceType.name);
 		val builderClassName = createBuilderNameForResource(resourceType.name);
 		
@@ -67,8 +65,6 @@ public class BuilderCompiler extends RaoEntityCompiler {
 		ResourceType resourceType,
 		 EObject context, JvmTypesBuilder jvmTypesBuilder,
 		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
 
 		val builderClassName = createBuilderNameForResource(resourceType.name);
 		val builderClass = entitiesToClasses.get(builderClassName);

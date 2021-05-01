@@ -1,22 +1,17 @@
 package ru.bmstu.rk9.rao.jvmmodel
 
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.common.types.JvmVisibility
 import ru.bmstu.rk9.rao.rao.ResourceType
 import org.eclipse.xtext.naming.QualifiedName
 import java.util.Collection
 import org.eclipse.xtext.common.types.JvmPrimitiveType
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import java.nio.ByteBuffer
 import ru.bmstu.rk9.rao.rao.FieldDeclaration
 import ru.bmstu.rk9.rao.lib.database.Database.DataType
 
 class ResourceTypeCompiler extends RaoEntityCompiler {
-	def static asClass(ResourceType resourceType, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
+	def static asClass(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val typeQualifiedName = QualifiedName.create(qualifiedName, resourceType.name)
 

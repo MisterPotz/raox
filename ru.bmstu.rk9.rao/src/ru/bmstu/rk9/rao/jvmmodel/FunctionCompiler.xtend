@@ -7,9 +7,7 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 
 class FunctionCompiler extends RaoEntityCompiler {
-	def static asMethod(FunctionDeclaration function, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder)
+	def static asMethod(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		return function.toMethod(function.name, function.type) [
 			for (param : function.parameters)
