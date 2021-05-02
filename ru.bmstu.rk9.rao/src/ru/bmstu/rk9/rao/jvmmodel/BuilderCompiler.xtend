@@ -10,6 +10,7 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.JvmGenericType
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 
 public class BuilderCompiler extends RaoEntityCompiler {
 	/**
@@ -21,6 +22,10 @@ public class BuilderCompiler extends RaoEntityCompiler {
 	 * e.g. ResourceNameField (if suffix is Field)
 	 */
 	public static String BUILDER_FIELD_SUFFIX = "";
+	
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, IJvmModelAssociations associations) {
+		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
+	}
 
 	/**
 	* creates builder for passed [resourceType] 
@@ -28,9 +33,8 @@ public class BuilderCompiler extends RaoEntityCompiler {
 	public def static JvmGenericType asBuilder(
 		ResourceType resourceType,
 		EObject raoModel,
-		JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder,
-		JvmDeclaredType it, 
+		extension JvmTypesBuilder jvmTypesBuilder, extension JvmTypeReferenceBuilder typeReferenceBuilder,
+				JvmDeclaredType it, 
 		boolean isPreIndexingPhase) {
 
 		val resourceClass = entitiesToClasses.get(resourceType.name);
@@ -39,14 +43,14 @@ public class BuilderCompiler extends RaoEntityCompiler {
 		val builderClass =  raoModel.toClass(builderClassName) [ builder |
 			builder.static = true
 
-			builder.members.addSimulatorIdField(raoModel);
-			builder.members += createSimulatorIdConstructor(raoModel)
+			builder.members += SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, typeReferenceBuilder, it)
+			builder.members += SimulatorIdCodeUtil.createSimulatorIdConstructor(jvmTypesBuilder, typeReferenceBuilder, raoModel)
 			builder.members += raoModel.toMethod("create", typeRef(resourceClass)) [
 				visibility = JvmVisibility.PUBLIC
 				for (param : resourceType.parameters)
 					parameters += raoModel.toParameter(param.declaration.name, param.declaration.parameterType)
 				body = '''
-					«IF isSimulatorIdOn»entitiesToClasses» resource = new «resourceType.name»(«createEnumerationString(parameters, [name])»);
+					«IF isSimulatorIdOn»entitiesToClasses» resource = new «resourceType.name»(«CodeGenerationUtil.createEnumerationString(parameters, [name])»);
 					«ENDIF»
 						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
 						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(resource,
@@ -55,7 +59,7 @@ public class BuilderCompiler extends RaoEntityCompiler {
 				'''
 			]
 
-			builder.members.addSimulatorIdGetter(raoModel);
+			builder.members += SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, typeReferenceBuilder, raoModel)
 		]
 		entitiesToClasses.put(builderClassName, builderClass)
 		return builderClass;
@@ -63,8 +67,8 @@ public class BuilderCompiler extends RaoEntityCompiler {
 
 	public def static asBuilderField(
 		ResourceType resourceType,
-		 EObject context, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
+		 EObject context, extension JvmTypesBuilder jvmTypesBuilder,
+		extension JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val builderClassName = createBuilderNameForResource(resourceType.name);
 		val builderClass = entitiesToClasses.get(builderClassName);
@@ -86,6 +90,6 @@ public class BuilderCompiler extends RaoEntityCompiler {
 	public def static StringConcatenationClient createLineOfBuilderFieldInitialization(String resourceName) {
 		val builderName = createBuilderNameForResource(resourceName);
 
-		return '''this.«resourceName + BUILDER_FIELD_SUFFIX»  = new «builderName»(«IF isSimulatorIdOn»this.«simulatorIdFieldName»«ELSE»«ENDIF»);'''
+		return '''this.«resourceName + BUILDER_FIELD_SUFFIX»  = new «builderName»(«IF isSimulatorIdOn»this.«SimulatorIdContract.SIMULATOR_ID_NAME»«ELSE»«ENDIF»);'''
 	}
 }

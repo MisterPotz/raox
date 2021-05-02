@@ -10,8 +10,18 @@ import java.util.List
 import org.eclipse.xtext.common.types.JvmConstructor
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 import java.util.function.Function
+import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
+import org.eclipse.xtext.common.types.JvmVisibility
 
 class CodeGenerationUtil {
+	private interface Extensioner<T> {
+		def T apply(JvmTypesBuilder b, JvmTypeReferenceBuilder tB);
+	}
+	
+	protected def static <T> T apply(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, Extensioner<T> extensioner) {
+		return extensioner.apply(jvmTypesBuilder, jvmTypeReferenceBuilder);
+	}
+	
 	def static JvmOperation associateGetter(
 		extension JvmTypesBuilder currentJvmTypesBuilder,
 		EObject raoEntity,
@@ -55,5 +65,29 @@ class CodeGenerationUtil {
 		return '''
 			«FOR o : objects»«fun.apply(o)»«IF objects.indexOf(o) != objects.size - 1», «ENDIF»«ENDFOR»
 		'''
+	}
+
+	def JvmConstructor createModelConstructor( JvmTypesBuilder jvmTypesBuilder, 
+		JvmTypeReferenceBuilder jvmTypeReferenceBuilder, 
+		Boolean isSimulatorIdOn, 
+		List<String> resourceTypes,
+		EObject raoEntity
+	) {
+		return apply(jvmTypesBuilder, jvmTypeReferenceBuilder) [ extension b, extension tB |
+			return raoEntity.toConstructor [ eObj |
+				eObj.visibility = JvmVisibility.PUBLIC
+				if (isSimulatorIdOn) {
+					eObj.parameters += SimulatorIdCodeUtil.createSimulatorIdParameter(b, tB, raoEntity)
+					eObj.body = '''
+						«FOR param : eObj.parameters»
+							this.«param.name» = «param.name»;
+						«ENDFOR»
+						«FOR resourceName : resourceTypes»
+							«BuilderCompiler.createLineOfBuilderFieldInitialization(resourceName)»
+						«ENDFOR»
+					'''
+				}
+			]
+		]
 	}
 }

@@ -5,17 +5,28 @@ import ru.bmstu.rk9.rao.rao.FunctionDeclaration
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 
 class FunctionCompiler extends RaoEntityCompiler {
-	def static asMethod(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
-		return function.toMethod(function.name, function.type) [
-			for (param : function.parameters)
-				parameters += function.toParameter(param.name, param.parameterType)
-			visibility = JvmVisibility.PUBLIC
-			static = true
-			final = true
-			body = function.body
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations) {
+		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
+	}
+
+	def asMethod(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase) {
+
+		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+			return function.toMethod(function.name, function.type) [
+				for (param : function.parameters)
+					parameters += function.toParameter(param.name, param.parameterType)
+				visibility = JvmVisibility.PUBLIC
+				static = true
+				final = true
+				body = function.body
+			]
+
 		]
+
 	}
 }

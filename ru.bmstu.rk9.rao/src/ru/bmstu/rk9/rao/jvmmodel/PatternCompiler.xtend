@@ -11,13 +11,20 @@ import ru.bmstu.rk9.rao.rao.PatternType
 
 import static extension ru.bmstu.rk9.rao.jvmmodel.TupleInfoFactory.*
 import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import org.eclipse.xtext.util.Tuples
 
 class PatternCompiler extends RaoEntityCompiler {
-	def static asClass(Pattern pattern,
+	
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, IJvmModelAssociations associations) {
+		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
+	}
+	
+	def asClass(Pattern pattern,
 		JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val patternQualifiedName = QualifiedName.create(qualifiedName, pattern.name)
-
+		return apply [ extension b, extension tB |
 		return pattern.toClass(patternQualifiedName) [
 			static = true
 			superTypes += if (pattern.type == PatternType.RULE)
@@ -33,7 +40,7 @@ class PatternCompiler extends RaoEntityCompiler {
 				for (param : pattern.parameters)
 					parameters += param.toParameter(param.name, param.parameterType)
 				body = '''
-					return () -> new «pattern.name»(«createEnumerationString(parameters, [name])»);
+					return () -> new «pattern.name»(«CodeGenerationUtil.createEnumerationString(parameters, [name])»);
 				'''
 			]
 
@@ -50,7 +57,8 @@ class PatternCompiler extends RaoEntityCompiler {
 			for (param : pattern.parameters)
 				members += param.toField(param.name, param.parameterType)
 
-			val tupleInfoMap = pattern.relevantTuples.createTuplesInfo()
+			val factory = new TupleInfoFactory(jvmTypesBuilder, jvmTypeReferenceBuilder, associations);
+			val tupleInfoMap = factory.createTuplesInfo(pattern.relevantTuples)
 
 			for (tuple : pattern.relevantTuples) {
 				val tupleInfo = tupleInfoMap.get(tuple)
@@ -98,10 +106,10 @@ class PatternCompiler extends RaoEntityCompiler {
 							}
 
 							body = '''
-								java.util.Set<«tupleInfo.genericTupleInfo.genericName»<«createEnumerationString(tuple.names, [createTupleGenericTypeName])»>> combinations = new java.util.HashSet<>();
+								java.util.Set<«tupleInfo.genericTupleInfo.genericName»<«CodeGenerationUtil.createEnumerationString(tuple.names, [createTupleGenericTypeName])»>> combinations = new java.util.HashSet<>();
 								«FOR name : tuple.names»for(«createTupleGenericTypeName(name)» __«name» : «parameters.get(tuple.names.indexOf(name)).name») {
 									«IF tuple.names.indexOf(name) == tuple.names.size - 1»combinations.add(new «tupleInfo.genericTupleInfo.genericName»(
-										«createEnumerationString(tuple.names, [n | "__" + n])»));«ENDIF»
+										«CodeGenerationUtil.createEnumerationString(tuple.names, [n | "__" + n])»));«ENDIF»
 									«ENDFOR»«FOR name : tuple.names»}
 								«ENDFOR»
 								return combinations;
@@ -137,7 +145,7 @@ class PatternCompiler extends RaoEntityCompiler {
 					members += method.toMethod(method.name, method.name.getPatternMethodTypeRef) [
 						visibility = JvmVisibility.PUBLIC
 						final = true
-						annotations += ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.overrideAnnotation()
+						annotations += overrideAnnotation()
 						body = method.body
 					]
 				}
@@ -145,7 +153,7 @@ class PatternCompiler extends RaoEntityCompiler {
 				members += pattern.toMethod("selectRelevantResources", typeRef(boolean)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true
-					annotations += ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.overrideAnnotation()
+					annotations += overrideAnnotation()
 
 					body = '''
 						«FOR relevant : pattern.relevantResources»
@@ -159,7 +167,7 @@ class PatternCompiler extends RaoEntityCompiler {
 						«ENDFOR»
 						«FOR tuple : pattern.relevantTuples»«
 							val tupleInfo = tupleInfoMap.get(tuple)
-							»«tupleInfo.genericTupleInfo.genericName»<«createEnumerationString(tuple.types, [simpleName])
+							»«tupleInfo.genericTupleInfo.genericName»<«CodeGenerationUtil.createEnumerationString(tuple.types, [simpleName])
 							»> __«tupleInfo.name» = «tupleInfo.resolveMethodName»();
 							if (__«tupleInfo.name» == null) {
 								finish();
@@ -179,7 +187,7 @@ class PatternCompiler extends RaoEntityCompiler {
 				members += pattern.toMethod("finish", typeRef(void)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true
-					annotations += ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.overrideAnnotation()
+					annotations += overrideAnnotation()
 
 					body = '''
 						«FOR relevant : pattern.relevantResources»
@@ -198,16 +206,20 @@ class PatternCompiler extends RaoEntityCompiler {
 				members += pattern.toMethod("getTypeName", typeRef(String)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true
-					annotations += ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.overrideAnnotation()
+					annotations += overrideAnnotation()
 
 					body = '''return "«patternQualifiedName»";'''
 				]
 			}
 		]
+
+
+]
 	}
 
-	def static private getPatternMethodTypeRef(String name) {
-		switch name {
+	def private getPatternMethodTypeRef(String name) {
+				return apply [ extension b, extension tB |
+				switch name {
 			case DefaultMethodsHelper.OperationMethodInfo.BEGIN.name,
 			case DefaultMethodsHelper.OperationMethodInfo.END.name,
 			case DefaultMethodsHelper.RuleMethodInfo.EXECUTE.name:
@@ -217,5 +229,8 @@ class PatternCompiler extends RaoEntityCompiler {
 		}
 
 		return null
+		
+		
+		]
 	}
 }
