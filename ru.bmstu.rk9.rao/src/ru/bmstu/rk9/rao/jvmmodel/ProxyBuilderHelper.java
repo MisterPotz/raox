@@ -10,15 +10,15 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
+import org.eclipse.xtext.common.types.JvmGenericType;
+import org.eclipse.xtext.common.types.JvmMember;
 import org.eclipse.xtext.common.types.JvmOperation;
-import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.JvmVisibility;
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations;
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder;
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure2;
-
 /**
  * @author algor
  *
@@ -29,15 +29,25 @@ public class ProxyBuilderHelper {
 	private EObject jvmClassElement;
 	private final JvmTypesBuilder jvmTypesBuilder;
 	private final IJvmModelAssociations associations;
-	private JvmTypeReferenceBuilder jTRB;
+	private JvmTypeReferenceBuilder jvmTypeReferenceBuilder;
 
 	private final ProxyBuilderHelperUtil util;
-	private final boolean createProxyBuilder;
 	private final ArrayList<JvmOperation> delegateOperations = new ArrayList<JvmOperation>();
+	/**
+	 * if client doesn't decide to associate a builder - this value will be left null
+	 */
+	private JvmGenericType builderClass = null;
+	/**
+	 * Used to remember constructor of a builded class to later reuse its parameters in code generation.
+	 * Could also be fetched from associations but I'm lazy and that could be more error-prone.
+	 */
+	private JvmConstructor constructorOfBuildedClass = null;
+	private JvmGenericType buildedClass = null;
 
 	public ProxyBuilderHelper(
+	
 			JvmTypesBuilder jvmTypesBuilder, 
-			JvmTypeReferenceBuilder jTRB,
+			JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
 			IJvmModelAssociations associations, 
 			EObject sourceElement, 
 			boolean isStatic, 
@@ -46,9 +56,9 @@ public class ProxyBuilderHelper {
 		this.targetClassStatic = isStatic;
 		this.associations = associations;
 		this.jvmTypesBuilder = jvmTypesBuilder;
-		this.createProxyBuilder = createProxyBuilder;
-		this.jTRB = jTRB;
+		this.jvmTypeReferenceBuilder = jvmTypeReferenceBuilder;
 		this.util = new ProxyBuilderHelperUtil(jvmTypesBuilder, targetClassStatic);
+		
 	}
 
 	/**
@@ -58,17 +68,20 @@ public class ProxyBuilderHelper {
 	 * 	builder creates
 	 */
 	public JvmConstructor createProxifiedClassConstructor(JvmFormalParameter... givenParams) {
-		return jvmTypesBuilder.toConstructor(sourceElement, p -> {
+		JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceElement, p -> {
 			for (JvmFormalParameter param : givenParams) {
 				p.getParameters().add(param);
 			}
 
 			if (isTargetClassStatic()) {
-				p.getParameters().add(RaoEntityCompiler.createSimulatorIdParameter(sourceElement));
+				p.getParameters().add(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
 			}
 
 			jvmTypesBuilder.setBody(p, util.createConstructorBody(p));
 		});
+		
+		constructorOfBuildedClass = createdCostructor;
+		return createdCostructor;
 	}
 
 	/**
@@ -84,9 +97,64 @@ public class ProxyBuilderHelper {
 		ArrayList<JvmField> toRet = new ArrayList<JvmField>();
 		toRet.addAll(s);
 		if (isTargetClassStatic()) {
-			toRet.add(RaoEntityCompiler.createSimulatorIdField(sourceElement));
+			toRet.add(SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
 		}
 		return toRet;
+	}
+	
+	/**
+	 * method must set up only additional methods
+	 * @param builderInitializer sets up any additional features of builder class
+	 * @return
+	 */
+	public JvmGenericType associateBuilderClass(Procedure2<ProxyBuilderFeatures, ? super JvmGenericType> builderInitializer) {
+		this.builderClass = jvmTypesBuilder.toClass(sourceElement, createBuilderName(buildedClass.getSimpleName()), jvmGenericType -> {
+			
+			List<JvmMember> members = jvmGenericType.getMembers();
+
+			// default constructor consisting solely of simulatorid
+			members.add(SimulatorIdCodeUtil.createSimulatorIdConstructor(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
+			members.add(SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
+			members.add(SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
+			
+			// adds additional features to the created class of builder
+			builderInitializer.apply(createEntities(), jvmGenericType);
+		});
+
+		return builderClass;
+	}
+	
+	public void setBuildedClass(JvmGenericType buildedClass) {
+		this.buildedClass = buildedClass;
+	}
+	
+	public String getBuilderVariableName() {
+		String buildedClassName = buildedClass.getSimpleName();
+		return buildedClassName + BUILDER_FIELD_SUFFIX;
+	}
+	
+	public String getBuilderClassName() {
+		return createBuilderName(buildedClass.getSimpleName());
+	}
+	
+	public String createInitializationLineForBuilderVariable() {
+		String builderVariableName = getBuilderVariableName();
+		String builderClassName = getBuilderClassName();
+		
+		return ProxyBuilderHelperUtil.createLineOfBuilderFieldInitialization(builderVariableName, builderClassName);
+	}
+
+	/**
+	 * 
+	 * @param parentSourceObject should be a more common object (e.g. class of a model) but that is not a necessary requirement
+	 * @return field that should be added as a member to the class associated with parent source element
+	 */
+	public JvmField addFieldForBuilderVariable(EObject parentSourceObject) {
+		return jvmTypesBuilder.toField(sourceElement, getBuilderVariableName(), jvmTypeReferenceBuilder.typeRef(builderClass), (jvmField) -> {
+			jvmField.setFinal(true);
+			jvmField.setVisibility(JvmVisibility.PUBLIC);
+			jvmField.setStatic(false);
+		});
 	}
 
 	/**
@@ -106,35 +174,12 @@ public class ProxyBuilderHelper {
 		}).filter(jvmEl -> {
 			String simpleName = ((JvmOperation) jvmEl).getSimpleName();
 			return names.contains(simpleName);
-		}).map(jv -> ((JvmOperation) jv)).collect(Collectors.toList());
+		}).map(JvmOperation.class::cast).collect(Collectors.toList());
 
 //		delegateOperations.clear();
 //		delegateOperations.addAll(operations);
 	}
 	
-	/**
-	 * must here associate builder class with a new method that is defined by a client
-	 * @param sourceElement element that is being mapped to java domain
-	 * @param name - name of created method
-	 * @param returnType - what type the method must return
- 	 * @param initializer Procedure that accepts not only the created jvmoperation but 
-	 */
-	public void addDelegatedBuilderMethod(/* @Nullable */ String name, /* @Nullable */ JvmTypeReference returnType,
-			// 
-			/* @Nullable */ Procedure2<ProxyBuilderEntities, ? super JvmOperation> methodScope) {
-		
-		EObject sourceElement = getSourceElement();
-		
-		Procedure1<? super JvmOperation> initializer = jvmOperation -> {
-			methodScope.apply(createEntities(), jvmOperation);
-		};
-		
-		JvmOperation result = typesFactory.createJvmOperation();
-		result.setSimpleName(name);
-		result.setVisibility(JvmVisibility.PUBLIC);
-		result.setReturnType(cloneWithProxies(returnType));
-	}
-
 
 	// TODO create field for proxifying of source class
 	// TODO create initialization lines for the proxifyment field and fields that
@@ -159,17 +204,39 @@ public class ProxyBuilderHelper {
 		return targetClassStatic;
 	}
 	
-	public ProxyBuilderEntities createEntities() {
-		return new ProxyBuilderEntitiesImpl();
+	public ProxyBuilderFeatures createEntities() {
+		return new ProxyBuilderFeaturesImpl();
 	}
 	
+	public static String createBuilderName(String buildedClassName) {
+		return buildedClassName + BUILDER_SUFFIX;
+	}
 	
-	class ProxyBuilderEntitiesImpl implements ProxyBuilderEntities {
+	/**
+	*	this string will be appended to the generated builder class name
+	*/
+	public static String BUILDER_SUFFIX = "Builder";
+	/**
+	 * this string will be appended to the generated builder class
+	 * e.g. ResourceNameField (if suffix is Field)
+	 */
+	public static String BUILDER_FIELD_SUFFIX = "";
+	
+	
+	class ProxyBuilderFeaturesImpl implements ProxyBuilderFeatures {
 
 		@Override
-		public Field<Integer> getSimulatorIdField() {
-			return new SimulatorIdFieldImpl();
+		public List<String> getBuildedClassParameters() {
+			return constructorOfBuildedClass.getParameters().stream().map((param) -> {
+				return param.getName();
+			}).collect(Collectors.toList());
 		}
+
+		// @Override
+		// public Field<Integer> getSimulatorIdField() {
+		// 	return new SimulatorIdFieldImpl();
+		// }
+		
 		
 	}
 	
@@ -221,8 +288,9 @@ public class ProxyBuilderHelper {
 		}
 	}
 	
-	interface ProxyBuilderEntities {
-		Field<Integer> getSimulatorIdField();
+	interface ProxyBuilderFeatures {
+		// Field<Integer> getSimulatorIdField();
+		List<String> getBuildedClassParameters();
 	}
 	
 	/**
@@ -231,6 +299,6 @@ public class ProxyBuilderHelper {
 	 *
 	 */
 	interface ProxyBuilderMethodScope {
-		 Procedure1<? super JvmOperation> apply(ProxyBuilderEntities entities);
+		 Procedure1<? super JvmOperation> apply(ProxyBuilderFeatures entities);
 	}
 }

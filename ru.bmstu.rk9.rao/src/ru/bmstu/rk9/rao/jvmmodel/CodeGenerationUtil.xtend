@@ -67,27 +67,27 @@ class CodeGenerationUtil {
 		'''
 	}
 
-	def JvmConstructor createModelConstructor( JvmTypesBuilder jvmTypesBuilder, 
-		JvmTypeReferenceBuilder jvmTypeReferenceBuilder, 
-		Boolean isSimulatorIdOn, 
-		List<String> resourceTypes,
-		EObject raoEntity
-	) {
-		return apply(jvmTypesBuilder, jvmTypeReferenceBuilder) [ extension b, extension tB |
-			return raoEntity.toConstructor [ eObj |
-				eObj.visibility = JvmVisibility.PUBLIC
-				if (isSimulatorIdOn) {
-					eObj.parameters += SimulatorIdCodeUtil.createSimulatorIdParameter(b, tB, raoEntity)
-					eObj.body = '''
-						«FOR param : eObj.parameters»
-							this.«param.name» = «param.name»;
-						«ENDFOR»
-						«FOR resourceName : resourceTypes»
-							«BuilderCompiler.createLineOfBuilderFieldInitialization(resourceName)»
-						«ENDFOR»
-					'''
-				}
-			]
-		]
-	}
+//	def JvmConstructor createModelConstructor( JvmTypesBuilder jvmTypesBuilder, 
+//		JvmTypeReferenceBuilder jvmTypeReferenceBuilder, 
+//		Boolean isSimulatorIdOn, 
+//		List<String> resourceTypes,
+//		EObject raoEntity
+//	) {
+//		return apply(jvmTypesBuilder, jvmTypeReferenceBuilder) [ extension b, extension tB |
+//			return raoEntity.toConstructor [ eObj |
+//				eObj.visibility = JvmVisibility.PUBLIC
+//				if (isSimulatorIdOn) {
+//					eObj.parameters += SimulatorIdCodeUtil.createSimulatorIdParameter(b, tB, raoEntity)
+//					eObj.body = '''
+//						«FOR param : eObj.parameters»
+//							this.«param.name» = «param.name»;
+//						«ENDFOR»
+//						«FOR resourceName : resourceTypes»
+//							«BuilderCompiler.createLineOfBuilderFieldInitialization(resourceName)»
+//						«ENDFOR»
+//					'''
+//				}
+//			]
+//		]
+//	}
 }

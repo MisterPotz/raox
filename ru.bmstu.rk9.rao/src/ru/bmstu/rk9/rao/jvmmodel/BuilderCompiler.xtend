@@ -13,15 +13,6 @@ import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 
 public class BuilderCompiler extends RaoEntityCompiler {
-	/**
-	*	this string will be appended to the generated builder class name
-	*/
-	public static String BUILDER_SUFFIX = "Builder";
-	/**
-	 * this string will be appended to the generated builder class
-	 * e.g. ResourceNameField (if suffix is Field)
-	 */
-	public static String BUILDER_FIELD_SUFFIX = "";
 	
 	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, IJvmModelAssociations associations) {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
@@ -37,59 +28,26 @@ public class BuilderCompiler extends RaoEntityCompiler {
 				JvmDeclaredType it, 
 		boolean isPreIndexingPhase) {
 
-		val resourceClass = entitiesToClasses.get(resourceType.name);
-		val builderClassName = createBuilderNameForResource(resourceType.name);
 		
-		val builderClass =  raoModel.toClass(builderClassName) [ builder |
+		val builderClass =  raoModel.toClass("sdf") [ builder |
 			builder.static = true
 
-			builder.members += SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, typeReferenceBuilder, it)
-			builder.members += SimulatorIdCodeUtil.createSimulatorIdConstructor(jvmTypesBuilder, typeReferenceBuilder, raoModel)
-			builder.members += raoModel.toMethod("create", typeRef(resourceClass)) [
-				visibility = JvmVisibility.PUBLIC
-				for (param : resourceType.parameters)
-					parameters += raoModel.toParameter(param.declaration.name, param.declaration.parameterType)
-				body = '''
-					«IF isSimulatorIdOn»entitiesToClasses» resource = new «resourceType.name»(«CodeGenerationUtil.createEnumerationString(parameters, [name])»);
-					«ENDIF»
-						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
-						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(resource,
-							ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.CREATED);
-						return resource;
-				'''
-			]
+			// TODO move this to resource type related compiler to use in ProxyBuilderHelper
+//			builder.members += raoModel.toMethod("create", typeRef(resourceClass)) [
+//				visibility = JvmVisibility.PUBLIC
+//				for (param : resourceType.parameters)
+//					parameters += raoModel.toParameter(param.declaration.name, param.declaration.parameterType)
+//				body = '''
+//					«IF isSimulatorIdOn»entitiesToClasses» resource = new «resourceType.name»(«CodeGenerationUtil.createEnumerationString(parameters, [name])»);
+//					«ENDIF»
+//						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
+//						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(resource,
+//							ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.CREATED);
+//						return resource;
+//				'''
+//			]
 
-			builder.members += SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, typeReferenceBuilder, raoModel)
 		]
-		entitiesToClasses.put(builderClassName, builderClass)
 		return builderClass;
-	}
-
-	public def static asBuilderField(
-		ResourceType resourceType,
-		 EObject context, extension JvmTypesBuilder jvmTypesBuilder,
-		extension JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		val builderClassName = createBuilderNameForResource(resourceType.name);
-		val builderClass = entitiesToClasses.get(builderClassName);
-		
-		return resourceType.toField(resourceType.name + BUILDER_FIELD_SUFFIX, typeRef(builderClass)) [
-			visibility = JvmVisibility.PUBLIC
-			final = true
-		// Field must be initialized only once in constructor of the model, not here
-//			initializer = '''
-//				new «resourceType.name + BUILDER_SUFFIX»(«IF isSimulatorIdOn»this.«simulatorIdFieldName»«ELSE»«ENDIF»)
-//			'''
-		]
-	}
-
-	public def static String createBuilderNameForResource(String resourceName) {
-		return resourceName + BUILDER_SUFFIX;
-	}
-
-	public def static StringConcatenationClient createLineOfBuilderFieldInitialization(String resourceName) {
-		val builderName = createBuilderNameForResource(resourceName);
-
-		return '''this.«resourceName + BUILDER_FIELD_SUFFIX»  = new «builderName»(«IF isSimulatorIdOn»this.«SimulatorIdContract.SIMULATOR_ID_NAME»«ELSE»«ENDIF»);'''
 	}
 }
