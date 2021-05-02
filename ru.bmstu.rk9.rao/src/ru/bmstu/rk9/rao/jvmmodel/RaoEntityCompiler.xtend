@@ -45,43 +45,13 @@ abstract class RaoEntityCompiler {
 		anno.setAnnotation(annoType)
 		return anno
 	}
-
-	def protected static <T> String createEnumerationString(List<T> objects, Function<T, String> fun) {
-		return '''
-			«FOR o : objects»«fun.apply(o)»«IF objects.indexOf(o) != objects.size - 1», «ENDIF»«ENDFOR»
-		'''
-	}
 	
-	def protected static JvmFormalParameter createSimulatorIdParameter(EObject context) {
-		return (context.toParameter(getSimulatorIdFieldName(), typeRef(int)));
-	}
-
-	def protected static JvmField createSimulatorIdField(EObject raoEntity) {
-		return raoEntity.toField(getSimulatorIdFieldName(), typeRef(int)) [
-			final = true
-		];
-	}
-	
-	
-	def protected static JvmConstructor createSimulatorIdConstructor(EObject raoEntity) {
-		return (raoEntity.toConstructor [
-			visibility = JvmVisibility.PUBLIC
-			if (isSimulatorIdOn) {
-				parameters += createSimulatorIdParameter(raoEntity)
-				body = '''
-					«FOR param : parameters»
-						this.«param.name» = «param.name»;
-					«ENDFOR»
-			'''
-			}
-		]);
-	}
 	
 	def static JvmConstructor createModelConstructor(EObject raoEntity) {
 		return (raoEntity.toConstructor [ eObj |
 			eObj.visibility = JvmVisibility.PUBLIC
 			if (isSimulatorIdOn) {
-				eObj.parameters += createSimulatorIdParameter(raoEntity)
+				eObj.parameters += SimulatorIdCodeUtil.createSimulatorIdParameter(currentJvmTypesBuilder, currentJvmTypeReferenceBuilder, raoEntity)
 				eObj.body = '''
 					«FOR param : eObj.parameters»
 						this.«param.name» = «param.name»;
@@ -94,28 +64,10 @@ abstract class RaoEntityCompiler {
 		])
 	}
 	
-	def protected static JvmOperation createSimulatorIdGetter(EObject raoEntity) {
-		return  raoEntity.toMethod("get" + getSimulatorIdFieldName().toFirstUpper(), typeRef(int)) [
-					body = '''
-						return this.«getSimulatorIdFieldName()»;
-					'''
-				]
-	}
-	
 	def static addSimulatorIdField(EList<JvmMember> list, EObject raoEntity) {
 		if (isSimulatorIdOn) {
-			list += createSimulatorIdField(raoEntity)
+			list += SimulatorIdCodeUtil.createSimulatorIdField(currentJvmTypesBuilder, currentJvmTypeReferenceBuilder, raoEntity)
 		}
-	}
-	
-	def static addSimulatorIdGetter(EList<JvmMember> list, EObject raoEntity) {
-		if (isSimulatorIdOn) {
-			list += createSimulatorIdGetter(raoEntity)
-		}
-	}
-
-	def protected static String getSimulatorIdFieldName() {
-		return "simulatorId";
 	}
 	
 	def static rememberResourceType(ResourceType resourceType) {

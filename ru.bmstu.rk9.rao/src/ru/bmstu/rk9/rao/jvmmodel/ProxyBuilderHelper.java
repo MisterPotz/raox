@@ -11,9 +11,13 @@ import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
 import org.eclipse.xtext.common.types.JvmOperation;
+import org.eclipse.xtext.common.types.JvmTypeReference;
+import org.eclipse.xtext.common.types.JvmVisibility;
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations;
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder;
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder;
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure2;
 
 /**
  * @author algor
@@ -25,13 +29,19 @@ public class ProxyBuilderHelper {
 	private EObject jvmClassElement;
 	private final JvmTypesBuilder jvmTypesBuilder;
 	private final IJvmModelAssociations associations;
-	private final ProxyBuilderHelperUtil util;
 	private JvmTypeReferenceBuilder jTRB;
+
+	private final ProxyBuilderHelperUtil util;
 	private final boolean createProxyBuilder;
 	private final ArrayList<JvmOperation> delegateOperations = new ArrayList<JvmOperation>();
 
-	public ProxyBuilderHelper(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jTRB,
-			IJvmModelAssociations associations, EObject sourceElement, boolean isStatic, boolean createProxyBuilder) {
+	public ProxyBuilderHelper(
+			JvmTypesBuilder jvmTypesBuilder, 
+			JvmTypeReferenceBuilder jTRB,
+			IJvmModelAssociations associations, 
+			EObject sourceElement, 
+			boolean isStatic, 
+			boolean createProxyBuilder) {
 		this.sourceElement = sourceElement;
 		this.targetClassStatic = isStatic;
 		this.associations = associations;
@@ -41,7 +51,13 @@ public class ProxyBuilderHelper {
 		this.util = new ProxyBuilderHelperUtil(jvmTypesBuilder, targetClassStatic);
 	}
 
-	public JvmConstructor createConstructor(JvmFormalParameter... givenParams) {
+	/**
+	 * 
+	 * @param givenParams paramaters that client wants to add to the created constructor
+	 * @return constructor that accepts and initializes fields for both given parameters and paramaters that this
+	 * 	builder creates
+	 */
+	public JvmConstructor createProxifiedClassConstructor(JvmFormalParameter... givenParams) {
 		return jvmTypesBuilder.toConstructor(sourceElement, p -> {
 			for (JvmFormalParameter param : givenParams) {
 				p.getParameters().add(param);
@@ -55,6 +71,11 @@ public class ProxyBuilderHelper {
 		});
 	}
 
+	/**
+	 * 
+	 * @param givenParams
+	 * @return list of fields that consist both of given parameters and parameters that this builder creates
+	 */
 	public List<JvmField> createFields(JvmFormalParameter... givenParams) {
 		List<JvmField> s = Arrays.asList(givenParams).stream().map(it -> {
 			return jvmTypesBuilder.toField(sourceElement, it.getName(), it.getParameterType());
@@ -75,6 +96,7 @@ public class ProxyBuilderHelper {
 	 * @param namesOfFunctionsToProxy names of functions that should be delegated
 	 *                                from builder class to the original one
 	 */
+	@Deprecated /*this type of methods must accept body, that must be embedded into structure that this helper creates */
 	public void rememberFunctionsToProxy(String... namesOfFunctionsToProxy) {
 		// must get all operations currently associated with the object
 		List<String> names = Arrays.asList(namesOfFunctionsToProxy);
@@ -86,9 +108,33 @@ public class ProxyBuilderHelper {
 			return names.contains(simpleName);
 		}).map(jv -> ((JvmOperation) jv)).collect(Collectors.toList());
 
-		delegateOperations.clear();
-		delegateOperations.addAll(operations);
+//		delegateOperations.clear();
+//		delegateOperations.addAll(operations);
 	}
+	
+	/**
+	 * must here associate builder class with a new method that is defined by a client
+	 * @param sourceElement element that is being mapped to java domain
+	 * @param name - name of created method
+	 * @param returnType - what type the method must return
+ 	 * @param initializer Procedure that accepts not only the created jvmoperation but 
+	 */
+	public void addDelegatedBuilderMethod(/* @Nullable */ String name, /* @Nullable */ JvmTypeReference returnType,
+			// 
+			/* @Nullable */ Procedure2<ProxyBuilderEntities, ? super JvmOperation> methodScope) {
+		
+		EObject sourceElement = getSourceElement();
+		
+		Procedure1<? super JvmOperation> initializer = jvmOperation -> {
+			methodScope.apply(createEntities(), jvmOperation);
+		};
+		
+		JvmOperation result = typesFactory.createJvmOperation();
+		result.setSimpleName(name);
+		result.setVisibility(JvmVisibility.PUBLIC);
+		result.setReturnType(cloneWithProxies(returnType));
+	}
+
 
 	// TODO create field for proxifying of source class
 	// TODO create initialization lines for the proxifyment field and fields that
@@ -111,5 +157,80 @@ public class ProxyBuilderHelper {
 
 	public boolean isTargetClassStatic() {
 		return targetClassStatic;
+	}
+	
+	public ProxyBuilderEntities createEntities() {
+		return new ProxyBuilderEntitiesImpl();
+	}
+	
+	
+	class ProxyBuilderEntitiesImpl implements ProxyBuilderEntities {
+
+		@Override
+		public Field<Integer> getSimulatorIdField() {
+			return new SimulatorIdFieldImpl();
+		}
+		
+	}
+	
+	class SimulatorIdFieldImpl extends Field<Integer> {
+		public SimulatorIdFieldImpl() {
+			super("simulatorId", Integer.class);
+		}
+	}
+	 
+	
+	/**
+	 * Java entity that is present within ProxyBuilder generated builder class scope
+	 * @param <T>
+	 */
+	abstract static class Entity<T> {
+		private final String name;
+		/**
+		 * for Field - class of field
+		 * for Method - class of returned type
+		 */
+		private final Class<T> clazz;
+		
+		public String getName() {
+			return name;
+		}
+		
+		public Class<T> getType() {
+			return clazz;
+		}
+		
+		
+		public Entity(String name, Class<T> fieldClazz) {
+			super();
+			this.name = name;
+			this.clazz = fieldClazz;
+		}
+	}
+	
+	static class Field<T> extends Entity<T> {		
+		public Field(String name, Class<T> fieldClazz) {
+			super(name, fieldClazz);
+
+		}
+	}
+	
+	static class Method<T> extends Entity<T> {
+		public Method(String name, Class<T> clazz) {
+			super(name, clazz);
+		}
+	}
+	
+	interface ProxyBuilderEntities {
+		Field<Integer> getSimulatorIdField();
+	}
+	
+	/**
+	 * SAM to combine scopes of JVM eobject and this builder
+	 * @author aleks
+	 *
+	 */
+	interface ProxyBuilderMethodScope {
+		 Procedure1<? super JvmOperation> apply(ProxyBuilderEntities entities);
 	}
 }

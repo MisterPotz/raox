@@ -24,7 +24,7 @@ class EventCompiler extends RaoEntityCompiler {
 			parametersList.add(event.toParameter("time", typeRef(double)));
 			parametersList.addAll(event.parameters.map[ it.toParameter(it.name, it.parameterType) ])
 			
-			members += pBH.createConstructor(parametersList);
+			members += pBH.createProxifiedClassConstructor(parametersList);
 			val fields = pBH.createFields(parametersList);
 			members.addAll(fields)
 
@@ -44,20 +44,35 @@ class EventCompiler extends RaoEntityCompiler {
 				body = event.body
 			]
 
-			members += event.toMethod("plan", typeRef(void)) [
-				visibility = JvmVisibility.PUBLIC
-				final = true
-				parameters += event.toParameter("time", typeRef(double))
-				for (param : event.parameters)
-					parameters += event.toParameter(param.name, param.parameterType)
-
-				body = '''
-					«event.name» event = new «event.name»(«createEnumerationString(parameters, [name])»);
-					ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
-				'''
+			// TODO this method must be eliminated
+//			members += event.toMethod("plan", typeRef(void)) [
+//				visibility = JvmVisibility.PUBLIC
+//				final = true
+//				parameters += event.toParameter("time", typeRef(double))
+//				for (param : event.parameters)
+//					parameters += event.toParameter(param.name, param.parameterType)
+//
+//				body = '''
+//					«event.name» event = new «event.name»(«createEnumerationString(parameters, [name])»);
+//					ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
+//				'''
+//			]
+			
+			pBH.addDelegatedBuilderMethod("plan", typeRef(double)) [ builderEntities, operation |
+					operation.visibility = JvmVisibility.PUBLIC
+					operation.final = true
+					operation.parameters += event.toParameter("time", typeRef(double))
+					for (param : event.parameters)
+						operation.parameters += event.toParameter(param.name, param.parameterType)
+		
+					operation.body = '''
+						«event.name» event = new «event.name»(«createEnumerationString(parameters, [name])»);
+						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
+					'''
 			]
 			
 			pBH.rememberFunctionsToProxy("plan");
 		]
+		// TODO save somehow proxybuilder here to later use the information that the proxybuilder was given
 	}
 }

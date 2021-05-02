@@ -61,8 +61,8 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 			RaoEntityCompiler.cleanCachedResourceTypes();
 			initializeCurrent(jvmTypesBuilder, _typeReferenceBuilder, associations);
 			
-			context.members += createSimulatorIdField(element)
-			context.members += element.createSimulatorIdGetter
+			context.members += SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, _typeReferenceBuilder, element)
+			context.members += SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, _typeReferenceBuilder, element)
 			
 			for (entity : element.objects) {
 				entity.compileRaoEntity(context, isPreIndexingPhase)
