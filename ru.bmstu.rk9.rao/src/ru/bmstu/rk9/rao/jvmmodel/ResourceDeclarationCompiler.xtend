@@ -9,6 +9,7 @@ import ru.bmstu.rk9.rao.rao.RaoModel
 
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import java.util.Arrays
 
 class ResourceDeclarationCompiler extends RaoEntityCompiler {
 
@@ -18,16 +19,19 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 	}
 
 	// TODO later pass here global storage for proxyBuilderHelpers to later collect all accumulated info
-	def asMembers(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		val ProxyBuilderHelper proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, resource, false);
-		proxyBuilderHelper.addAdditionalParentScopeMembers(
+	def asMembers(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+		val ProxyBuilderHelper proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder,
+			associations, resource, false);
+		storage.addNewProxyBuilder(proxyBuilderHelper)
+		return Arrays.asList(
 			asField(resource, it, isPreIndexingPhase, proxyBuilderHelper),
 			asGetter(resource, it, isPreIndexingPhase)
-		)		
+		)
 	}
-	
+
 	// methods, related to a separate resource class
-	def asField(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelper resourceDeclarationProxy) {
+	def asField(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelper resourceDeclarationProxy) {
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			val String name = resourceInitialValueName(resource.name)
 			return resource.toField(name, resource.constructor.inferredType) [ field |
@@ -37,7 +41,7 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 				// constructor
 				resourceDeclarationProxy.addCodeForParentScopeConstructor(
 					'''
-					«name» = «resource.constructor»;
+						«name» = «resource.constructor»;
 					'''
 				)
 			]
@@ -81,7 +85,7 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 			return model.toClass("resourcesPreinitializer") [
 				superTypes += typeRef(Runnable)
 				visibility = JvmVisibility.PROTECTED
-				
+
 				members += model.toMethod("run", typeRef(void)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true

@@ -146,6 +146,10 @@ public class ProxyBuilderHelper {
 		return this.additionalMembersToParentScope;
 	}
 	
+	public GeneratedCodeBodyBuilder getCodeToAppendToParentScopeConstructor() {
+		return this.codeToAppendToParentScopeConstructor;
+	}
+	
 	public void setBuildedClass(JvmGenericType buildedClass) {
 		this.buildedClass = buildedClass;
 	}
