@@ -2,7 +2,6 @@ package ru.bmstu.rk9.rao.jvmmodel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -102,13 +101,19 @@ public class ProxyBuilderHelper {
 		return toRet;
 	}
 	
+	public List<JvmMember> createNecessaryMembers() {
+		return Arrays.asList(
+				SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement),
+				SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
+	}
+	
 	/**
 	 * method must set up only additional methods
 	 * @param builderInitializer sets up any additional features of builder class
 	 * @return
 	 */
 	public JvmGenericType associateBuilderClass(Procedure2<ProxyBuilderFeatures, ? super JvmGenericType> builderInitializer) {
-		this.builderClass = jvmTypesBuilder.toClass(sourceElement, createBuilderName(buildedClass.getSimpleName()), jvmGenericType -> {
+		this.builderClass = jvmTypesBuilder.toClass(sourceElement, getBuilderClassName(), jvmGenericType -> {
 			
 			List<JvmMember> members = jvmGenericType.getMembers();
 
@@ -118,7 +123,7 @@ public class ProxyBuilderHelper {
 			members.add(SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
 			
 			// adds additional features to the created class of builder
-			builderInitializer.apply(createEntities(), jvmGenericType);
+			builderInitializer.apply(createFeatures(), jvmGenericType);
 		});
 
 		return builderClass;
@@ -204,7 +209,7 @@ public class ProxyBuilderHelper {
 		return targetClassStatic;
 	}
 	
-	public ProxyBuilderFeatures createEntities() {
+	public ProxyBuilderFeatures createFeatures() {
 		return new ProxyBuilderFeaturesImpl();
 	}
 	

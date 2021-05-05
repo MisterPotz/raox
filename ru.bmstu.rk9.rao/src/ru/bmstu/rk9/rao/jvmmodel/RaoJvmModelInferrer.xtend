@@ -34,6 +34,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
 	@Inject IJvmModelAssociations associations
 
+// it is better to use extensions this way, because if they are used statically, the ide performance is poor
 	extension EntityCreationCompiler entityCreationCompiler;
 	extension VarConstCompiler varconstCompiler;
 	extension EnumCompiler enumCompiler;

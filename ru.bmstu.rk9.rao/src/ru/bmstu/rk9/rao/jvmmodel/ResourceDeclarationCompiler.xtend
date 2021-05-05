@@ -20,6 +20,8 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 
 		val resources = model.objects.filter(typeof(ResourceDeclaration))
 		val modelQualifiedNamePart = qualifiedName
+		val eventQualifiedName = QualifiedName.create(qualifiedName, event.name)
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, typeReferenceBuilder, associations, event, false, true);
 
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			return model.toClass("resourcesPreinitializer") [

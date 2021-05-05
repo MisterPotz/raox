@@ -12,18 +12,24 @@ import ru.bmstu.rk9.rao.lib.database.Database.DataType
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import java.util.ArrayList
+import org.eclipse.xtext.common.types.JvmFormalParameter
 
 class ResourceTypeCompiler extends RaoEntityCompiler {
 
-
-	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, IJvmModelAssociations associations) {
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations) {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
-	
+
 	def asClass(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val typeQualifiedName = QualifiedName.create(qualifiedName, resourceType.name)
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, resourceType, false,
+			true);
+
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+
 			return resourceType.toClass(typeQualifiedName) [
 				static = true
 
@@ -31,50 +37,61 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 					typeRef
 				})
 
+				val parametersList = new ArrayList<JvmFormalParameter>();
 
-				members += resourceType.toConstructor [
-					visibility = JvmVisibility.PRIVATE
-					for (param : resourceType.parameters)
-						parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
-					if (isSimulatorIdOn) {
-						parameters += SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType)
-						body = '''
-							«FOR param : parameters»
-								«IF parameters.indexOf(param) < parameters.size - 1»
-									this._«param.name» = «param.name»;
-								«ELSE »
-									this.«param.name» = «param.name»;
-								«ENDIF»
-							«ENDFOR»
-						'''
-					} else {
-						body = '''
-							«FOR param : parameters»
-								this._«param.name» = «param.name»;
-							«ENDFOR»
-						'''
-					}
-				]
+				parametersList.addAll(resourceType.parameters.map [
+					it.toParameter(it.declaration.name, it.declaration.parameterType)
+				])
 
-				if (!resourceType.parameters.empty)
-					members += SimulatorIdCodeUtil.createSimulatorIdConstructor(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType)
+				members += pBH.createFields(parametersList)
+				members += pBH.createProxifiedClassConstructor(parametersList);
+				members += pBH.createNecessaryMembers()
 
 				// TODO: move this method to custom builder class
 //			if (!isSimulatorIdOn) {
-				members += resourceType.toMethod("create", typeRef) [
-					visibility = JvmVisibility.PUBLIC
-					static = true
-					for (param : resourceType.parameters)
-						parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
-					body = '''
-						«resourceType.name» resource = new «resourceType.name»(«CodeGenerationUtil.createEnumerationString(parameters, [name])»);
-						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
-						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(resource,
-								ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.CREATED);
-						return resource;
-					'''
+				pBH.associateBuilderClass [ features, builderClassType |
+					builderClassType.members += resourceType.toMethod("create", typeRef) [
+						visibility = JvmVisibility.PUBLIC
+						for (param : resourceType.parameters)
+							parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
+						body = '''
+							«resourceType.name» resource = new «resourceType.name»(«String.join(", ", features.buildedClassParameters)»);
+							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
+							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(resource,
+									ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.CREATED);
+							return resource;
+						'''
+
+					]
+					builderClassType.members += resourceType.toMethod("getAny", typeRef) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						body = '''
+							return ru.bmstu.rk9.rao.lib.runtime.RaoCollectionExtensions.any(getAll());
+						'''
+					]
+
+					builderClassType.members += resourceType.toMethod("getAll", typeRef(Collection, {
+						typeRef
+					})) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						body = '''
+							return ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().getAll(«resourceType.name».class);
+						'''
+					]
+
+					builderClassType.members += resourceType.toMethod("getAccessible", typeRef(Collection, {
+						typeRef
+					})) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						body = '''
+							return ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().getAccessible(«resourceType.name».class);
+						'''
+					]
 				]
-//			}			
+				
 				members += resourceType.toMethod("erase", typeRef(void)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true
@@ -111,9 +128,6 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 					]
 				}
 
-				members += SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType)
-				members += SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType)
-				
 				members += resourceType.toMethod("checkEqual", typeRef(boolean)) [ m |
 					m.visibility = JvmVisibility.PUBLIC
 					m.parameters += resourceType.toParameter("other", typeRef)
@@ -206,37 +220,6 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						«ENDFOR»
 						
 						return buffer;
-					'''
-				]
-
-				members += resourceType.toMethod("getAny", typeRef) [
-					visibility = JvmVisibility.PUBLIC
-					final = true
-					static = true
-					body = '''
-						return ru.bmstu.rk9.rao.lib.runtime.RaoCollectionExtensions.any(getAll());
-					'''
-				]
-
-				members += resourceType.toMethod("getAll", typeRef(Collection, {
-					typeRef
-				})) [
-					visibility = JvmVisibility.PUBLIC
-					final = true
-					static = true
-					body = '''
-						return ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().getAll(«resourceType.name».class);
-					'''
-				]
-
-				members += resourceType.toMethod("getAccessible", typeRef(Collection, {
-					typeRef
-				})) [
-					visibility = JvmVisibility.PUBLIC
-					final = true
-					static = true
-					body = '''
-						return ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().getAccessible(«resourceType.name».class);
 					'''
 				]
 			]
