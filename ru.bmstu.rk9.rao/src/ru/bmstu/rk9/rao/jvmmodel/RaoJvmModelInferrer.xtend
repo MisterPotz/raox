@@ -61,6 +61,10 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 	}
 
 	new() {
+		this.proxyBuilderHelpers = new ArrayList();
+	}
+
+	def init() {
 		this.entityCreationCompiler = new EntityCreationCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
 		this.varconstCompiler = new VarConstCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations)
 		this.enumCompiler = new EnumCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
@@ -76,11 +80,11 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 		this.resourceDeclarationCompiler = new ResourceDeclarationCompiler(jvmTypesBuilder, _typeReferenceBuilder,
 			associations);
 		this.dataSourceCompiler = new ResultCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
-		this.proxyBuilderHelpers = new ArrayList();
 		this.modelCompiler = new ModelCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
 	}
 
 	def dispatch void infer(RaoModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
+		init();
 		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [ context |
 			RaoEntityCompiler.cleanCachedResourceTypes();
 

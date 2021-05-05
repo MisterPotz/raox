@@ -31,10 +31,13 @@ class ModelCompiler extends RaoEntityCompiler {
 		val additionalLines = proxyBuildersStorage.collectedProxyBuilders.stream().reduce(new StringConcatenation(), [accum, newVal | 
 			accum.append(newVal.codeToAppendToParentScopeConstructor);
 			return accum
-		], null)
+		]) [ left, right |
+			left.append(right)
+			return left
+		]
 		
 		return apply [extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			model.toConstructor[ constructor |
+			return model.toConstructor[ constructor |
 				constructor.parameters += parameters
 				constructor.visibility = JvmVisibility.PUBLIC
 				constructor.body = '''
