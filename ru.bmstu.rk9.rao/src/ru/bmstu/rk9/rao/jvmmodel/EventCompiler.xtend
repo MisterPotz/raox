@@ -21,7 +21,7 @@ class EventCompiler extends RaoEntityCompiler {
 		JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val eventQualifiedName = QualifiedName.create(qualifiedName, event.name)
-		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, typeReferenceBuilder, associations, event, false, true);
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, typeReferenceBuilder, associations, event, false);
 		
 		return apply [ extension b, extension tB |
 			return event.toClass(eventQualifiedName) [
@@ -33,9 +33,9 @@ class EventCompiler extends RaoEntityCompiler {
 				parametersList.add(event.toParameter("time", typeRef(double)));
 				parametersList.addAll(event.parameters.map[it.toParameter(it.name, it.parameterType)])
 
-				members += pBH.createProxifiedClassConstructor(parametersList);
+				members += pBH.createConstructorForBuildedClass(parametersList);
 				
-				val fields = pBH.createFields(parametersList);
+				val fields = pBH.createFieldsForBuildedClass(parametersList);
 				members.addAll(fields)
 
 				members += event.toMethod("getName", typeRef(String)) [

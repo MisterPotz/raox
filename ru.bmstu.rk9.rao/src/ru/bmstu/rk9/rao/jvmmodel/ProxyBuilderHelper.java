@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.xtend2.lib.StringConcatenationClient;
 import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
@@ -28,10 +29,9 @@ public class ProxyBuilderHelper {
 	private EObject jvmClassElement;
 	private final JvmTypesBuilder jvmTypesBuilder;
 	private final IJvmModelAssociations associations;
-	private JvmTypeReferenceBuilder jvmTypeReferenceBuilder;
+	private final JvmTypeReferenceBuilder jvmTypeReferenceBuilder;
 
 	private final ProxyBuilderHelperUtil util;
-	private final ArrayList<JvmOperation> delegateOperations = new ArrayList<JvmOperation>();
 	/**
 	 * if client doesn't decide to associate a builder - this value will be left null
 	 */
@@ -42,22 +42,27 @@ public class ProxyBuilderHelper {
 	 */
 	private JvmConstructor constructorOfBuildedClass = null;
 	private JvmGenericType buildedClass = null;
+	
+	/**
+	 * sometimes we need to setup final fields lazily - in constructor. this field is for that purpose
+	 */
+	private final GeneratedCodeBodyBuilder codeToAppendToParentScopeConstructor;
+	private final List<JvmMember> additionalMembersToParentScope;
 
 	public ProxyBuilderHelper(
-	
 			JvmTypesBuilder jvmTypesBuilder, 
 			JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
 			IJvmModelAssociations associations, 
 			EObject sourceElement, 
-			boolean isStatic, 
-			boolean createProxyBuilder) {
+			boolean isStatic) {
 		this.sourceElement = sourceElement;
 		this.targetClassStatic = isStatic;
 		this.associations = associations;
 		this.jvmTypesBuilder = jvmTypesBuilder;
 		this.jvmTypeReferenceBuilder = jvmTypeReferenceBuilder;
 		this.util = new ProxyBuilderHelperUtil(jvmTypesBuilder, targetClassStatic);
-		
+		this.codeToAppendToParentScopeConstructor = new GeneratedCodeBodyBuilder();
+		this.additionalMembersToParentScope = new ArrayList<>();
 	}
 
 	/**
@@ -66,7 +71,7 @@ public class ProxyBuilderHelper {
 	 * @return constructor that accepts and initializes fields for both given parameters and paramaters that this
 	 * 	builder creates
 	 */
-	public JvmConstructor createProxifiedClassConstructor(JvmFormalParameter... givenParams) {
+	public JvmConstructor createConstructorForBuildedClass(JvmFormalParameter... givenParams) {
 		JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceElement, p -> {
 			for (JvmFormalParameter param : givenParams) {
 				p.getParameters().add(param);
@@ -88,7 +93,7 @@ public class ProxyBuilderHelper {
 	 * @param givenParams
 	 * @return list of fields that consist both of given parameters and parameters that this builder creates
 	 */
-	public List<JvmField> createFields(JvmFormalParameter... givenParams) {
+	public List<JvmField> createFieldsForBuildedClass(JvmFormalParameter... givenParams) {
 		List<JvmField> s = Arrays.asList(givenParams).stream().map(it -> {
 			return jvmTypesBuilder.toField(sourceElement, it.getName(), it.getParameterType());
 		}).collect(Collectors.toList());
@@ -101,7 +106,7 @@ public class ProxyBuilderHelper {
 		return toRet;
 	}
 	
-	public List<JvmMember> createNecessaryMembers() {
+	public List<JvmMember> createNecessaryMembersForBuildedClass() {
 		return Arrays.asList(
 				SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement),
 				SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
@@ -127,6 +132,18 @@ public class ProxyBuilderHelper {
 		});
 
 		return builderClass;
+	}
+	
+	public void addCodeForParentScopeConstructor(StringConcatenationClient code) {
+		this.codeToAppendToParentScopeConstructor.append(code);
+	}
+
+	public void addAdditionalParentScopeMembers(JvmMember ... newMember) {
+		this.additionalMembersToParentScope.addAll(Arrays.asList(newMember));
+	}
+
+	public List<JvmMember> getAdditionalParentScopeMembers() {
+		return this.additionalMembersToParentScope;
 	}
 	
 	public void setBuildedClass(JvmGenericType buildedClass) {
@@ -161,6 +178,7 @@ public class ProxyBuilderHelper {
 			jvmField.setStatic(false);
 		});
 	}
+	
 
 	/**
 	 * Must be run after all related functions are added to <members> of the

@@ -25,8 +25,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 	def asClass(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
 		val typeQualifiedName = QualifiedName.create(qualifiedName, resourceType.name)
-		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, resourceType, false,
-			true);
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, resourceType, false);
 
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 
@@ -43,9 +42,9 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 					it.toParameter(it.declaration.name, it.declaration.parameterType)
 				])
 
-				members += pBH.createFields(parametersList)
-				members += pBH.createProxifiedClassConstructor(parametersList);
-				members += pBH.createNecessaryMembers()
+				members += pBH.createFieldsForBuildedClass(parametersList)
+				members += pBH.createConstructorForBuildedClass(parametersList);
+				members += pBH.createNecessaryMembersForBuildedClass()
 
 				// TODO: move this method to custom builder class
 //			if (!isSimulatorIdOn) {
@@ -168,7 +167,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				]
 
 				members += resourceType.toMethod("getTypeName", typeRef(String)) [
-					visibility = JvmVisibility.PUBLIC
+					visibility = JvmVisibility.	PUBLIC
 					final = true
 					annotations += overrideAnnotation()
 					body = '''
