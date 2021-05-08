@@ -52,6 +52,7 @@ public class ProxyBuilderHelper {
 	 */
 	private final GeneratedCodeBodyBuilder codeToAppendToParentScopeConstructor;
 	private final List<JvmMember> additionalMembersToParentScope;
+	private final List<JvmMember> additionalMembersToParentInitializingScope;
 
 	public ProxyBuilderHelper(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
 			IJvmModelAssociations associations, EObject sourceElement, boolean isStatic) {
@@ -63,6 +64,7 @@ public class ProxyBuilderHelper {
 		this.util = new ProxyBuilderHelperUtil(jvmTypesBuilder, targetClassStatic);
 		this.codeToAppendToParentScopeConstructor = new GeneratedCodeBodyBuilder();
 		this.additionalMembersToParentScope = new ArrayList<>();
+		this.additionalMembersToParentInitializingScope = new ArrayList<>();
 	}
 
 	/**
@@ -139,8 +141,8 @@ public class ProxyBuilderHelper {
 			List<JvmMember> members = jvmGenericType.getMembers();
 
 			// default constructor consisting solely of simulatorid
-			members.add(SimulatorIdCodeUtil.createSimulatorIdConstructor(jvmTypesBuilder, jvmTypeReferenceBuilder,
-					sourceElement));
+			members.add(CodeGenerationUtil.associateConstructor(jvmTypesBuilder, sourceElement, getBuilderClassConstructorParameters(),
+					null));
 			members.add(SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder,
 					sourceElement));
 			members.add(SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder,
@@ -152,6 +154,10 @@ public class ProxyBuilderHelper {
 
 		return builderClass;
 	}
+	
+	public List<JvmFormalParameter> getBuilderClassConstructorParameters() {
+		return Arrays.asList(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
+	}
 
 	public void addCodeForParentScopeConstructor(StringConcatenationClient code) {
 		this.codeToAppendToParentScopeConstructor.append(code);
@@ -160,9 +166,17 @@ public class ProxyBuilderHelper {
 	public void addAdditionalParentScopeMembers(JvmMember... newMember) {
 		this.additionalMembersToParentScope.addAll(Arrays.asList(newMember));
 	}
+	
+	public void addAdditionalParentInitializingScopeMembers(JvmMember... newMember) {
+		this.additionalMembersToParentInitializingScope.addAll(Arrays.asList(newMember));
+	}
 
 	public List<JvmMember> getAdditionalParentScopeMembers() {
 		return this.additionalMembersToParentScope;
+	} 
+
+	public List<JvmMember> getAdditionalMembersToParentInitializingScope() {
+		return additionalMembersToParentInitializingScope;
 	}
 
 	public GeneratedCodeBodyBuilder getCodeToAppendToParentScopeConstructor() {
@@ -188,7 +202,17 @@ public class ProxyBuilderHelper {
 
 		return ProxyBuilderHelperUtil.createLineOfBuilderFieldInitialization(builderVariableName, builderClassName);
 	}
+	
+	public boolean hasBuilderClass() {
+		return builderClass != null;
+	}
 
+	public List<JvmMember> collectAdditionalMembers() {
+		List<JvmMember> collected = new ArrayList<>();
+		collected.addAll(additionalMembersToParentScope);
+		collected.add(builderClass);
+		return collected;
+	}
 	/**
 	 * 
 	 * @param parentSourceObject should be a more common object (e.g. class of a

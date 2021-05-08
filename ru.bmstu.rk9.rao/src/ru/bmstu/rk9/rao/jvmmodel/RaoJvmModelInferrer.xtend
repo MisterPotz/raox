@@ -110,7 +110,13 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 				for (entity : element.objects.filter[((it instanceof EntityCreation) || (it instanceof ResourceDeclaration))]) {
 					entity.compileRaoEntity(it, isPreIndexingPhase, this)
 				}
+				for (proxyBuilder : collectedProxyBuilders) {
+					for (member : proxyBuilder.additionalMembersToParentInitializingScope) {
+						members += member
+					}
+				}
 			]
+			
 			context.members += initializingScopeType
 			
 			context.members += element.toField("initializingScope", typeRef(initializingScopeType)) [
@@ -196,7 +202,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 	def dispatch compileRaoEntity(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += resource.asMembers(it, isPreIndexingPhase, storage)
+		resource.asMembersForInitializingScope(it, isPreIndexingPhase, storage)
 	}
 
 	def dispatch compileRaoEntity(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase,

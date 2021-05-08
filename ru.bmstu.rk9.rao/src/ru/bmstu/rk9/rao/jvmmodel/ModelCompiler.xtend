@@ -55,6 +55,6 @@ class ModelCompiler extends RaoEntityCompiler {
 		ProxyBuilderHelpersStorage storage) {
 		val proxyBuilders = storage.collectedProxyBuilders
 
-		return proxyBuilders.map[builderClass]
+		return proxyBuilders.flatMap[collectAdditionalMembers]
 	}
 }

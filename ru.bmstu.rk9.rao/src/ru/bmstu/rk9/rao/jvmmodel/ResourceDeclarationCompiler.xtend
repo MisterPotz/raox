@@ -19,14 +19,16 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 	}
 
 	// TODO later pass here global storage for proxyBuilderHelpers to later collect all accumulated info
-	def asMembers(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+	def asMembersForInitializingScope(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
 		val ProxyBuilderHelper proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder,
 			associations, resource, false);
 		storage.addNewProxyBuilder(proxyBuilderHelper)
-		return Arrays.asList(
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(Arrays.asList(
 			asField(resource, it, isPreIndexingPhase, proxyBuilderHelper),
 			asGetter(resource, it, isPreIndexingPhase)
-		)
+		))
+		return null
 	}
 
 	// methods, related to a separate resource class
@@ -35,18 +37,13 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			val String name = resourceInitialValueName(resource.name)
 			return resource.toField(name, resource.constructor.inferredType) [ field |
-				field.visibility = JvmVisibility.PRIVATE
+				field.visibility = JvmVisibility.PUBLIC
 				// here no initializer must be given as all resources will be created in constructor
 				// instead, pass initialization line into proxybuilder - it will be later used in model class
 				// constructor
-				resourceDeclarationProxy.addCodeForParentScopeConstructor(
-					'''
-						«name» = «resource.constructor»;
-					'''
-				)
+				field.initializer = resource.constructor
 			]
 		]
-
 	}
 
 	def asGetter(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase) {

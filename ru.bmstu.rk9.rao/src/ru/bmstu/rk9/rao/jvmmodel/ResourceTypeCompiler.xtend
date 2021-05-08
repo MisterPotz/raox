@@ -14,6 +14,7 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import java.util.ArrayList
 import org.eclipse.xtext.common.types.JvmFormalParameter
+import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
 
 class ResourceTypeCompiler extends RaoEntityCompiler {
 
@@ -48,8 +49,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				members += pBH.createNecessaryMembersForBuildedClass()
 				members += pBH.createSimulatorIdConstructorForBuildedClass()
 				pBH.buildedClass = it
-				
-				pBH.associateBuilderClass [ features, builderClassType |
+				val builderClass = pBH.associateBuilderClass [ features, builderClassType |
 					builderClassType.members += resourceType.toMethod("create", typeRef) [
 						visibility = JvmVisibility.PUBLIC
 						for (param : resourceType.parameters)
@@ -91,6 +91,12 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						'''
 					]
 				]
+				pBH.addAdditionalParentInitializingScopeMembers(resourceType.toField(resourceType.name, typeRef(builderClass)) [
+					visibility = JvmVisibility.PUBLIC
+					final = true
+					initializer = '''new «typeRef(builderClass)»(«pBH.builderClassConstructorParameters.map[new NameableMember(it).name].join(", ")»)'''
+				])
+				
 				
 				members += resourceType.toMethod("erase", typeRef(void)) [
 					visibility = JvmVisibility.PUBLIC
