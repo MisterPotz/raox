@@ -12,6 +12,8 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 import java.util.function.Function
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.common.types.JvmVisibility
+import org.eclipse.xtext.common.types.JvmMember
+import java.util.HashMap
 
 class CodeGenerationUtil {
 	private interface Extensioner<T> {
@@ -44,7 +46,7 @@ class CodeGenerationUtil {
 	) {
 		return sourceObject.toConstructor [
 			it.parameters.addAll(parameters)
-			body = createInitializingList(parameters)
+			body = createInitializingList(parameters.map[new NameableMember(it)])
 			if (additionalBlock !== null) {
 				additionalBlock.apply(it)
 			}
@@ -53,7 +55,7 @@ class CodeGenerationUtil {
 	
 	
 
-	def static StringConcatenationClient createInitializingList(List<JvmFormalParameter> parameters) {
+	def static StringConcatenationClient createInitializingList(List<NameableMember> parameters) {
 		return '''
 			«FOR param : parameters»
 			this.«param.name» = «param.name»;
@@ -61,10 +63,33 @@ class CodeGenerationUtil {
 		'''
 	}
 	
+	def static StringConcatenationClient createInitializingListWithValues(
+		HashMap<NameableMember, String> parameters
+	) {
+		return '''
+			«FOR param : parameters.entrySet»
+			this.«param.key.name» = «param.value»;
+			«ENDFOR»
+		'''
+	}
+	
+	
 	def protected static <T> String createEnumerationString(List<T> objects, Function<T, String> fun) {
 		return '''
 			«FOR o : objects»«fun.apply(o)»«IF objects.indexOf(o) != objects.size - 1», «ENDIF»«ENDFOR»
 		'''
+	}
+
+	public static class NameableMember {
+		public final String name;
+
+		new(JvmMember member) {
+			this.name = member.simpleName;
+		}
+		
+		new(JvmFormalParameter parameter) {
+			this.name = parameter.name;
+		}
 	}
 
 //	def JvmConstructor createModelConstructor( JvmTypesBuilder jvmTypesBuilder, 

@@ -22,11 +22,12 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
 
-	def asClass(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	def asClass(ResourceType resourceType, JvmDeclaredType parentJvmObject, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
 
-		val typeQualifiedName = QualifiedName.create(qualifiedName, resourceType.name)
+		val typeQualifiedName = QualifiedName.create(parentJvmObject.qualifiedName, resourceType.name)
 		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, resourceType, false);
-
+		storage.addNewProxyBuilder(pBH)
+		
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 
 			return resourceType.toClass(typeQualifiedName) [
@@ -39,20 +40,20 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				val parametersList = new ArrayList<JvmFormalParameter>();
 
 				parametersList.addAll(resourceType.parameters.map [
-					it.toParameter(it.declaration.name, it.declaration.parameterType)
+					resourceType.toParameter(it.declaration.name, it.declaration.parameterType)
 				])
 
 				members += pBH.createFieldsForBuildedClass(parametersList)
 				members += pBH.createConstructorForBuildedClass(parametersList);
 				members += pBH.createNecessaryMembersForBuildedClass()
-
-				// TODO: move this method to custom builder class
-//			if (!isSimulatorIdOn) {
+				members += pBH.createSimulatorIdConstructorForBuildedClass()
+				pBH.buildedClass = it
+				
 				pBH.associateBuilderClass [ features, builderClassType |
 					builderClassType.members += resourceType.toMethod("create", typeRef) [
 						visibility = JvmVisibility.PUBLIC
 						for (param : resourceType.parameters)
-							parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
+							parameters += resourceType.toParameter(param.declaration.name, param.declaration.parameterType)
 						body = '''
 							«resourceType.name» resource = new «resourceType.name»(«String.join(", ", features.buildedClassParameters)»);
 							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
@@ -101,32 +102,31 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 								ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.ERASED);
 					'''
 				]
-
+				
+				
 				for (param : resourceType.parameters) {
-					members += param.toField("_" + param.declaration.name, param.declaration.parameterType) [
-						initializer = param.^default
-					]
 					members +=
-						param.toMethod("get" + param.declaration.name.toFirstUpper, param.declaration.parameterType) [
+						resourceType.toMethod("get" + param.declaration.name.toFirstUpper, param.declaration.parameterType) [
 							body = '''
-								return _«param.declaration.name»;
+								return «param.declaration.name»;
 							'''
 						]
-					members += param.toMethod("set" + param.declaration.name.toFirstUpper, typeRef(void)) [
-						parameters += param.toParameter(param.declaration.name, param.declaration.parameterType)
+					members += resourceType.toMethod("set" + param.declaration.name.toFirstUpper, typeRef(void)) [
+						parameters += resourceType.toParameter(param.declaration.name, param.declaration.parameterType)
 						body = '''
 							«resourceType.name» actual = this;
 							
 							if (isShallowCopy)
 								actual = ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().copyOnWrite(this);
 							
-							actual._«param.declaration.name» = «param.declaration.name»;
+							actual.«param.declaration.name» = «param.declaration.name»;
 							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(actual,
 									ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.ALTERED);
 						'''
 					]
 				}
-
+				
+				
 				members += resourceType.toMethod("checkEqual", typeRef(boolean)) [ m |
 					m.visibility = JvmVisibility.PUBLIC
 					m.parameters += resourceType.toParameter("other", typeRef)
@@ -137,35 +137,32 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						«ELSE»
 							return «String.join(" && ", resourceType.parameters.map[ p |
 						'''«IF p.declaration.parameterType.type instanceof JvmPrimitiveType
-								»this._«p.declaration.name» == other._«p.declaration.name»«
+								»this.«p.declaration.name» == other.«p.declaration.name»«
 							ELSE
-								»this._«p.declaration.name».equals(other._«p.declaration.name»)«
+								»this.«p.declaration.name».equals(other.«p.declaration.name»)«
 							ENDIF»
 						'''
 					])»;
 						«ENDIF»
 					'''
 				]
-
+				
 				members += resourceType.toMethod("deepCopy", typeRef) [
 					visibility = JvmVisibility.PUBLIC
 					annotations += overrideAnnotation
 					body = '''
-						«IF isSimulatorIdOn»
 							«resourceType.name» copy = new «resourceType.name»(«SimulatorIdContract.SIMULATOR_ID_NAME»);	
-						«ELSE»
-							«resourceType.name» copy = new «resourceType.name»();
-						«ENDIF»
 							copy.setNumber(this.number);
 							copy.setName(this.name);
 							«FOR param : resourceType.parameters»
-							copy._«param.declaration.name» = this._«param.declaration.name»;
+							copy.«param.declaration.name» = this.«param.declaration.name»;
 							«ENDFOR»
 						
 							return copy;
 					'''
 				]
-
+				
+				
 				members += resourceType.toMethod("getTypeName", typeRef(String)) [
 					visibility = JvmVisibility.	PUBLIC
 					final = true
@@ -195,11 +192,11 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						int _currentPosition = «fixedWidthParametersSize + variableWidthParameters.size * DataType.INT.size»;
 						«FOR param : variableWidthParameters»
 							_positions.add(_currentPosition);
-							String _«param.declaration.name»Value = String.valueOf(_«param.declaration.name»);
-							byte[] _«param.declaration.name»Bytes = _«param.declaration.name»Value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-							int _«param.declaration.name»Length = _«param.declaration.name»Bytes.length;
-							_currentPosition += _«param.declaration.name»Length + «DataType.INT.size»;
-							_totalSize += _«param.declaration.name»Length + «2 * DataType.INT.size»;
+							String «param.declaration.name»Value = String.valueOf(«param.declaration.name»);
+							byte[] «param.declaration.name»Bytes = «param.declaration.name»Value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+							int «param.declaration.name»Length = «param.declaration.name»Bytes.length;
+							_currentPosition += «param.declaration.name»Length + «DataType.INT.size»;
+							_totalSize += «param.declaration.name»Length + «2 * DataType.INT.size»;
 						«ENDFOR»
 						
 						ByteBuffer buffer = ByteBuffer.allocate(_totalSize);
@@ -214,13 +211,14 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						«ENDFOR»
 						
 						«FOR param : variableWidthParameters»
-							buffer.putInt(_«param.declaration.name»Length);
-							buffer.put(_«param.declaration.name»Bytes);
+							buffer.putInt(«param.declaration.name»Length);
+							buffer.put(«param.declaration.name»Bytes);
 						«ENDFOR»
 						
 						return buffer;
 					'''
 				]
+
 			]
 
 		]
@@ -238,11 +236,11 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 		val type = DataType.getByName(param.declaration.parameterType.simpleName)
 		switch type {
 			case INT:
-				return '''putInt(_«param.declaration.name»)'''
+				return '''putInt(«param.declaration.name»)'''
 			case DOUBLE:
-				return '''putDouble(_«param.declaration.name»)'''
+				return '''putDouble(«param.declaration.name»)'''
 			case BOOLEAN:
-				return '''put(_«param.declaration.name» ? (byte)1 : (byte)0)'''
+				return '''put(«param.declaration.name» ? (byte)1 : (byte)0)'''
 			default:
 				return '''/* INTERNAL ERROR: attempting to serialize type «param.declaration.parameterType.simpleName» as fixed width type */'''
 		}

@@ -30,11 +30,14 @@ import org.eclipse.xtext.common.types.JvmField
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import java.util.List
 import java.util.ArrayList
+import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver
+import org.eclipse.xtext.common.types.JvmVisibility
 
 class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderHelpersStorage {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
 	@Inject IJvmModelAssociations associations
-
+	
+	@Inject IBatchTypeResolver typeResolver
 // it is better to use extensions this way, because if they are used statically, the ide performance is poor
 	extension EntityCreationCompiler entityCreationCompiler;
 	extension VarConstCompiler varconstCompiler;
@@ -65,7 +68,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 	}
 
 	def init() {
-		this.entityCreationCompiler = new EntityCreationCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.entityCreationCompiler = new EntityCreationCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations, typeResolver);
 		this.varconstCompiler = new VarConstCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations)
 		this.enumCompiler = new EnumCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
 		this.functionCompiler = new FunctionCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
@@ -93,31 +96,39 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 			context.members +=
 				SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, _typeReferenceBuilder, element)
 
-			for (entity : element.objects) {
-				entity.compileRaoEntity(context, isPreIndexingPhase, this)
-			
-//				println(i)
-//				if (i instanceof Event) {
-//					val associate = associations.getJvmElements(i).filter[it instanceof JvmOperation]
-//					for (g : associate) {
-//						val s = g as JvmOperation
-//
-//						println("\t" + s.simpleName + "\t" + s.parameters + "\t" + s)
-//					}
-//				}
-			}
-
 			element.compileResourceInitialization(context, isPreIndexingPhase, this)
 
+			for (entity : element.objects.filter[ !((it instanceof EntityCreation) || (it instanceof ResourceDeclaration))]) {
+				entity.compileRaoEntity(context, isPreIndexingPhase, this)
+			}
+				
+			val initializingScopeType = element.toClass("InitializingScope") [
+				final = true
+				static = false 
+				visibility = JvmVisibility.PRIVATE
+				
+				for (entity : element.objects.filter[((it instanceof EntityCreation) || (it instanceof ResourceDeclaration))]) {
+					entity.compileRaoEntity(it, isPreIndexingPhase, this)
+				}
+			]
+			context.members += initializingScopeType
+			
+			context.members += element.toField("initializingScope", typeRef(initializingScopeType)) [
+				final = true 
+				static =false
+				visibility = JvmVisibility.PRIVATE
+			]
+			
 			// create constructor with initializations from all proxybuilders that were collected
-			context.members += modelCompiler.asConstructor(element, context, isPreIndexingPhase, this);
+			context.members += modelCompiler.asConstructor(element, context, isPreIndexingPhase, this, initializingScopeType);
+			context.members += modelCompiler.asAdditionalMembers(element, context, isPreIndexingPhase, this)
 		]
 	}
 
 	def dispatch compileRaoEntity(EntityCreation entity, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
 		if (!isPreIndexingPhase && entity.constructor !== null)
-			members += entity.asField(it, isPreIndexingPhase)
+			members += entity.asField(it, isPreIndexingPhase, storage)
 	}
 
 	def dispatch compileRaoEntity(VarConst varconst, JvmDeclaredType it, boolean isPreIndexingPhase,
@@ -145,9 +156,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 		/*  that is required for the proper inflation of model constructor
 		 *  where fields of builders for each resource are initiated
 		 */
-		val clazz = resourceType.asClass(it, isPreIndexingPhase)
-		members += clazz
-		addResourceClass(resourceType, clazz);
+		members += resourceType.asClass(it, isPreIndexingPhase, this)
 	}
 
 //	def compileResourceBuilder(RaoModel model, ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {

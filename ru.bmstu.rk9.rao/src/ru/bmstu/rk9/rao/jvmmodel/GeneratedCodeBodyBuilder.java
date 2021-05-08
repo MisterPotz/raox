@@ -21,9 +21,11 @@ class GeneratedCodeBodyBuilder extends StringConcatenationClient {
         collectedLines.newLineIfNotEmpty();
         return this;
     }
+    
+    
 
     @Override
     protected void appendTo(TargetStringConcatenation target) {
-    	target.append(collectedLines.toString());
+    	target.append(collectedLines);
     }
 }

@@ -31,7 +31,6 @@ class DefaultMethodCompiler extends RaoEntityCompiler {
 			return method.toClass(method.name) [
 				superTypes += typeRef(Runnable)
 				visibility = JvmVisibility.PROTECTED
-				static = true
 				members += method.toMethod("run", typeRef(void)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true
@@ -51,7 +50,6 @@ class DefaultMethodCompiler extends RaoEntityCompiler {
 					typeRef(Boolean)
 				})
 				visibility = JvmVisibility.PROTECTED
-				static = true
 				members += method.toMethod("get", typeRef(Boolean)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true
@@ -59,7 +57,6 @@ class DefaultMethodCompiler extends RaoEntityCompiler {
 					body = method.body
 				]
 			]
-
 		]
 	}
 }
