@@ -98,36 +98,13 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 			element.compileResourceInitialization(context, isPreIndexingPhase, this)
 
-			for (entity : element.objects.filter[ !((it instanceof EntityCreation) || (it instanceof ResourceDeclaration))]) {
+			for (entity : element.objects) {
+				// may add or not add members to the context EObject
 				entity.compileRaoEntity(context, isPreIndexingPhase, this)
 			}
-				
-			val initializingScopeType = element.toClass("InitializingScope") [
-				final = true
-				static = false 
-				visibility = JvmVisibility.PRIVATE
-				
-				for (entity : element.objects.filter[((it instanceof EntityCreation) || (it instanceof ResourceDeclaration))]) {
-					entity.compileRaoEntity(it, isPreIndexingPhase, this)
-				}
-				for (proxyBuilder : collectedProxyBuilders) {
-					for (member : proxyBuilder.additionalMembersToParentInitializingScope) {
-						members += member
-					}
-				}
-			]
-			
-			context.members += initializingScopeType
-			
-			context.members += element.toField("initializingScope", typeRef(initializingScopeType)) [
-				final = true 
-				static =false
-				visibility = JvmVisibility.PRIVATE
-			]
 			
 			// create constructor with initializations from all proxybuilders that were collected
-			context.members += modelCompiler.asConstructor(element, context, isPreIndexingPhase, this, initializingScopeType);
-			context.members += modelCompiler.asAdditionalMembers(element, context, isPreIndexingPhase, this)
+			context.members += modelCompiler.asMembersAndConstructor(element, context, isPreIndexingPhase, this)
 		]
 	}
 
@@ -219,8 +196,8 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 	def compileResourceInitialization(RaoModel element, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += element.asGlobalInitializationMethod(it, isPreIndexingPhase)
-		members += element.asGlobalInitializationState(it, isPreIndexingPhase)
+		element.asGlobalInitializationMethod(it, isPreIndexingPhase, this)
+		element.rememberAsGlobalInitializationState(it, isPreIndexingPhase, this)
 	}
 
 	override addNewProxyBuilder(ProxyBuilderHelper newBuilder) {

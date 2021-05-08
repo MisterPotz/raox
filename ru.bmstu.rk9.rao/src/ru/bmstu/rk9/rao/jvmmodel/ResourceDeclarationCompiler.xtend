@@ -73,12 +73,14 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 	}
 
 	// methods related to all resource declarations
-	def asGlobalInitializationMethod(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
+	def asGlobalInitializationMethod(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, model,
+			false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
 		val resources = model.objects.filter(typeof(ResourceDeclaration))
 		val modelQualifiedNamePart = qualifiedName
-
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+		
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			return model.toClass("resourcesPreinitializer") [
 				superTypes += typeRef(Runnable)
 				visibility = JvmVisibility.PROTECTED
@@ -99,19 +101,21 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 				]
 			]
 
-		]
+		]) 
 	}
 
-	def asGlobalInitializationState(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return model.toField("__initialized", typeRef(boolean)) [
-				visibility = JvmVisibility.PRIVATE
-				final = false
-				// TODO remove for non static context
-				initializer = '''false'''
-			]
-
-		]
+	def rememberAsGlobalInitializationState(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, model,
+			false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				return model.toField("__initialized", typeRef(boolean)) [
+					visibility = JvmVisibility.PRIVATE
+					final = false
+					initializer = '''false'''
+				]
+			])
 	}
 }

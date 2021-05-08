@@ -13,6 +13,9 @@ import org.eclipse.xtend2.lib.StringConcatenation
 import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
 import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.common.types.JvmGenericType
+import ru.bmstu.rk9.rao.rao.EntityCreation
+import ru.bmstu.rk9.rao.rao.ResourceDeclaration
+import org.eclipse.xtext.service.AllRulesCache.AllRulesCacheAdapter
 
 /**
  * compiler for RaoModels
@@ -24,37 +27,49 @@ class ModelCompiler extends RaoEntityCompiler {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
 
-	def asConstructor(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase,
-		ProxyBuilderHelpersStorage proxyBuildersStorage, JvmGenericType initializingScopeRef) {
-		// as for now, models accept simulatorid as a parameter
-		val List<JvmFormalParameter> parameters = Arrays.asList(
-			SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, model))
-//		
-//		// probably i can't pass null here, but if i don't set parallel execution here it might be ok
-//		val additionalLines = proxyBuildersStorage.collectedProxyBuilders.stream().reduce(new StringConcatenation(), [accum, newVal | 
-//			accum.append(newVal.codeToAppendToParentScopeConstructor);
-//			return accum
-//		]) [ left, right |
-//			left.append(right)
-//			return left
-//		]
-//		
+	def asMembersAndConstructor(
+		RaoModel model,
+		JvmDeclaredType it,
+		boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage
+	) {
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return model.toConstructor [ constructor |
+			val proxyBuilders = storage.collectedProxyBuilders
+
+			val initializingScopeType = model.toClass(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS) [
+				final = true
+				static = false
+				visibility = JvmVisibility.PRIVATE
+				// add members that need to go to initialization scope (the one with prepared model dependencies like simulatorid)
+				members += proxyBuilders.flatMap[additionalMembersToParentInitializingScope]
+			]
+
+			val initializationField = model.toField(GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD,
+				typeRef(initializingScopeType)) [
+				final = true
+				static = false
+				visibility = JvmVisibility.PRIVATE
+			]
+
+			val additionalMembers = proxyBuilders.flatMap[collectAdditionalMembers].toList
+
+			additionalMembers += initializingScopeType
+			additionalMembers += initializationField
+
+			val List<JvmFormalParameter> parameters = Arrays.asList(
+				SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, model))
+
+			val constructor = model.toConstructor [ constructor |
 				constructor.parameters += parameters
 				constructor.visibility = JvmVisibility.PUBLIC
 				constructor.body = '''
 					«CodeGenerationUtil.createInitializingList(parameters.map[new NameableMember(it)])»
-					this.initializingScope = new «typeRef(initializingScopeRef)»();
+					this.«GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD» = new «typeRef(initializingScopeType)»();
 				'''
 			]
+			
+			additionalMembers += constructor
+			return additionalMembers
 		]
-	}
-
-	def asAdditionalMembers(RaoModel model, JvmDeclaredType it, boolean isPreIndexingPhase,
-		ProxyBuilderHelpersStorage storage) {
-		val proxyBuilders = storage.collectedProxyBuilders
-
-		return proxyBuilders.flatMap[collectAdditionalMembers]
 	}
 }
