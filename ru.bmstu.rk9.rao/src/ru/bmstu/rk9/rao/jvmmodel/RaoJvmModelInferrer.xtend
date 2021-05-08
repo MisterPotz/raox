@@ -111,7 +111,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 	def dispatch compileRaoEntity(EntityCreation entity, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
 		if (!isPreIndexingPhase && entity.constructor !== null)
-			members += entity.asField(it, isPreIndexingPhase, storage)
+			entity.rememberAsField(it, isPreIndexingPhase, storage)
 	}
 
 	def dispatch compileRaoEntity(VarConst varconst, JvmDeclaredType it, boolean isPreIndexingPhase,
@@ -154,7 +154,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 	def dispatch compileRaoEntity(Event event, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += event.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+		event.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase, this)
 	}
 
 	def dispatch compileRaoEntity(Pattern pattern, JvmDeclaredType it, boolean isPreIndexingPhase,

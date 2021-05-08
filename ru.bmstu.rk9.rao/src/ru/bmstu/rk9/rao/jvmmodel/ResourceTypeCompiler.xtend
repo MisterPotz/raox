@@ -109,7 +109,6 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 					'''
 				]
 				
-				
 				for (param : resourceType.parameters) {
 					members +=
 						resourceType.toMethod("get" + param.declaration.name.toFirstUpper, param.declaration.parameterType) [

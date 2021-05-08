@@ -136,6 +136,9 @@ public class ProxyBuilderHelper {
 	 */
 	public JvmGenericType associateBuilderClass(
 			Procedure2<ProxyBuilderFeatures, ? super JvmGenericType> builderInitializer) {
+		if (buildedClass == null) {
+			throw new IllegalStateException("to assocate a builder class one must have a reference to the builded class");
+		}
 		this.builderClass = jvmTypesBuilder.toClass(sourceElement, getBuilderClassName(), jvmGenericType -> {
 
 			List<JvmMember> members = jvmGenericType.getMembers();

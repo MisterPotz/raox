@@ -9,23 +9,26 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import java.util.ArrayList
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
 
 class EventCompiler extends RaoEntityCompiler {
-	
-	
-	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, IJvmModelAssociations associations) {
+
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations) {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
-	
-	def asClass(Event event, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
-		JvmDeclaredType it, boolean isPreIndexingPhase) {
 
-		val eventQualifiedName = QualifiedName.create(qualifiedName, event.name)
+	def asClass(Event event, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
+		JvmDeclaredType parentClass, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+
+		val eventQualifiedName = QualifiedName.create(parentClass.qualifiedName, event.name)
 		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, typeReferenceBuilder, associations, event, false);
-		
-		return apply [ extension b, extension tB |
-			return event.toClass(eventQualifiedName) [
-				superTypes += typeRef(ru.bmstu.rk9.rao.lib.event.Event)
+		storage.addNewProxyBuilder(pBH)
+
+		// event class should be used inside initializing scope
+		pBH.addAdditionalParentInitializingScopeMembers(apply [ extension b, extension tB |
+			return event.toClass(eventQualifiedName) [ eventClass |
+				eventClass.superTypes += typeRef(ru.bmstu.rk9.rao.lib.event.Event)
 
 				// partially delegate creation of features to ProxyBuilderHelper here
 				val parametersList = new ArrayList<JvmFormalParameter>();
@@ -33,12 +36,36 @@ class EventCompiler extends RaoEntityCompiler {
 				parametersList.add(event.toParameter("time", typeRef(double)));
 				parametersList.addAll(event.parameters.map[it.toParameter(it.name, it.parameterType)])
 
-				members += pBH.createConstructorForBuildedClass(parametersList);
+				eventClass.members += pBH.createConstructorForBuildedClass(parametersList);
+				eventClass.members += pBH.createFieldsForBuildedClass(parametersList);
+				eventClass.members += pBH.createNecessaryMembersForBuildedClass()
 				
-				val fields = pBH.createFieldsForBuildedClass(parametersList);
-				members.addAll(fields)
+				// because we need to have a builder class that has method 'plan' which will look like a static one
+				// must create association for this wanted class
+				pBH.buildedClass = eventClass
+				val builderClass = pBH.associateBuilderClass [ builderFeatures, builderJvmGenericType |
+					builderJvmGenericType.members += event.toMethod("plan", typeRef(Void.TYPE)) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						parameters += event.toParameter("time", typeRef(double))
+						for (param : event.parameters)
+							parameters += event.toParameter(param.name, param.parameterType)
 
-				members += event.toMethod("getName", typeRef(String)) [
+						body = '''
+							«typeRef(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS + "." + event.name)» event = «GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD».new «eventClass.simpleName»(«String.join(", ", builderFeatures.buildedClassParameters)»);
+							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
+						'''
+					]
+				]
+				
+				// adding field
+				pBH.addAdditionalParentInitializingScopeMembers(event.toField(event.name, typeRef(builderClass)) [
+					visibility = JvmVisibility.PUBLIC
+					final = true
+					initializer = '''new «typeRef(builderClass)»(«pBH.builderClassConstructorParameters.map[new NameableMember(it).name].join(", ")»)'''
+				])
+
+				eventClass.members += event.toMethod("getName", typeRef(String)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true
 					annotations += overrideAnnotation()
@@ -47,31 +74,14 @@ class EventCompiler extends RaoEntityCompiler {
 					'''
 				]
 
-				members += event.toMethod("execute", typeRef(void)) [
+				eventClass.members += event.toMethod("execute", typeRef(void)) [
 					visibility = JvmVisibility.PROTECTED
 					final = true
 					annotations += overrideAnnotation()
 					body = event.body
 				]
 
-				// because we need to have a builder class that has method 'plan' which will look like a static one
-				// must create association for this wanted class
-				pBH.associateBuilderClass [ builderFeatures, builderJvmGenericType | 
-					builderJvmGenericType.members += event.toMethod("plan", typeRef(double)) [
-						visibility = JvmVisibility.PUBLIC
-						final = true
-						parameters += event.toParameter("time", typeRef(double))
-						for (param : event.parameters)
-							parameters += event.toParameter(param.name, param.parameterType)
-	
-						body = '''
-							«event.name» event = new «event.name»(«String.join(", ", builderFeatures.buildedClassParameters)»);
-							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
-						'''
-					]
-				]
 			]
-
-		]
+		])
 	}
 }
