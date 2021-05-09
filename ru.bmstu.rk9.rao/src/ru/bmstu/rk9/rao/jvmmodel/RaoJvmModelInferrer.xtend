@@ -126,12 +126,12 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 	def dispatch compileRaoEntity(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += function.asMethod(it, isPreIndexingPhase)
+		function.rememberAsMethod(it, isPreIndexingPhase, this)
 	}
 
 	def dispatch compileRaoEntity(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += method.asClass(it, isPreIndexingPhase)
+		method.rememberAsClass(it, isPreIndexingPhase, this)
 	}
 
 	def dispatch compileRaoEntity(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase,
@@ -174,7 +174,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 	def dispatch compileRaoEntity(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += frame.asClass(it, isPreIndexingPhase);
+		frame.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
 	def dispatch compileRaoEntity(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase,
@@ -185,13 +185,13 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 	def dispatch compileRaoEntity(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
 
-		members += dataSource.asClass(it, isPreIndexingPhase);
+		dataSource.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
 	def dispatch compileRaoEntity(Result result, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
 		if (!isPreIndexingPhase && result.constructor !== null)
-			members += result.asField(it, isPreIndexingPhase);
+			result.rememberAsField(it, isPreIndexingPhase, this)
 	}
 
 	def compileResourceInitialization(RaoModel element, JvmDeclaredType it, boolean isPreIndexingPhase,

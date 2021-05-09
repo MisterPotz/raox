@@ -15,7 +15,9 @@ class GeneratorCompiler extends RaoEntityCompiler {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
 
+	// seems that this field does not depend on simulator id, it can be left in outer scope (don't use proxybuilderhelper)
 	def asClass(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase) {
+		
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			return generator.toClass(QualifiedName.create(qualifiedName, generator.name)) [
 				static = true

@@ -19,35 +19,40 @@ class FrameCompiler extends RaoEntityCompiler {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
 
-	def asClass(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	// probably code of a frame may contain references to dependencies, so must be put into initialization scope
+	def rememberAsClass(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
 		val frameQualifiedName = QualifiedName.create(qualifiedName, frame.name)
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return frame.toClass(frameQualifiedName) [
-				static = true
-				superTypes += typeRef(AnimationFrame)
 
-				members += frame.toMethod("getTypeName", typeRef(String)) [
-					final = true
-					annotations += overrideAnnotation
-					body = '''
-						return "«frameQualifiedName»";
-					'''
-				]
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, frame, false)
+		storage.addNewProxyBuilder(pBH)
 
-				for (method : frame.defaultMethods) {
-					members += method.toMethod(method.name, typeRef(void)) [
-						if (method.name == DefaultMethodsHelper.FrameMethodInfo.DRAW.name)
-							parameters += frame.toParameter("it", typeRef(AnimationContext))
-						for (param : method.parameters)
-							parameters += method.toParameter(param.name, param.parameterType)
-						visibility = JvmVisibility.PUBLIC
+		pBH.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				return frame.toClass(frameQualifiedName) [
+					superTypes += typeRef(AnimationFrame)
+
+					members += frame.toMethod("getTypeName", typeRef(String)) [
 						final = true
-						annotations += overrideAnnotation()
-						body = method.body
+						annotations += overrideAnnotation
+						body = '''
+							return "«frameQualifiedName»";
+						'''
 					]
-				}
-			]
 
-		]
+					for (method : frame.defaultMethods) {
+						members += method.toMethod(method.name, typeRef(void)) [
+							if (method.name == DefaultMethodsHelper.FrameMethodInfo.DRAW.name)
+								parameters += frame.toParameter("it", typeRef(AnimationContext))
+							for (param : method.parameters)
+								parameters += method.toParameter(param.name, param.parameterType)
+							visibility = JvmVisibility.PUBLIC
+							final = true
+							annotations += overrideAnnotation()
+							body = method.body
+						]
+					}
+				]
+			])
 	}
 }

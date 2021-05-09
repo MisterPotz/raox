@@ -14,19 +14,23 @@ class FunctionCompiler extends RaoEntityCompiler {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
 
-	def asMethod(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	def rememberAsMethod(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations,
+			function, false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
 
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return function.toMethod(function.name, function.type) [
-				for (param : function.parameters)
-					parameters += function.toParameter(param.name, param.parameterType)
-				visibility = JvmVisibility.PUBLIC
-				static = true
-				final = true
-				body = function.body
-			]
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				return function.toMethod(function.name, function.type) [
+					for (param : function.parameters)
+						parameters += function.toParameter(param.name, param.parameterType)
+					visibility = JvmVisibility.PUBLIC
+					static = true
+					final = true
+					body = function.body
+				]
 
-		]
-
+			])
 	}
 }

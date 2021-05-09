@@ -12,19 +12,20 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 
-
-
 class ResultCompiler extends RaoEntityCompiler {
 
-	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, IJvmModelAssociations associations) {
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations) {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
-	
-	def asClass(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase) {
 
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+	// data source may contain code that references dependencies of model, thus must be put into initializationscope
+	def rememberAsClass(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, dataSource, false)
+		storage.addNewProxyBuilder(pBH)
+		pBH.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			return dataSource.toClass(QualifiedName.create(qualifiedName, dataSource.name)) [
-				static = true
 				superTypes += typeRef(ru.bmstu.rk9.rao.lib.result.AbstractDataSource, {
 					dataSource.evaluateType
 				})
@@ -67,17 +68,22 @@ class ResultCompiler extends RaoEntityCompiler {
 			]
 
 		]
+		)
 	}
 
-	def asField(Result result, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return result.toField(result.name, result.constructor.inferredType) [
-				visibility = JvmVisibility.PUBLIC
-				static = true
-				final = true
-				initializer = result.constructor
-			]
+	// Result takes lambda that may contain references to model dependencies, thus this field must be contained inside initializing inner scope
+	def rememberAsField(Result result, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, result, false)
+		storage.addNewProxyBuilder(pBH)
+		pBH.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				return result.toField(result.name, result.constructor.inferredType) [
+					visibility = JvmVisibility.PUBLIC
+					final = true
+					initializer = result.constructor
+				]
 
-		]
+			]
+		)
 	}
 }

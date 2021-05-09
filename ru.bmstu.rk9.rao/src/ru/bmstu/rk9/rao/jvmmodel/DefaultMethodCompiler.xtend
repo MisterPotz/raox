@@ -11,52 +11,62 @@ import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 
 class DefaultMethodCompiler extends RaoEntityCompiler {
 
-	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder, IJvmModelAssociations associations) {
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations) {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
-	
-	def asClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			switch (method.name) {
-				case DefaultMethodsHelper.GlobalMethodInfo.INIT.name:
-					return method.initAsClass(it, isPreIndexingPhase)
-				case DefaultMethodsHelper.GlobalMethodInfo.TERMINATE_CONDITION.name:
-					return method.terminateAsClass(it, isPreIndexingPhase)
-			}
-		]
+
+	def rememberAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		switch (method.name) {
+			case DefaultMethodsHelper.GlobalMethodInfo.INIT.name:
+				method.rememberInitAsClass(it, isPreIndexingPhase, storage)
+			case DefaultMethodsHelper.GlobalMethodInfo.TERMINATE_CONDITION.name:
+				method.rememberTerminateAsClass(it, isPreIndexingPhase, storage)
+		}
 	}
 
-	def private initAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return method.toClass(method.name) [
-				superTypes += typeRef(Runnable)
-				visibility = JvmVisibility.PROTECTED
-				members += method.toMethod("run", typeRef(void)) [
-					visibility = JvmVisibility.PUBLIC
-					final = true
-					annotations += overrideAnnotation
-					body = method.body
+	// run method may contain entities that exist only within initialized scope - hence, must be put into the scope itself
+	def private rememberInitAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, method,
+			false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				method.toClass(method.name) [
+					superTypes += typeRef(Runnable)
+					visibility = JvmVisibility.PROTECTED
+					members += method.toMethod("run", typeRef(void)) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						annotations += overrideAnnotation
+						body = method.body
+					]
 				]
 			]
-
-		]
+		)
 	}
 
-	def private terminateAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return method.toClass(method.name) [
-				superTypes += typeRef(Supplier, {
-					typeRef(Boolean)
-				})
-				visibility = JvmVisibility.PROTECTED
-				members += method.toMethod("get", typeRef(Boolean)) [
-					visibility = JvmVisibility.PUBLIC
-					final = true
-					annotations += overrideAnnotation
-					body = method.body
+	def private rememberTerminateAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, method,
+			false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				return method.toClass(method.name) [
+					superTypes += typeRef(Supplier, {
+						typeRef(Boolean)
+					})
+					visibility = JvmVisibility.PROTECTED
+					members += method.toMethod("get", typeRef(Boolean)) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						annotations += overrideAnnotation
+						body = method.body
+					]
 				]
-			]
-		]
+			])
 	}
 }

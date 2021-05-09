@@ -21,7 +21,11 @@ class PatternCompiler extends RaoEntityCompiler {
 	}
 	
 	def asClass(Pattern pattern,
-		JvmDeclaredType it, boolean isPreIndexingPhase) {
+		JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+			
+//		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, pattern,
+//			false)
+//		storage.addNewProxyBuilder(proxyBuilderHelper)
 
 		val patternQualifiedName = QualifiedName.create(qualifiedName, pattern.name)
 		return apply [ extension b, extension tB |
