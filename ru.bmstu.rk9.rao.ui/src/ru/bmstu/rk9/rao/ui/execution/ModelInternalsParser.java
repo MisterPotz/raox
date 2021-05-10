@@ -417,12 +417,12 @@ public class ModelInternalsParser {
 		}
 	}
 
-	public final List<VarConst> getVarConsts() {
-		return varconsts;
-	}
-
 	public final List<AnimationFrame> getAnimationFrames() {
 		return animationFrames;
+	}
+	
+	public List<VarConst> getVarConsts() {
+		return varconsts;
 	}
 
 	public final void closeClassLoader() {
