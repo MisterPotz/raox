@@ -15,61 +15,63 @@ class LogicCompiler extends RaoEntityCompiler {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
 
-	def asClass(Logic logic, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	def rememberAsClass(Logic logic, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
 
 		val logicQualifiedName = QualifiedName.create(qualifiedName, logic.name)
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, logic,
+			false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
 
-		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
-			return logic.toClass(logicQualifiedName) [
-				static = true
-				superTypes += typeRef(ru.bmstu.rk9.rao.lib.dpt.Logic)
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				return logic.toClass(logicQualifiedName) [
+					superTypes += typeRef(ru.bmstu.rk9.rao.lib.dpt.Logic)
 
-				for (activity : logic.activities) {
-					members += activity.toField(activity.name, typeRef(ru.bmstu.rk9.rao.lib.dpt.Activity)) [
-						visibility = JvmVisibility.PRIVATE
+					for (activity : logic.activities) {
+						members += activity.toField(activity.name, typeRef(ru.bmstu.rk9.rao.lib.dpt.Activity)) [
+							visibility = JvmVisibility.PRIVATE
+						]
+
+						members +=
+							activity.toMethod("initialize" + activity.name.toFirstUpper,
+								typeRef(ru.bmstu.rk9.rao.lib.dpt.Activity)) [
+								visibility = JvmVisibility.PRIVATE
+								final = true
+								body = activity.constructor
+							]
+					}
+
+					members += logic.toMethod("initializeActivities", typeRef(void)) [
+						visibility = JvmVisibility.PROTECTED
+						final = true
+						annotations += overrideAnnotation()
+						body = '''
+							«FOR activity : logic.activities»
+								this.«activity.name» = initialize«activity.name.toFirstUpper»();
+								this.«activity.name».setName("«activity.name»");
+								addActivity(this.«activity.name»);
+							«ENDFOR»
+						'''
 					]
 
-					members +=
-						activity.toMethod("initialize" + activity.name.toFirstUpper,
-							typeRef(ru.bmstu.rk9.rao.lib.dpt.Activity)) [
-							visibility = JvmVisibility.PRIVATE
-							final = true
-							body = activity.constructor
-						]
-				}
-
-				members += logic.toMethod("initializeActivities", typeRef(void)) [
-					visibility = JvmVisibility.PROTECTED
-					final = true
-					annotations += overrideAnnotation()
-					body = '''
-						«FOR activity : logic.activities»
-							this.«activity.name» = initialize«activity.name.toFirstUpper»();
-							this.«activity.name».setName("«activity.name»");
-							addActivity(this.«activity.name»);
-						«ENDFOR»
-					'''
-				]
-
-				members += logic.toMethod("getTypeName", typeRef(String)) [
-					visibility = JvmVisibility.PUBLIC
-					final = true
-					annotations += overrideAnnotation()
-					body = '''
-						return "«logicQualifiedName»";
-					'''
-				]
-
-				for (method : logic.defaultMethods) {
-					members += method.toMethod(method.name, typeRef(void)) [
+					members += logic.toMethod("getTypeName", typeRef(String)) [
 						visibility = JvmVisibility.PUBLIC
 						final = true
 						annotations += overrideAnnotation()
-						body = method.body
+						body = '''
+							return "«logicQualifiedName»";
+						'''
 					]
-				}
-			]
 
-		]
+					for (method : logic.defaultMethods) {
+						members += method.toMethod(method.name, typeRef(void)) [
+							visibility = JvmVisibility.PUBLIC
+							final = true
+							annotations += overrideAnnotation()
+							body = method.body
+						]
+					}
+				]
+			])
 	}
 }

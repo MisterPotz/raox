@@ -30,14 +30,11 @@ import org.eclipse.xtext.common.types.JvmField
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import java.util.List
 import java.util.ArrayList
-import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver
-import org.eclipse.xtext.common.types.JvmVisibility
 
 class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderHelpersStorage {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
 	@Inject IJvmModelAssociations associations
 	
-	@Inject IBatchTypeResolver typeResolver
 // it is better to use extensions this way, because if they are used statically, the ide performance is poor
 	extension EntityCreationCompiler entityCreationCompiler;
 	extension VarConstCompiler varconstCompiler;
@@ -68,7 +65,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 	}
 
 	def init() {
-		this.entityCreationCompiler = new EntityCreationCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations, typeResolver);
+		this.entityCreationCompiler = new EntityCreationCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
 		this.varconstCompiler = new VarConstCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations)
 		this.enumCompiler = new EnumCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
 		this.functionCompiler = new FunctionCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
@@ -141,12 +138,7 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 		 */
 		members += resourceType.asClass(it, isPreIndexingPhase, this)
 	}
-
-//	def compileResourceBuilder(RaoModel model, ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
-//		RaoEntityCompiler.rememberResourceType(resourceType)
-//		members += resourceType.asBuilder(model, jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-//		members += resourceType.asBuilderField(model, jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-//	}
+	
 	def dispatch compileRaoEntity(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
 		members += generator.asClass(it, isPreIndexingPhase)
@@ -159,17 +151,17 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 	def dispatch compileRaoEntity(Pattern pattern, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += pattern.asClass(it, isPreIndexingPhase);
+		pattern.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
 	def dispatch compileRaoEntity(Logic logic, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += logic.asClass(it, isPreIndexingPhase);
+		logic.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
 	def dispatch compileRaoEntity(Search search, JvmDeclaredType it, boolean isPreIndexingPhase,
 		ProxyBuilderHelpersStorage storage) {
-		members += search.asClass(it, isPreIndexingPhase);
+		search.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
 	def dispatch compileRaoEntity(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase,

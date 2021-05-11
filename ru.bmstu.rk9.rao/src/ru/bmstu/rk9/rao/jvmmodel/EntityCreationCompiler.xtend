@@ -12,12 +12,10 @@ import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver
 import org.eclipse.xtext.xbase.compiler.output.TreeAppendable
 
 class EntityCreationCompiler extends RaoEntityCompiler {
-	private final IBatchTypeResolver typeResolver
 
 	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
-		IJvmModelAssociations associations, IBatchTypeResolver typeResolver) {
+		IJvmModelAssociations associations) {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
-		this.typeResolver = typeResolver
 	}
 
 	def rememberAsField(EntityCreation entityCreation, JvmDeclaredType it, boolean isPreIndexingPhase,

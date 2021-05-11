@@ -74,23 +74,26 @@ public class ProxyBuilderHelper {
 	 * @return constructor that accepts and initializes fields for both given
 	 *         parameters and paramaters that this builder creates
 	 */
-	public JvmConstructor createConstructorForBuildedClass(JvmFormalParameter... givenParams) {
+	public JvmConstructor createConstructorForBuildedClass(boolean addSimulatorId, JvmFormalParameter... givenParams) {
 		JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceElement, p -> {
-//			if (isTargetClassStatic()) {
-			p.getParameters().add(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
-					jvmTypeReferenceBuilder, sourceElement));
-//			}
+			if (addSimulatorId) {
+				p.getParameters().add(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
+						jvmTypeReferenceBuilder, sourceElement));
+			}
 
 			for (JvmFormalParameter param : givenParams) {
 				p.getParameters().add(param);
 			}
-
 
 			jvmTypesBuilder.setBody(p, util.createConstructorBody(p));
 		});
 
 		constructorOfBuildedClass = createdCostructor;
 		return createdCostructor;
+	}
+
+	public JvmConstructor createConstructorForBuildedClass(JvmFormalParameter... givenParams) {
+		return createConstructorForBuildedClass(true, givenParams);
 	}
 
 	/**
@@ -137,15 +140,15 @@ public class ProxyBuilderHelper {
 	public JvmGenericType associateBuilderClass(
 			Procedure2<ProxyBuilderFeatures, ? super JvmGenericType> builderInitializer) {
 		if (buildedClass == null) {
-			throw new IllegalStateException("to assocate a builder class one must have a reference to the builded class");
+			throw new IllegalStateException(
+					"to assocate a builder class one must have a reference to the builded class");
 		}
 		this.builderClass = jvmTypesBuilder.toClass(sourceElement, getBuilderClassName(), jvmGenericType -> {
-
 			List<JvmMember> members = jvmGenericType.getMembers();
 
 			// default constructor consisting solely of simulatorid
-			members.add(CodeGenerationUtil.associateConstructor(jvmTypesBuilder, sourceElement, getBuilderClassConstructorParameters(),
-					null));
+			members.add(CodeGenerationUtil.associateConstructor(jvmTypesBuilder, sourceElement,
+					getBuilderClassConstructorParameters(), null));
 			members.add(SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder,
 					sourceElement));
 			members.add(SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder,
@@ -157,9 +160,10 @@ public class ProxyBuilderHelper {
 
 		return builderClass;
 	}
-	
+
 	public List<JvmFormalParameter> getBuilderClassConstructorParameters() {
-		return Arrays.asList(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
+		return Arrays.asList(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder,
+				sourceElement));
 	}
 
 	public void addCodeForParentScopeConstructor(StringConcatenationClient code) {
@@ -169,14 +173,14 @@ public class ProxyBuilderHelper {
 	public void addAdditionalParentScopeMembers(JvmMember... newMember) {
 		this.additionalMembersToParentScope.addAll(Arrays.asList(newMember));
 	}
-	
+
 	public void addAdditionalParentInitializingScopeMembers(JvmMember... newMember) {
 		this.additionalMembersToParentInitializingScope.addAll(Arrays.asList(newMember));
 	}
 
 	public List<JvmMember> getAdditionalParentScopeMembers() {
 		return this.additionalMembersToParentScope;
-	} 
+	}
 
 	public List<JvmMember> getAdditionalMembersToParentInitializingScope() {
 		return additionalMembersToParentInitializingScope;
@@ -205,7 +209,7 @@ public class ProxyBuilderHelper {
 
 		return ProxyBuilderHelperUtil.createLineOfBuilderFieldInitialization(builderVariableName, builderClassName);
 	}
-	
+
 	public boolean hasBuilderClass() {
 		return builderClass != null;
 	}
@@ -216,6 +220,7 @@ public class ProxyBuilderHelper {
 		collected.add(builderClass);
 		return collected;
 	}
+
 	/**
 	 * 
 	 * @param parentSourceObject should be a more common object (e.g. class of a
