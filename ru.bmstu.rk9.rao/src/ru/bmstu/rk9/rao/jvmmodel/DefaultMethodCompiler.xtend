@@ -7,47 +7,66 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import java.util.function.Supplier
 import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 
 class DefaultMethodCompiler extends RaoEntityCompiler {
-	def static asClass(DefaultMethod method, JvmTypesBuilder jvmTypesBuilder,
-		JvmTypeReferenceBuilder typeReferenceBuilder, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
 
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations) {
+		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
+	}
+
+	def rememberAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
 		switch (method.name) {
 			case DefaultMethodsHelper.GlobalMethodInfo.INIT.name:
-				return method.initAsClass(it, isPreIndexingPhase)
+				method.rememberInitAsClass(it, isPreIndexingPhase, storage)
 			case DefaultMethodsHelper.GlobalMethodInfo.TERMINATE_CONDITION.name:
-				return method.terminateAsClass(it, isPreIndexingPhase)
+				method.rememberTerminateAsClass(it, isPreIndexingPhase, storage)
 		}
 	}
 
-	def private static initAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		return method.toClass(method.name) [
-			superTypes += typeRef(Runnable)
-			visibility = JvmVisibility.PROTECTED
-			static = true
-			members += method.toMethod("run", typeRef(void)) [
-				visibility = JvmVisibility.PUBLIC
-				final = true
-				annotations += overrideAnnotation
-				body = method.body
+	// run method may contain entities that exist only within initialized scope - hence, must be put into the scope itself
+	def private rememberInitAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, method,
+			false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				method.toClass(method.name) [
+					superTypes += typeRef(Runnable)
+					visibility = JvmVisibility.PROTECTED
+					members += method.toMethod("run", typeRef(void)) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						annotations += overrideAnnotation
+						body = method.body
+					]
+				]
 			]
-		]
+		)
 	}
 
-	def private static terminateAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		return method.toClass(method.name) [
-			superTypes += typeRef(Supplier, {
-				typeRef(Boolean)
-			})
-			visibility = JvmVisibility.PROTECTED
-			static = true
-			members += method.toMethod("get", typeRef(Boolean)) [
-				visibility = JvmVisibility.PUBLIC
-				final = true
-				annotations += overrideAnnotation
-				body = method.body
-			]
-		]
+	def private rememberTerminateAsClass(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		val proxyBuilderHelper = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, method,
+			false)
+		storage.addNewProxyBuilder(proxyBuilderHelper)
+		proxyBuilderHelper.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
+				return method.toClass(method.name) [
+					superTypes += typeRef(Supplier, {
+						typeRef(Boolean)
+					})
+					visibility = JvmVisibility.PROTECTED
+					members += method.toMethod("get", typeRef(Boolean)) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						annotations += overrideAnnotation
+						body = method.body
+					]
+				]
+			])
 	}
 }

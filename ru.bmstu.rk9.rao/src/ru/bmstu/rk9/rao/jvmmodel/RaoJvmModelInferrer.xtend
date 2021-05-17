@@ -23,100 +23,181 @@ import ru.bmstu.rk9.rao.rao.EntityCreation
 import ru.bmstu.rk9.rao.rao.VarConst
 import ru.bmstu.rk9.rao.rao.DataSource
 
-import static extension ru.bmstu.rk9.rao.jvmmodel.DefaultMethodCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.EntityCreationCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.EnumCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.EventCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.FrameCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.FunctionCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.GeneratorCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.LogicCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.PatternCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.ResourceDeclarationCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.ResourceTypeCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.SearchCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.ResultCompiler.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.VarConstCompiler.*
 import static extension ru.bmstu.rk9.rao.naming.RaoNaming.*
+import static extension ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.*
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.xtext.common.types.JvmField
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import java.util.List
+import java.util.ArrayList
 
-class RaoJvmModelInferrer extends AbstractModelInferrer {
+class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderHelpersStorage {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
+	@Inject IJvmModelAssociations associations
+	
+// it is better to use extensions this way, because if they are used statically, the ide performance is poor
+	extension EntityCreationCompiler entityCreationCompiler;
+	extension VarConstCompiler varconstCompiler;
+	extension EnumCompiler enumCompiler;
+	extension FunctionCompiler functionCompiler;
+	extension DefaultMethodCompiler defaultMethodCompiler;
+	extension ResourceTypeCompiler resourceTypeCompiler;
+	extension GeneratorCompiler generatorCompiler;
+	extension EventCompiler eventCompiler;
+	extension PatternCompiler patternCompiler;
+	extension LogicCompiler logicCompiler;
+	extension SearchCompiler searchCompiler;
+	extension FrameCompiler frameCompiler;
+	extension ResourceDeclarationCompiler resourceDeclarationCompiler;
+	extension ResultCompiler dataSourceCompiler;
+	extension ModelCompiler modelCompiler;
 
-	def dispatch void infer(RaoModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [
-			for (entity : element.objects) {
-				entity.compileRaoEntity(it, isPreIndexingPhase)
-			}
-			
-			element.compileResourceInitialization(it, isPreIndexingPhase)
+	private final List<ProxyBuilderHelper> proxyBuilderHelpers;
+
+	def JvmField createSimIdField(EObject rao) {
+		return rao.toField("simId", typeRef(int)) [
+			final = true
 		]
 	}
 
-	def dispatch compileRaoEntity(EntityCreation entity, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	new() {
+		this.proxyBuilderHelpers = new ArrayList();
+	}
+
+	def init() {
+		this.entityCreationCompiler = new EntityCreationCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.varconstCompiler = new VarConstCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations)
+		this.enumCompiler = new EnumCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.functionCompiler = new FunctionCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.defaultMethodCompiler = new DefaultMethodCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.resourceTypeCompiler = new ResourceTypeCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.generatorCompiler = new GeneratorCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.eventCompiler = new EventCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.patternCompiler = new PatternCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.logicCompiler = new LogicCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.searchCompiler = new SearchCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.frameCompiler = new FrameCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.resourceDeclarationCompiler = new ResourceDeclarationCompiler(jvmTypesBuilder, _typeReferenceBuilder,
+			associations);
+		this.dataSourceCompiler = new ResultCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+		this.modelCompiler = new ModelCompiler(jvmTypesBuilder, _typeReferenceBuilder, associations);
+	}
+
+	def dispatch void infer(RaoModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
+		init();
+		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [ context |
+			RaoEntityCompiler.cleanCachedResourceTypes();
+
+			context.members +=
+				SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, _typeReferenceBuilder, element)
+			context.members +=
+				SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, _typeReferenceBuilder, element)
+
+			element.compileResourceInitialization(context, isPreIndexingPhase, this)
+
+			for (entity : element.objects) {
+				// may add or not add members to the context EObject
+				entity.compileRaoEntity(context, isPreIndexingPhase, this)
+			}
+			
+			// create constructor with initializations from all proxybuilders that were collected
+			context.members += modelCompiler.asMembersAndConstructor(element, context, isPreIndexingPhase, this)
+		]
+	}
+
+	def dispatch compileRaoEntity(EntityCreation entity, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
 		if (!isPreIndexingPhase && entity.constructor !== null)
-			members += entity.asField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+			entity.rememberAsField(it, isPreIndexingPhase, storage)
+	}
+
+	def dispatch compileRaoEntity(VarConst varconst, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		members += varconst.asClass(it, isPreIndexingPhase)
+	}
+
+	def dispatch compileRaoEntity(EnumDeclaration enumDeclaration, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		members += enumDeclaration.asType(it, isPreIndexingPhase)
+	}
+
+	def dispatch compileRaoEntity(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		function.rememberAsMethod(it, isPreIndexingPhase, this)
+	}
+
+	def dispatch compileRaoEntity(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		method.rememberAsClass(it, isPreIndexingPhase, this)
+	}
+
+	def dispatch compileRaoEntity(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		/*  that is required for the proper inflation of model constructor
+		 *  where fields of builders for each resource are initiated
+		 */
+		members += resourceType.asClass(it, isPreIndexingPhase, this)
 	}
 	
-	def dispatch compileRaoEntity(VarConst varconst, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += varconst.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def dispatch compileRaoEntity(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		members += generator.asClass(it, isPreIndexingPhase)
 	}
 
-	def dispatch compileRaoEntity(EnumDeclaration enumDeclaration, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += enumDeclaration.asType(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def dispatch compileRaoEntity(Event event, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		event.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase, this)
 	}
 
-	def dispatch compileRaoEntity(FunctionDeclaration function, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += function.asMethod(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def dispatch compileRaoEntity(Pattern pattern, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		pattern.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
-	def dispatch compileRaoEntity(DefaultMethod method, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += method.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def dispatch compileRaoEntity(Logic logic, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		logic.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
-	def dispatch compileRaoEntity(ResourceType resourceType, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += resourceType.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def dispatch compileRaoEntity(Search search, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		search.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
-	def dispatch compileRaoEntity(Generator generator, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += generator.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def dispatch compileRaoEntity(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		frame.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
-	def dispatch compileRaoEntity(Event event, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += event.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def dispatch compileRaoEntity(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		resource.asMembersForInitializingScope(it, isPreIndexingPhase, storage)
 	}
 
-	def dispatch compileRaoEntity(Pattern pattern, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += pattern.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+	def dispatch compileRaoEntity(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+
+		dataSource.rememberAsClass(it, isPreIndexingPhase, this);
 	}
 
-	def dispatch compileRaoEntity(Logic logic, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += logic.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
-	}
-
-	def dispatch compileRaoEntity(Search search, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += search.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
-	}
-
-	def dispatch compileRaoEntity(Frame frame, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += frame.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
-	}
-
-	def dispatch compileRaoEntity(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += resource.asGetter(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-		members += resource.asField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-	}
-
-	def dispatch compileRaoEntity(DataSource dataSource, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += dataSource.asClass(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
-	}
-
-	def dispatch compileRaoEntity(Result result, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	def dispatch compileRaoEntity(Result result, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
 		if (!isPreIndexingPhase && result.constructor !== null)
-			members += result.asField(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase);
+			result.rememberAsField(it, isPreIndexingPhase, this)
 	}
 
-	def compileResourceInitialization(RaoModel element, JvmDeclaredType it, boolean isPreIndexingPhase) {
-		members += element.asGlobalInitializationMethod(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
-		members += element.asGlobalInitializationState(jvmTypesBuilder, _typeReferenceBuilder, it, isPreIndexingPhase)
+	def compileResourceInitialization(RaoModel element, JvmDeclaredType it, boolean isPreIndexingPhase,
+		ProxyBuilderHelpersStorage storage) {
+		element.asGlobalInitializationMethod(it, isPreIndexingPhase, this)
+		element.rememberAsGlobalInitializationState(it, isPreIndexingPhase, this)
 	}
+
+	override addNewProxyBuilder(ProxyBuilderHelper newBuilder) {
+		proxyBuilderHelpers.add(newBuilder);
+	}
+
+	override getCollectedProxyBuilders() {
+		return proxyBuilderHelpers
+	}
+
 }

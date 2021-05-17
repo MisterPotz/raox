@@ -6,61 +6,82 @@ import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
+import java.util.ArrayList
+import org.eclipse.xtext.common.types.JvmFormalParameter
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
 
 class EventCompiler extends RaoEntityCompiler {
-	def static asClass(Event event, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
-		JvmDeclaredType it, boolean isPreIndexingPhase) {
-		initializeCurrent(jvmTypesBuilder, typeReferenceBuilder);
 
-		val eventQualifiedName = QualifiedName.create(qualifiedName, event.name)
+	new(JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder jvmTypeReferenceBuilder,
+		IJvmModelAssociations associations) {
+		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
+	}
 
-		return event.toClass(eventQualifiedName) [
-			static = true
-			superTypes += typeRef(ru.bmstu.rk9.rao.lib.event.Event)
+	def asClass(Event event, JvmTypesBuilder jvmTypesBuilder, JvmTypeReferenceBuilder typeReferenceBuilder,
+		JvmDeclaredType parentClass, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
 
-			members += event.toConstructor [
-				visibility = JvmVisibility.PRIVATE
-				parameters += event.toParameter("time", typeRef(double))
-				for (param : event.parameters)
-					parameters += param.toParameter(param.name, param.parameterType)
-				body = '''
-					«FOR param : parameters»this.«param.name» = «param.name»;
-					«ENDFOR»
-				'''
+		val eventQualifiedName = QualifiedName.create(parentClass.qualifiedName, event.name)
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, typeReferenceBuilder, associations, event, false);
+		storage.addNewProxyBuilder(pBH)
+
+		// event class should be used inside initializing scope
+		pBH.addAdditionalParentInitializingScopeMembers(apply [ extension b, extension tB |
+			return event.toClass(eventQualifiedName) [ eventClass |
+				eventClass.superTypes += typeRef(ru.bmstu.rk9.rao.lib.event.Event)
+
+				// partially delegate creation of features to ProxyBuilderHelper here
+				val parametersList = new ArrayList<JvmFormalParameter>();
+
+				parametersList.add(event.toParameter("time", typeRef(double)));
+				parametersList.addAll(event.parameters.map[it.toParameter(it.name, it.parameterType)])
+
+				eventClass.members += pBH.createConstructorForBuildedClass(parametersList);
+				eventClass.members += pBH.createFieldsForBuildedClass(parametersList);
+				eventClass.members += pBH.createNecessaryMembersForBuildedClass()
+				
+				// because we need to have a builder class that has method 'plan' which will look like a static one
+				// must create association for this wanted class
+				pBH.buildedClass = eventClass
+				val builderClass = pBH.associateBuilderClass [ builderFeatures, builderJvmGenericType |
+					builderJvmGenericType.members += event.toMethod("plan", typeRef(Void.TYPE)) [
+						visibility = JvmVisibility.PUBLIC
+						final = true
+						parameters += event.toParameter("time", typeRef(double))
+						for (param : event.parameters)
+							parameters += event.toParameter(param.name, param.parameterType)
+
+						body = '''
+							«typeRef(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS + "." + event.name)» event = «GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD».new «eventClass.simpleName»(«String.join(", ", builderFeatures.buildedClassParameters)»);
+							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
+						'''
+					]
+				]
+				
+				// adding field
+				pBH.addAdditionalParentInitializingScopeMembers(event.toField(event.name, typeRef(builderClass)) [
+					visibility = JvmVisibility.PUBLIC
+					final = true
+					initializer = '''new «typeRef(builderClass)»(«pBH.builderClassConstructorParameters.map[new NameableMember(it).name].join(", ")»)'''
+				])
+
+				eventClass.members += event.toMethod("getName", typeRef(String)) [
+					visibility = JvmVisibility.PUBLIC
+					final = true
+					annotations += overrideAnnotation()
+					body = '''
+						return "«eventQualifiedName»";
+					'''
+				]
+
+				eventClass.members += event.toMethod("execute", typeRef(void)) [
+					visibility = JvmVisibility.PROTECTED
+					final = true
+					annotations += overrideAnnotation()
+					body = event.body
+				]
+
 			]
-
-			for (param : event.parameters)
-				members += param.toField(param.name, param.parameterType)
-
-			members += event.toMethod("getName", typeRef(String)) [
-				visibility = JvmVisibility.PUBLIC
-				final = true
-				annotations += ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.overrideAnnotation()
-				body = '''
-					return "«eventQualifiedName»";
-				'''
-			]
-
-			members += event.toMethod("execute", typeRef(void)) [
-				visibility = JvmVisibility.PROTECTED
-				final = true
-				annotations += ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.overrideAnnotation()
-				body = event.body
-			]
-
-			members += event.toMethod("plan", typeRef(void)) [
-				visibility = JvmVisibility.PUBLIC
-				static = true
-				final = true
-				parameters += event.toParameter("time", typeRef(double))
-				for (param : event.parameters)
-					parameters += event.toParameter(param.name, param.parameterType)
-
-				body = '''
-					«event.name» event = new «event.name»(«createEnumerationString(parameters, [name])»);
-					ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
-				'''
-			]
-		]
+		])
 	}
 }
