@@ -26,7 +26,6 @@ class FunctionCompiler extends RaoEntityCompiler {
 					for (param : function.parameters)
 						parameters += function.toParameter(param.name, param.parameterType)
 					visibility = JvmVisibility.PUBLIC
-					static = true
 					final = true
 					body = function.body
 				]
