@@ -10,11 +10,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import ru.bmstu.rk9.rao.lib.varconst.VarConst;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
@@ -82,12 +77,14 @@ public class ExecutionJobProvider {
 
 				display.syncExec(() -> AnimationView.initialize(parser.getAnimationFrames()));
 
-				// TODO: generating varconsts list of varconst tuples
+				/**
+				 * TODO: maybe use static class methods and varconst array as a argument to generateCombinations method so 
+				 * generating looks like -> combinations = VarConstManager.generateCombinations(parser.getVarConst())
+				 * Now u need to use getCombinations method to get them
+				*/
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations();
-				// for getting a combinations mtrx use varconsts.getCombinations() method; 
-				
-				
+
 				try {
 					CurrentSimulator.initialize(parser.getSimulatorInitializationInfo());
 				} catch (Exception e) {

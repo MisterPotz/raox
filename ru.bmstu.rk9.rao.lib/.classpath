@@ -5,9 +5,4 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="output" path="bin"/>
-<!-- BELOW AUTO GEN -->
-<classpathentry exported="true" kind="lib" path="/home/thesaintbelial/.p2/pool/plugins/org.eclipse.xtext.xbase.lib_2.23.0.v20200831-0723.jar"/>
-<classpathentry exported="true" kind="lib" path="/home/thesaintbelial/.p2/pool/plugins/org.eclipse.xtext.xbase.lib.source_2.23.0.v20200831-0723.jar"/>
-<classpathentry exported="true" kind="lib" path="/home/thesaintbelial/.p2/pool/plugins/com.google.guava_27.1.0.v20190517-1946.jar"/>
-<classpathentry exported="true" kind="lib" path="/home/thesaintbelial/.p2/pool/plugins/com.google.guava_21.0.0.v20170206-1425.jar"/>
 </classpath>
