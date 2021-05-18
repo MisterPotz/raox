@@ -9,7 +9,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.eclipse.core.resources.IFile;
@@ -28,6 +30,7 @@ import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 import org.eclipse.xtext.xbase.typesystem.references.LightweightTypeReference;
 
+import ru.bmstu.rk9.rao.jvmmodel.GeneratedCodeContract;
 import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
 import ru.bmstu.rk9.rao.lib.database.Database.DataType;
 import ru.bmstu.rk9.rao.lib.dpt.AbstractDecisionPoint;
@@ -142,50 +145,75 @@ public class ModelInternalsParser {
 		}
 	}
 
-	/** collects methods/classes that can change static state of model when called (but this method doesn't yet launch them) 
-	 * also collects serialization data about all fields/methods/classes (like resource types)
-	*/
+	/**
+	 * collects methods/classes that can change static state of model when called
+	 * (but this method doesn't yet launch them) also collects serialization data
+	 * about all fields/methods/classes (like resource types)
+	 */
 	@SuppressWarnings("unchecked")
 	public final void parseModel(RaoModel model, String modelClassName)
 			throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException,
 			IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
 		Class<?> modelClass = Class.forName(modelClassName, false, classLoader);
-		// the static context of the model is available 
+		// the static context of the model is available
 
-		/** 27/03/2021 the following lines of code collect model declared methods that change static values of model class and interact with
-		 * CurrentSimulator
-		 */
-		try {
+		List<Class<?>> declaredClasses = Arrays.asList(modelClass.getDeclaredClasses());
+
+		// need to check for initialization scope first
+		Optional<Class<?>> foundInitializationScope = declaredClasses.stream().filter((Class<?> clazz) -> {
+			return clazz.getSimpleName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS);
+		}).findFirst();
+
+		if (foundInitializationScope.isEmpty()) {
+			// TODO: log message that initialization scope not found
+			return;
+		}
+		Class<?> initializationScope = foundInitializationScope.get();
+
+		List<Class<?>> initializationScopeDeclaredClasses = Arrays.asList(initializationScope.getDeclaredClasses());
+
+		Optional<Class<?>> initClass = initializationScopeDeclaredClasses.stream().filter((Class<?> clazz) -> {
+			return clazz.getSimpleName().equals("init");
+		}).findFirst();
+		
+		if (!initClass.isEmpty()) {
+			/**
+			 * 27/03/2021 the following lines of code collect model declared methods that
+			 * change static values of model class and interact with CurrentSimulator
+			 */
 			/**
 			 * init method of the model, when called the state is changed and first event is
 			 * planned
 			 */
-			Class<?> init = Class.forName(modelClassName + "$init", false, classLoader);
-			Constructor<?> initConstructor = init.getDeclaredConstructor();
+			Constructor<?> initConstructor = initClass.get().getDeclaredConstructor();
 			initConstructor.setAccessible(true);
+			// TODO put there provider that accepts model class to get the init
 			simulatorInitializationInfo.initList.add((Runnable) initConstructor.newInstance());
-		} catch (ClassNotFoundException classException) {
 		}
 
-		try {
+		Optional<Class<?>> terminateClass = initializationScopeDeclaredClasses.stream().filter((Class<?> clazz) -> {
+			return clazz.getSimpleName().equals("terminateCondition");
+		}).findFirst();
+		
+		if (!terminateClass.isEmpty()) {
 			/** when called returns boolean, if true - must terminate */
-			Class<?> terminate = Class.forName(modelClassName + "$terminateCondition", false, classLoader);
-			Constructor<?> terminateConstructor = terminate.getDeclaredConstructor();
+			Constructor<?> terminateConstructor = terminateClass.get().getDeclaredConstructor();
 			terminateConstructor.setAccessible(true);
 			simulatorInitializationInfo.terminateConditions.add((Supplier<Boolean>) terminateConstructor.newInstance());
-		} catch (ClassNotFoundException classException) {
 		}
 
-		try {
+		
+		Optional<Class<?>> resourcePreinitializerClass = initializationScopeDeclaredClasses.stream().filter((Class<?> clazz) -> {
+			return clazz.getSimpleName().equals("resourcesPreinitializer");
+		}).findFirst();
+		
+		if (!resourcePreinitializerClass.isEmpty()) {
 			/** assign initial values to resources */
-			Class<?> resourcePreinitializer = Class.forName(modelClassName + "$resourcesPreinitializer", false,
-					classLoader);
-			Constructor<?> resourcePreinitializerConstructor = resourcePreinitializer.getDeclaredConstructor();
+			Constructor<?> resourcePreinitializerConstructor = resourcePreinitializerClass.get().getDeclaredConstructor();
 			resourcePreinitializerConstructor.setAccessible(true);
 			simulatorPreinitializationInfo.resourcePreinitializers
 					.add((Runnable) resourcePreinitializerConstructor.newInstance());
-		} catch (ClassNotFoundException classException) {
 		}
 
 		EList<RaoEntity> entities = model.getObjects();
@@ -242,12 +270,12 @@ public class ModelInternalsParser {
 				PatternType type = ((ru.bmstu.rk9.rao.rao.Pattern) entity).getType();
 
 				switch (type) {
-				case OPERATION:
-					typeString = ModelStructureConstants.OPERATION;
-					break;
-				case RULE:
-					typeString = ModelStructureConstants.RULE;
-					break;
+					case OPERATION:
+						typeString = ModelStructureConstants.OPERATION;
+						break;
+					case RULE:
+						typeString = ModelStructureConstants.RULE;
+						break;
 				}
 
 				JSONArray relevantResources = new JSONArray();
@@ -301,8 +329,9 @@ public class ModelInternalsParser {
 				continue;
 			}
 
-			/** named resource is an instance of resource type
-			 * find declared instances of each resource type and save them to their jsons (json of resource types)
+			/**
+			 * named resource is an instance of resource type find declared instances of
+			 * each resource type and save them to their jsons (json of resource types)
 			 */
 			if (entity instanceof ru.bmstu.rk9.rao.rao.ResourceDeclaration) {
 				XExpression constructor = ((ru.bmstu.rk9.rao.rao.ResourceDeclaration) entity).getConstructor();
@@ -371,7 +400,7 @@ public class ModelInternalsParser {
 				resultFields.add(field);
 		}
 
-		/** 27/03/2021 ??? not sure where it is used  */
+		/** 27/03/2021 ??? not sure where it is used */
 		for (Method method : modelClass.getDeclaredMethods()) {
 			if (!method.getReturnType().equals(Boolean.TYPE))
 				continue;
