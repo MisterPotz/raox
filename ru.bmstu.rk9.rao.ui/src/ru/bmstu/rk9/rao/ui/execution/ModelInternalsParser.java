@@ -213,7 +213,7 @@ public class ModelInternalsParser {
 		}, (Class<?> clazz) -> {
 			/** when called returns boolean, if true - must terminate */
 			try {
-				Constructor<?>  terminateConstructor = clazz.getDeclaredConstructor();
+				Constructor<?> terminateConstructor = clazz.getDeclaredConstructor();
 				terminateConstructor.setAccessible(true);
 				simulatorInitializationInfo.terminateConditions
 						.add((Supplier<Boolean>) terminateConstructor.newInstance());
@@ -291,12 +291,12 @@ public class ModelInternalsParser {
 				PatternType type = ((ru.bmstu.rk9.rao.rao.Pattern) entity).getType();
 
 				switch (type) {
-					case OPERATION:
-						typeString = ModelStructureConstants.OPERATION;
-						break;
-					case RULE:
-						typeString = ModelStructureConstants.RULE;
-						break;
+				case OPERATION:
+					typeString = ModelStructureConstants.OPERATION;
+					break;
+				case RULE:
+					typeString = ModelStructureConstants.RULE;
+					break;
 				}
 
 				JSONArray relevantResources = new JSONArray();
@@ -384,17 +384,23 @@ public class ModelInternalsParser {
 			}
 		}
 
+		// going through classes that are declared at model class level
 		for (Class<?> nestedModelClass : modelClass.getDeclaredClasses()) {
 			if (ComparableResource.class.isAssignableFrom(nestedModelClass)) {
 				simulatorPreinitializationInfo.resourceClasses.add(nestedModelClass);
 				continue;
 			}
 
+
+		}
+
+		// going through classes that are declared at initialization scope nested class in model
+		for (Class<?> nestedModelClass : initializationScope.getDeclaredClasses()) {
+			// TODO make sure that the info that this class is not static is marked
 			if (Logic.class.isAssignableFrom(nestedModelClass)) {
 				decisionPointClasses.add(nestedModelClass);
 				continue;
 			}
-
 			if (Search.class.isAssignableFrom(nestedModelClass)) {
 				decisionPointClasses.add(nestedModelClass);
 				continue;
@@ -416,7 +422,7 @@ public class ModelInternalsParser {
 		}
 
 		/** look only for abstract results */
-		for (Field field : modelClass.getDeclaredFields()) {
+		for (Field field : initializationScope.getDeclaredFields()) {
 			if (AbstractResult.class.isAssignableFrom(field.getType()))
 				resultFields.add(field);
 		}
@@ -429,15 +435,12 @@ public class ModelInternalsParser {
 			if (method.getParameterCount() > 0)
 				continue;
 
-			Supplier<Boolean> supplier = new Supplier<Boolean>() {
-				@Override
-				public Boolean get() {
-					try {
-						return (boolean) method.invoke(null);
-					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-						e.printStackTrace();
-						throw new RaoLibException("Internal error invoking function " + method.getName());
-					}
+			Supplier<Boolean> supplier = () -> {
+				try {
+					return (boolean) method.invoke(null);
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+					e.printStackTrace();
+					throw new RaoLibException("Internal error invoking function " + method.getName());
 				}
 			};
 			modelContentsInfo.booleanFunctions.put(NamingHelper.createFullNameForMember(method), supplier);
