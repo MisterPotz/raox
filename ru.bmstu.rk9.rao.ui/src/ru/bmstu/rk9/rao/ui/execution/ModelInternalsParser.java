@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.eclipse.core.resources.IFile;
@@ -145,6 +146,25 @@ public class ModelInternalsParser {
 		}
 	}
 
+	/* Nullable */
+	private Class<?> findClassAndDo(List<Class<?>> classes, Predicate<Class<?>> predicate, Action action) {
+		Optional<Class<?>> optionalClass = classes.stream().filter((Class<?> clazz) -> {
+			return clazz.getSimpleName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS);
+		}).findFirst();
+
+		if (!optionalClass.isEmpty()) {
+			if (action != null) {
+				action.action(optionalClass.get());
+			}
+			return optionalClass.get();
+		}
+		return null;
+	}
+
+	private interface Action {
+		void action(Class<?> clazz);
+	}
+
 	/**
 	 * collects methods/classes that can change static state of model when called
 	 * (but this method doesn't yet launch them) also collects serialization data
@@ -159,25 +179,16 @@ public class ModelInternalsParser {
 		// the static context of the model is available
 
 		List<Class<?>> declaredClasses = Arrays.asList(modelClass.getDeclaredClasses());
-
 		// need to check for initialization scope first
-		Optional<Class<?>> foundInitializationScope = declaredClasses.stream().filter((Class<?> clazz) -> {
+		Class<?> initializationScope = findClassAndDo(declaredClasses, (Class<?> clazz) -> {
 			return clazz.getSimpleName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS);
-		}).findFirst();
-
-		if (foundInitializationScope.isEmpty()) {
-			// TODO: log message that initialization scope not found
-			return;
-		}
-		Class<?> initializationScope = foundInitializationScope.get();
+		}, null);
 
 		List<Class<?>> initializationScopeDeclaredClasses = Arrays.asList(initializationScope.getDeclaredClasses());
 
-		Optional<Class<?>> initClass = initializationScopeDeclaredClasses.stream().filter((Class<?> clazz) -> {
+		findClassAndDo(initializationScopeDeclaredClasses, (Class<?> clazz) -> {
 			return clazz.getSimpleName().equals("init");
-		}).findFirst();
-		
-		if (!initClass.isEmpty()) {
+		}, (Class<?> clazz) -> {
 			/**
 			 * 27/03/2021 the following lines of code collect model declared methods that
 			 * change static values of model class and interact with CurrentSimulator
@@ -186,35 +197,45 @@ public class ModelInternalsParser {
 			 * init method of the model, when called the state is changed and first event is
 			 * planned
 			 */
-			Constructor<?> initConstructor = initClass.get().getDeclaredConstructor();
-			initConstructor.setAccessible(true);
-			// TODO put there provider that accepts model class to get the init
-			simulatorInitializationInfo.initList.add((Runnable) initConstructor.newInstance());
-		}
+			try {
+				Constructor<?> initConstructor = clazz.getDeclaredConstructor();
+				initConstructor.setAccessible(true);
+				// TODO put there provider that accepts model class to get the init
+				simulatorInitializationInfo.initList.add((Runnable) initConstructor.newInstance());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
 
-		Optional<Class<?>> terminateClass = initializationScopeDeclaredClasses.stream().filter((Class<?> clazz) -> {
+		findClassAndDo(initializationScopeDeclaredClasses, (Class<?> clazz) -> {
 			return clazz.getSimpleName().equals("terminateCondition");
-		}).findFirst();
-		
-		if (!terminateClass.isEmpty()) {
+		}, (Class<?> clazz) -> {
 			/** when called returns boolean, if true - must terminate */
-			Constructor<?> terminateConstructor = terminateClass.get().getDeclaredConstructor();
-			terminateConstructor.setAccessible(true);
-			simulatorInitializationInfo.terminateConditions.add((Supplier<Boolean>) terminateConstructor.newInstance());
-		}
+			try {
+				Constructor<?>  terminateConstructor = clazz.getDeclaredConstructor();
+				terminateConstructor.setAccessible(true);
+				simulatorInitializationInfo.terminateConditions
+						.add((Supplier<Boolean>) terminateConstructor.newInstance());
+			} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
+					| IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		});
 
-		
-		Optional<Class<?>> resourcePreinitializerClass = initializationScopeDeclaredClasses.stream().filter((Class<?> clazz) -> {
+		findClassAndDo(initializationScopeDeclaredClasses, (Class<?> clazz) -> {
 			return clazz.getSimpleName().equals("resourcesPreinitializer");
-		}).findFirst();
-		
-		if (!resourcePreinitializerClass.isEmpty()) {
-			/** assign initial values to resources */
-			Constructor<?> resourcePreinitializerConstructor = resourcePreinitializerClass.get().getDeclaredConstructor();
-			resourcePreinitializerConstructor.setAccessible(true);
-			simulatorPreinitializationInfo.resourcePreinitializers
-					.add((Runnable) resourcePreinitializerConstructor.newInstance());
-		}
+		}, (Class<?> clazz) -> {
+			try {
+				Constructor<?> resourcePreinitializerConstructor = clazz.getDeclaredConstructor();
+				resourcePreinitializerConstructor.setAccessible(true);
+				simulatorPreinitializationInfo.resourcePreinitializers
+						.add((Runnable) resourcePreinitializerConstructor.newInstance());
+			} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
+					| IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		});
 
 		EList<RaoEntity> entities = model.getObjects();
 
