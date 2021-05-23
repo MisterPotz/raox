@@ -1,7 +1,12 @@
 package ru.bmstu.rk9.rao.lib.simulator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import com.google.common.collect.Streams;
 
 import ru.bmstu.rk9.rao.lib.json.JSONArray;
 import ru.bmstu.rk9.rao.lib.json.JSONObject;
@@ -19,8 +24,13 @@ public class SimulatorPreinitializationInfo {
 
 	public final JSONObject modelStructure;
 	public final List<Class<?>> resourceClasses = new ArrayList<>();
-	public final List<Runnable> resourcePreinitializers = new ArrayList<>();
-
+	
+	public Class<?> modelClass;
+	public Class<?> initializationScopeClass;
+	
+//	public final List<Runnable> resourcePreinitializers = new ArrayList<>();
+	public final List<Function<Object, Runnable>> resourcePreinitializerCreators = new ArrayList<>();
+	
 	public static final JSONObject generateModelStructureStub() {
 		return new JSONObject().put(ModelStructureConstants.NAME, "").put(ModelStructureConstants.NUMBER_OF_MODELS, 1)
 				.put(ModelStructureConstants.RESOURCE_TYPES, new JSONArray())
@@ -30,4 +40,6 @@ public class SimulatorPreinitializationInfo {
 				.put(ModelStructureConstants.LOGICS, new JSONArray())
 				.put(ModelStructureConstants.SEARCHES, new JSONArray());
 	}
+	
+
 }

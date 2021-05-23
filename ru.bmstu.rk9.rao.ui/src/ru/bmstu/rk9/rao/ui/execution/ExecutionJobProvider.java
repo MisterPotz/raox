@@ -1,5 +1,9 @@
 package ru.bmstu.rk9.rao.ui.execution;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -10,9 +14,11 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 
+import ru.bmstu.rk9.rao.jvmmodel.GeneratedCodeContract;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.export.ExportTraceHandler;
@@ -58,10 +64,34 @@ public class ExecutionJobProvider {
 				SerializationConfigView.initNames();
 
 				CurrentSimulator.set(new Simulator());
+				SimulatorPreinitializationInfo preinitializationInfo = parser.getSimulatorPreinitializationInfo();
+				Object modelInstance;
+				
+				try {
+					modelInstance = preinitializationInfo.modelClass.getDeclaredConstructor().newInstance();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e1);
+				}
+				
+				Object initializationScopeInstance;
+				try {
+					initializationScopeInstance = Arrays.asList(preinitializationInfo.modelClass.getDeclaredFields())
+							.stream().filter(field -> {
+								return field.getName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD);
+							}).findFirst().get().get(modelInstance);
+				} catch (IllegalArgumentException | IllegalAccessException | SecurityException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e1);
+				}
 
 				try {
-					/** change state of static context of model via running resourcePreinitializers */
-					CurrentSimulator.preinitialize(parser.getSimulatorPreinitializationInfo());
+					/**
+					 * change state of static context of model via running resourcePreinitializers
+					 */
+					CurrentSimulator.preinitialize(preinitializationInfo);
 				} catch (Exception e) {
 					e.printStackTrace();
 					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e);
@@ -76,7 +106,10 @@ public class ExecutionJobProvider {
 					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Model postprocessing failed", e);
 				}
 
-				display.syncExec(() -> AnimationView.initialize(parser.getAnimationFrames()));
+				display.syncExec(
+						() -> AnimationView.initialize(parser.getAnimationFrames().stream().map(frameProvider -> {
+							return frameProvider.apply(initializationScopeInstance);
+						}).collect(Collectors.toList())));
 
 				try {
 					/** launch init#run */
