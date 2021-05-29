@@ -56,6 +56,9 @@ import ru.bmstu.rk9.rao.rao.RaoEntity;
 import ru.bmstu.rk9.rao.rao.RaoModel;
 import ru.bmstu.rk9.rao.rao.RelevantResource;
 import ru.bmstu.rk9.rao.rao.RelevantResourceTuple;
+import ru.bmstu.rk9.rao.ui.gef.process.BlockConverter;
+import ru.bmstu.rk9.rao.ui.gef.process.ProcessEditor;
+import ru.bmstu.rk9.rao.ui.gef.process.model.ProcessModelNode;
 
 @SuppressWarnings("restriction")
 public class ModelInternalsParser {
@@ -65,8 +68,6 @@ public class ModelInternalsParser {
 
 	private final List<Class<?>> decisionPointClasses = new ArrayList<>();
 
-
-	
 	private final ModelContentsInfo modelContentsInfo = new ModelContentsInfo();
 
 	private final List<Class<?>> animationClasses = new ArrayList<>();
@@ -180,7 +181,8 @@ public class ModelInternalsParser {
 
 		this.simulatorCommonModelInfo.setModelClass(modelClass);
 		this.simulatorPreinitializationInfo.setSimulatorCommonModelInfo(simulatorCommonModelInfo);
-		
+		this.simulatorInitializationInfo.setSimulatorCommonModelInfo(simulatorCommonModelInfo);	
+
 		// the static context of the model is available
 
 		List<Class<?>> declaredClasses = Arrays.asList(modelClass.getDeclaredClasses());
@@ -188,59 +190,6 @@ public class ModelInternalsParser {
 		Class<?> initializationScope = findClassAndDo(declaredClasses, (Class<?> clazz) -> {
 			return clazz.getSimpleName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS);
 		}, null);
-
-		List<Class<?>> initializationScopeDeclaredClasses = Arrays.asList(initializationScope.getDeclaredClasses());
-
-
-
-		findClassAndDo(initializationScopeDeclaredClasses, (Class<?> clazz) -> {
-			return clazz.getSimpleName().equals("init");
-		}, (Class<?> clazz) -> {
-			/**
-			 * 27/03/2021 the following lines of code collect model declared methods that
-			 * change static values of model class and interact with CurrentSimulator
-			 */
-			/**
-			 * init method of the model, when called the state is changed and first event is
-			 * planned
-			 */
-			try {
-				Constructor<?> initConstructor = clazz.getDeclaredConstructor(initializationScope);
-				initConstructor.setAccessible(true);
-				// TODO put there provider that accepts model class to get the init
-				simulatorInitializationInfo.initList.add((Object initializationScopeInstance) -> {
-					try {
-						return (Runnable) initConstructor.newInstance(initializationScopeInstance);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					return null;
-				});
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
-
-		findClassAndDo(initializationScopeDeclaredClasses, (Class<?> clazz) -> {
-			return clazz.getSimpleName().equals("terminateCondition");
-		}, (Class<?> clazz) -> {
-			/** when called returns boolean, if true - must terminate */
-			try {
-				Constructor<?> terminateConstructor = clazz.getDeclaredConstructor(initializationScope);
-				terminateConstructor.setAccessible(true);
-				simulatorInitializationInfo.terminateConditions.add((Object initializationScopeInstance) -> {
-					try {
-						return (Supplier<Boolean>) terminateConstructor.newInstance(initializationScopeInstance);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					return null;
-				});
-			} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
-				e.printStackTrace();
-			}
-		});
 
 		EList<RaoEntity> entities = model.getObjects();
 
@@ -389,15 +338,6 @@ public class ModelInternalsParser {
 			}
 		}
 
-		// going through classes that are declared at model class level
-		for (Class<?> nestedModelClass : modelClass.getDeclaredClasses()) {
-			if (ComparableResource.class.isAssignableFrom(nestedModelClass)) {
-				simulatorPreinitializationInfo.resourceClasses.add(nestedModelClass);
-				continue;
-			}
-
-		}
-
 		// going through classes that are declared at initialization scope nested class
 		// in model
 		for (Class<?> nestedModelClass : initializationScope.getDeclaredClasses()) {
@@ -434,71 +374,33 @@ public class ModelInternalsParser {
 		}
 
 		/** 27/03/2021 ??? not sure where it is used */
-//		for (Method method : modelClass.getDeclaredMethods()) {
-//			if (!method.getReturnType().equals(Boolean.TYPE))
-//				continue;
-//
-//			if (method.getParameterCount() > 0)
-//				continue;
-//
-//			Supplier<Boolean> supplier = () -> {
-//				try {
-//					return (boolean) method.invoke(null);
-//				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-//					e.printStackTrace();
-//					throw new RaoLibException("Internal error invoking function " + method.getName());
-//				}
-//			};
-//			modelContentsInfo.booleanFunctions.put(NamingHelper.createFullNameForMember(method), supplier);
-//		}
+		// for (Method method : modelClass.getDeclaredMethods()) {
+		// if (!method.getReturnType().equals(Boolean.TYPE))
+		// continue;
+		//
+		// if (method.getParameterCount() > 0)
+		// continue;
+		//
+		// Supplier<Boolean> supplier = () -> {
+		// try {
+		// return (boolean) method.invoke(null);
+		// } catch (IllegalAccessException | IllegalArgumentException |
+		// InvocationTargetException e) {
+		// e.printStackTrace();
+		// throw new RaoLibException("Internal error invoking function " +
+		// method.getName());
+		// }
+		// };
+		// modelContentsInfo.booleanFunctions.put(NamingHelper.createFullNameForMember(method),
+		// supplier);
+		// }
 	}
 
 	public final void postprocess() throws IllegalArgumentException, IllegalAccessException, InstantiationException,
 			InvocationTargetException, ClassNotFoundException, IOException, CoreException {
-		for (Field resultField : resultFields) {
-			resultField.setAccessible(true);
-			Function<Object, AbstractResult<?>> result = (Object initializationScopeClass) -> {
-				AbstractResult<?> newResult;
-				try {
-					newResult = (AbstractResult<?>) resultField.get(initializationScopeClass);
-					String name = NamingHelper.createFullNameForMember(resultField);
-					newResult.setName(name);
-					return newResult;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				return null; 
-			};
-
-	
-			simulatorInitializationInfo.results.add(result);
-		}
-
-		for (Class<?> decisionPointClass : decisionPointClasses) {
-			Function<Object, AbstractDecisionPoint> dpt = (Object initializationScopeClass) -> {
-				try {
-					Constructor<?> constructor = decisionPointClass.getConstructor(initializationScopeClass.getClass());
-					AbstractDecisionPoint decisionPoint = (AbstractDecisionPoint) constructor.newInstance(initializationScopeClass);
-					return decisionPoint;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				return null; 
-			};
-			simulatorInitializationInfo.decisionPoints.add(dpt);
-		}
-
-		// TODO this is connected to blocks functionality, let's check for it later
-		// for (IResource processFile : BuildUtil.getAllFilesInProject(project, "proc"))
-		// {
-		// ProcessModelNode model = ProcessEditor.readModelFromFile((IFile)
-		// processFile);
-		// if (model == null)
-		// model = new ProcessModelNode();
-		// List<Block> blocks = BlockConverter.convertModelToBlocks(model,
-		// modelContentsInfo);
-		// simulatorInitializationInfo.processBlocks.addAll(blocks);
-		// }
+		simulatorInitializationInfo.setResultFields(resultFields);
+		simulatorInitializationInfo.setDecisionPointClasses(decisionPointClasses);
+		// setUpBlocks();
 
 		for (Class<?> animationClass : animationClasses) {
 			Function<Object, AnimationFrame> frame = (Object initializationScopeClass) -> {
@@ -509,11 +411,23 @@ public class ModelInternalsParser {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				return null; 
+				return null;
 			};
 			animationFrames.add(frame);
 		}
 	}
+
+	private void setUpBlocks() throws ClassNotFoundException, IOException, CoreException {
+		// TODO this is connected to blocks functionality, let's check for it later
+		for (IResource processFile : BuildUtil.getAllFilesInProject(project, "proc")) {
+			ProcessModelNode model = ProcessEditor.readModelFromFile((IFile) processFile);
+			if (model == null)
+				model = new ProcessModelNode();
+			List<Block> blocks = BlockConverter.convertModelToBlocks(model, modelContentsInfo);
+			simulatorInitializationInfo.getProcessBlocks().addAll(blocks);
+		}
+	}
+
 	public final List<Function<Object, AnimationFrame>> getAnimationFrames() {
 
 		return animationFrames;

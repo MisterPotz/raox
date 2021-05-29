@@ -1,5 +1,7 @@
 package ru.bmstu.rk9.rao.lib.simulator;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -23,7 +25,7 @@ public class Simulator implements ISimulator {
 
 	private void assertHasModel() {
 		if (modelInstance == null) {
-			throw new IllegalStateException("model was not passed to simulator before calling the methods that require the model presence within a simulator");
+			throw new IllegalStateException("model was not passed to a simulator before calling the methods that require the model presence within the simulator");
 		}
 	}
 
@@ -35,9 +37,14 @@ public class Simulator implements ISimulator {
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
 		logger = new Logger();
 
-		
-		for (Runnable resourcePreinitializer : preinitializationInfo.resourcePreinitializers)
-			resourcePreinitializer.run();
+		Object initializationScopeField = ReflectionUtils.safeGet(Object.class, preinitializationInfo.getSimulatorCommonModelInfo().getInitializationScopeField(), getModelInstance());
+
+		for (Constructor<?> resourcePreinitializer : preinitializationInfo.resourcePreinitializerCreators) {
+			Runnable runnableInstance = ReflectionUtils.safeNewInstance(Runnable.class, resourcePreinitializer, initializationScopeField);
+			if (runnableInstance != null) {
+				runnableInstance.run();
+			}		
+		}
 	}
 
 	@Override

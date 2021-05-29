@@ -71,16 +71,19 @@ public class ExecutionJobProvider {
 				Object modelInstance;
 				
 				try {
-					modelInstance = preinitializationInfo.modelClass.getDeclaredConstructor().newInstance();
+					modelInstance = preinitializationInfo
+							.getSimulatorCommonModelInfo()
+							.getModelClass()
+							.getDeclaredConstructor()
+							.newInstance();
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e1);
 				}
 				
 				Object initializationScopeInstance;
 				try {
-					initializationScopeInstance = Arrays.asList(preinitializationInfo.modelClass.getDeclaredFields())
+					initializationScopeInstance = Arrays.asList(modelInstance.getClass().getDeclaredFields())
 							.stream().filter(field -> {
 								return field.getName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD);
 							})

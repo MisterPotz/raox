@@ -1,35 +1,31 @@
 package ru.bmstu.rk9.rao.lib.simulator;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.;
 import java.util.stream.Collectors;
 import ru.bmstu.rk9.rao.lib.json.JSONArray;
 import ru.bmstu.rk9.rao.lib.json.JSONObject;
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
 import ru.bmstu.rk9.rao.lib.process.Transact;
+import ru.bmstu.rk9.rao.lib.resource.ComparableResource;
 
 /**
  * Available RaoEntities in the class of user model
  */
 public class SimulatorPreinitializationInfo {
+	public final JSONObject modelStructure;
+	public final List<Class<?>> resourceClasses = new ArrayList<>();
+
+	private SimulatorCommonModelInfo simulatorCommonModelInfo;
+	
+	public final List<Constructor<?>> resourcePreinitializerCreators = new ArrayList<>();
+
 	public SimulatorPreinitializationInfo() {
 		modelStructure = generateModelStructureStub();
 		resourceClasses.add(Transact.class);
 	}
-
-	public final JSONObject modelStructure;
-	public final List<Class<?>> resourceClasses = new ArrayList<>();
-	
-	private SimulatorCommonModelInfo simulatorCommonModelInfo;
-	
-//	public final List<Runnable> resourcePreinitializers = new ArrayList<>();
-	public List<Constructor<?>> resourcePreinitializerCreators;
 	
 	public static final JSONObject generateModelStructureStub() {
 		return new JSONObject().put(ModelStructureConstants.NAME, "").put(ModelStructureConstants.NUMBER_OF_MODELS, 1)
@@ -43,23 +39,21 @@ public class SimulatorPreinitializationInfo {
 	
 	public void setSimulatorCommonModelInfo(SimulatorCommonModelInfo info) {
 		this.simulatorCommonModelInfo = info;
-		this.resourcePreinitializerCreators = findResourcePreinitializerClasses(info.getInitializationScopeClass());
+		this.resourcePreinitializerCreators.clear();
+		this.resourcePreinitializerCreators.addAll(findResourcePreinitializerClasses());
+		this.resourceClasses.clear();
+		this.resourceClasses.addAll(findResourceClasses());
 	}
 
-	private List<Constructor<?>> findResourcePreinitializerClasses(Class<?> initializationScopeClass) {
-		return Arrays.asList(initializationScopeClass.getDeclaredClasses())
-		.stream()
-		.filter(clazz -> clazz.getSimpleName().equals("resourcesPreinitializer"))
-		.map(clazz -> {
-			try {
-				return clazz.getDeclaredConstructor(initializationScopeClass);
-			} catch (NoSuchMethodException | SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return null;
-		})
-		.filter(Objects::nonNull)
-		.collect(Collectors.toList());
+	public SimulatorCommonModelInfo getSimulatorCommonModelInfo() {
+		return simulatorCommonModelInfo;
+	}
+
+	private List<Constructor<?>> findResourcePreinitializerClasses() {
+		return StreamUtils.findConstructorsForClasses(simulatorCommonModelInfo.getInitializationScopeClass(), clazz -> clazz.getSimpleName().equals("resourcesPreinitializer"));
+	}
+
+	private List<Class<?>> findResourceClasses() {
+		return Arrays.asList(simulatorCommonModelInfo.getModelClass().getDeclaredClasses()).stream().filter(clazz -> ComparableResource.class.isAssignableFrom(clazz)).collect(Collectors.toList());
 	}
 }

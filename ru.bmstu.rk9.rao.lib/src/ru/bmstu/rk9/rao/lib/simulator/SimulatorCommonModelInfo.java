@@ -1,18 +1,9 @@
 package ru.bmstu.rk9.rao.lib.simulator;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
 import ru.bmstu.rk9.rao.lib.contract.RaoGenerationContract;
-import ru.bmstu.rk9.rao.lib.json.JSONArray;
-import ru.bmstu.rk9.rao.lib.json.JSONObject;
-import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
-import ru.bmstu.rk9.rao.lib.process.Transact;
 
 
 public class SimulatorCommonModelInfo {
