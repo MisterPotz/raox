@@ -50,21 +50,23 @@ import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorInitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorCommonModelInfo;
 import ru.bmstu.rk9.rao.rao.PatternType;
 import ru.bmstu.rk9.rao.rao.RaoEntity;
 import ru.bmstu.rk9.rao.rao.RaoModel;
 import ru.bmstu.rk9.rao.rao.RelevantResource;
 import ru.bmstu.rk9.rao.rao.RelevantResourceTuple;
-import ru.bmstu.rk9.rao.ui.gef.process.BlockConverter;
-import ru.bmstu.rk9.rao.ui.gef.process.ProcessEditor;
-import ru.bmstu.rk9.rao.ui.gef.process.model.ProcessModelNode;
 
 @SuppressWarnings("restriction")
 public class ModelInternalsParser {
 	private final SimulatorPreinitializationInfo simulatorPreinitializationInfo = new SimulatorPreinitializationInfo();
 	private final SimulatorInitializationInfo simulatorInitializationInfo = new SimulatorInitializationInfo();
+	private final SimulatorCommonModelInfo simulatorCommonModelInfo = new SimulatorCommonModelInfo();
+
 	private final List<Class<?>> decisionPointClasses = new ArrayList<>();
 
+
+	
 	private final ModelContentsInfo modelContentsInfo = new ModelContentsInfo();
 
 	private final List<Class<?>> animationClasses = new ArrayList<>();
@@ -175,8 +177,10 @@ public class ModelInternalsParser {
 			IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
 		Class<?> modelClass = Class.forName(modelClassName, false, classLoader);
-		simulatorPreinitializationInfo.modelClass = modelClass;
 
+		this.simulatorCommonModelInfo.setModelClass(modelClass);
+		this.simulatorPreinitializationInfo.setSimulatorCommonModelInfo(simulatorCommonModelInfo);
+		
 		// the static context of the model is available
 
 		List<Class<?>> declaredClasses = Arrays.asList(modelClass.getDeclaredClasses());
@@ -186,6 +190,8 @@ public class ModelInternalsParser {
 		}, null);
 
 		List<Class<?>> initializationScopeDeclaredClasses = Arrays.asList(initializationScope.getDeclaredClasses());
+
+
 
 		findClassAndDo(initializationScopeDeclaredClasses, (Class<?> clazz) -> {
 			return clazz.getSimpleName().equals("init");
@@ -231,27 +237,6 @@ public class ModelInternalsParser {
 					}
 					return null;
 				});
-			} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
-				e.printStackTrace();
-			}
-		});
-
-		findClassAndDo(initializationScopeDeclaredClasses, (Class<?> clazz) -> {
-			return clazz.getSimpleName().equals("resourcesPreinitializer");
-		}, (Class<?> clazz) -> {
-			try {
-				Constructor<?> resourcePreinitializerConstructor = clazz.getDeclaredConstructor(initializationScope);
-				resourcePreinitializerConstructor.setAccessible(true);
-				simulatorPreinitializationInfo.resourcePreinitializerCreators
-						.add((Object initializationScopeInstance) -> {
-							try {
-								return (Runnable) resourcePreinitializerConstructor
-										.newInstance(initializationScopeInstance);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-							return null;
-						});
 			} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
 				e.printStackTrace();
 			}
