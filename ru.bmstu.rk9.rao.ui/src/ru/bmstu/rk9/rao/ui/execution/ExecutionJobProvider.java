@@ -65,6 +65,9 @@ public class ExecutionJobProvider {
 
 				CurrentSimulator.set(new Simulator());
 				SimulatorPreinitializationInfo preinitializationInfo = parser.getSimulatorPreinitializationInfo();
+
+				// TODO this is where we must plan the creation of model instances and run the simulations
+
 				Object modelInstance;
 				
 				try {
@@ -80,7 +83,10 @@ public class ExecutionJobProvider {
 					initializationScopeInstance = Arrays.asList(preinitializationInfo.modelClass.getDeclaredFields())
 							.stream().filter(field -> {
 								return field.getName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD);
-							}).findFirst().get().get(modelInstance);
+							})
+							.findFirst()
+							.get()
+							.get(modelInstance);
 				} catch (IllegalArgumentException | IllegalAccessException | SecurityException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();

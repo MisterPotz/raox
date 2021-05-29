@@ -19,19 +19,31 @@ import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
 
 public class Simulator implements ISimulator {
+	private Object modelInstance;
+
+	private void assertHasModel() {
+		if (modelInstance == null) {
+			throw new IllegalStateException("model was not passed to simulator before calling the methods that require the model presence within a simulator");
+		}
+	}
+
 	@Override
 	public void preinitilize(SimulatorPreinitializationInfo preinitializationInfo) {
+		assertHasModel();
 		modelState = new ModelState(preinitializationInfo.resourceClasses);
 		database = new Database(preinitializationInfo.modelStructure);
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
 		logger = new Logger();
 
+		
 		for (Runnable resourcePreinitializer : preinitializationInfo.resourcePreinitializers)
 			resourcePreinitializer.run();
 	}
 
 	@Override
 	public void initialize(SimulatorInitializationInfo initializationInfo) {
+		assertHasModel();
+
 		executionStateNotifier = new Notifier<ExecutionState>(ExecutionState.class);
 		dptManager = new DPTManager(initializationInfo.decisionPoints);
 		processManager = new Process(initializationInfo.processBlocks);
@@ -169,5 +181,15 @@ public class Simulator implements ISimulator {
 			if (c.get())
 				return true;
 		return false;
+	}
+
+	@Override
+	public void setModelInstance(Object modelInstance) {
+		this.modelInstance = modelInstance;
+	}
+
+	@Override
+	public Object getModelInstance() {
+		return modelInstance;
 	}
 }
