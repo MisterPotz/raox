@@ -4,13 +4,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+
 import ru.bmstu.rk9.rao.lib.process.Block;
 
 public class SimulatorInitializationInfo {
 	public final /* Runnable */ List<Constructor<?>> initList = new ArrayList<>();
 	public final /* Supplier<Boolean> */ List<Constructor<?>> terminateConditions = new ArrayList<>();
 	private final /* AbstractDecisionPoint */ List<Constructor<?>> decisionPoints = new ArrayList<>();
-	private final /* Block */ List<Block> processBlocks = new ArrayList<>();
+	public final /* Block */ List<Block> processBlocks = new ArrayList<>();
 	public final /* AbstractResult */ List<Field> results = new ArrayList<>();
 
 	private SimulatorCommonModelInfo simulatorCommonModelInfo;

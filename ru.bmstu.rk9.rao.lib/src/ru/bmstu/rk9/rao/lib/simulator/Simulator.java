@@ -1,27 +1,33 @@
 package ru.bmstu.rk9.rao.lib.simulator;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import ru.bmstu.rk9.rao.lib.database.Database;
+import ru.bmstu.rk9.rao.lib.dpt.AbstractDecisionPoint;
 import ru.bmstu.rk9.rao.lib.dpt.DPTManager;
 import ru.bmstu.rk9.rao.lib.event.Event;
 import ru.bmstu.rk9.rao.lib.event.EventScheduler;
 import ru.bmstu.rk9.rao.lib.logger.Logger;
 import ru.bmstu.rk9.rao.lib.modeldata.StaticModelData;
 import ru.bmstu.rk9.rao.lib.notification.Notifier;
+import ru.bmstu.rk9.rao.lib.process.Block;
 import ru.bmstu.rk9.rao.lib.process.Process;
 import ru.bmstu.rk9.rao.lib.process.Process.ProcessStatus;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.result.ResultManager;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
+import ru.bmstu.rk9.rao.lib.simulator.utils.SimulatorReflectionUtils;
 
 public class Simulator implements ISimulator {
 	private Object modelInstance;
+	private Object initializationScopeInstance;
+
 
 	private void assertHasModel() {
 		if (modelInstance == null) {
@@ -32,15 +38,17 @@ public class Simulator implements ISimulator {
 	@Override
 	public void preinitilize(SimulatorPreinitializationInfo preinitializationInfo) {
 		assertHasModel();
+
+		// set some info 
+		initializeInitializationScopeInstance(preinitializationInfo.getSimulatorCommonModelInfo());
+
 		modelState = new ModelState(preinitializationInfo.resourceClasses);
 		database = new Database(preinitializationInfo.modelStructure);
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
 		logger = new Logger();
 
-		Object initializationScopeField = ReflectionUtils.safeGet(Object.class, preinitializationInfo.getSimulatorCommonModelInfo().getInitializationScopeField(), getModelInstance());
-
 		for (Constructor<?> resourcePreinitializer : preinitializationInfo.resourcePreinitializerCreators) {
-			Runnable runnableInstance = ReflectionUtils.safeNewInstance(Runnable.class, resourcePreinitializer, initializationScopeField);
+			Runnable runnableInstance = ReflectionUtils.safeNewInstance(Runnable.class, resourcePreinitializer, initializationScopeInstance);
 			if (runnableInstance != null) {
 				runnableInstance.run();
 			}		
@@ -51,18 +59,42 @@ public class Simulator implements ISimulator {
 	public void initialize(SimulatorInitializationInfo initializationInfo) {
 		assertHasModel();
 
-		executionStateNotifier = new Notifier<ExecutionState>(ExecutionState.class);
-		dptManager = new DPTManager(initializationInfo.decisionPoints);
-		processManager = new Process(initializationInfo.processBlocks);
-		resultManager = new ResultManager(initializationInfo.results);
+		executionStateNotifier = new Notifier<>(ExecutionState.class);
+		dptManager = createDPTManager(initializationInfo.getDecisionPoints(), initializationScopeInstance);
+		processManager = createProcess(initializationInfo.processBlocks, initializationScopeInstance);
+		resultManager = createResultManager(initializationInfo.results, initializationScopeInstance);
 
-		for (Supplier<Boolean> terminateCondition : initializationInfo.terminateConditions)
-			terminateList.add(terminateCondition);
-
-		for (Runnable init : initializationInfo.initList)
-			init.run();
+		setTerminateConditions(initializationInfo);
+		runInitializers(initializationInfo);
 
 		database.addMemorizedResourceEntries(null, null, null);
+	}
+
+	private static DPTManager createDPTManager(List<Constructor<?>> decisionPointConstructors, Object initializationScopeInstance) {
+		return new DPTManager(decisionPointConstructors.stream().map(constructor ->
+		 ReflectionUtils.safeNewInstance(AbstractDecisionPoint.class, constructor, initializationScopeInstance))
+		 .collect(Collectors.toList()));
+	}
+
+	private static Process createProcess(List<Block> processBlocks, Object initializationScopeInstance) {
+		return new Process(processBlocks);
+	}
+
+	private static ResultManager createResultManager(List<Field> results, Object initializationScopeInstance) {
+		return new ResultManager(results.stream().map(field -> ReflectionUtils.safeGet(AbstractResult.class, field, initializationScopeInstance))
+		.collect(Collectors.toList()));
+	}
+
+	private void setTerminateConditions(SimulatorInitializationInfo initializationInfo) {
+		initializationInfo.terminateConditions.stream()
+		.map( constructor -> (Supplier<Boolean>) ReflectionUtils.safeNewInstance(Supplier.class, constructor, this.initializationScopeInstance))
+		.forEach( supplier -> terminateList.add(supplier));
+	} 
+
+	private void runInitializers(SimulatorInitializationInfo initializationInfo) {
+		initializationInfo.initList.stream().map(constructor -> 
+			(Runnable) ReflectionUtils.safeNewInstance(Runnable.class, constructor, this.initializationScopeInstance)
+		).forEach(Runnable::run);
 	}
 
 	private Database database;
@@ -198,5 +230,11 @@ public class Simulator implements ISimulator {
 	@Override
 	public Object getModelInstance() {
 		return modelInstance;
+	}
+
+	private void initializeInitializationScopeInstance(SimulatorCommonModelInfo info) {
+		if (initializationScopeInstance == null) {
+			initializationScopeInstance = SimulatorReflectionUtils.getInitializationField(getModelInstance(), info);
+		}
 	}
 }
