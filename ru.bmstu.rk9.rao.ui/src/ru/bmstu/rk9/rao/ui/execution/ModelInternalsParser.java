@@ -418,7 +418,7 @@ public class ModelInternalsParser {
 	}
 
 	private void setUpBlocks() throws ClassNotFoundException, IOException, CoreException {
-		// TODO this is connected to blocks functionality, let's check for it later
+		// TODO this is connected to blocks functionality (probably), let's check for it later
 		for (IResource processFile : BuildUtil.getAllFilesInProject(project, "proc")) {
 			ProcessModelNode model = ProcessEditor.readModelFromFile((IFile) processFile);
 			if (model == null)

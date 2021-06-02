@@ -17,6 +17,15 @@ public class ReflectionUtils {
 		}
 		return null;
 	}
+
+	public static Constructor<?> safeGetConstructor(Class<?> clazz, Class<?> ... constructorArguments) {
+		try {
+			return clazz.getDeclaredConstructor(constructorArguments);
+		} catch (IllegalArgumentException | NoSuchMethodException | SecurityException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 	
 	public static <T> T safeGet(Class<T> targetClass, Field field, Object object) {
 		try {

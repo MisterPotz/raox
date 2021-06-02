@@ -1,9 +1,7 @@
 package ru.bmstu.rk9.rao.ui.execution;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
+import java.lang.reflect.Constructor;
 import java.util.stream.Collectors;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -13,10 +11,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
-
-import ru.bmstu.rk9.rao.jvmmodel.GeneratedCodeContract;
+import ru.bmstu.rk9.rao.jvmmodel.SimulatorIdContract;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
+import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
@@ -68,32 +66,28 @@ public class ExecutionJobProvider {
 
 				// TODO this is where we must plan the creation of model instances and run the simulations
 
-				Object modelInstance;
+				Constructor<?> modelConstructor = 
+				ReflectionUtils.safeGetConstructor(preinitializationInfo.getSimulatorCommonModelInfo().getModelClass(), SimulatorIdContract.SIMULATOR_ID_CLASS);
 				
-				try {
-					modelInstance = preinitializationInfo
-							.getSimulatorCommonModelInfo()
-							.getModelClass()
-							.getDeclaredConstructor()
-							.newInstance();
-				} catch (Exception e1) {
-					e1.printStackTrace();
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e1);
+				if (modelConstructor == null) {
+					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui",
+							"Simulator preinitialization failed");
 				}
 				
-				Object initializationScopeInstance;
-				try {
-					initializationScopeInstance = Arrays.asList(modelInstance.getClass().getDeclaredFields())
-							.stream().filter(field -> {
-								return field.getName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD);
-							})
-							.findFirst()
-							.get()
-							.get(modelInstance);
-				} catch (IllegalArgumentException | IllegalAccessException | SecurityException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e1);
+				Object modelInstance = ReflectionUtils.safeNewInstance(Object.class, modelConstructor, 42);
+
+				if (modelInstance == null) {
+					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui",
+							"Simulator preinitialization failed");
+				}
+
+				Object initializationScopeInstance = ReflectionUtils.safeGet(Object.class,
+						preinitializationInfo.getSimulatorCommonModelInfo()
+								.getInitializationScopeField(),
+						modelInstance);
+
+				if (initializationScopeInstance == null) {
+					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed");
 				}
 
 				try {
