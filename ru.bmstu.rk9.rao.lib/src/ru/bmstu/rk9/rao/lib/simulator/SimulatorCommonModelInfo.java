@@ -20,7 +20,7 @@ public class SimulatorCommonModelInfo {
 
 	private static Class<?> findInitializationScopeClass(Class<?> modelClass) {
 		Optional<Class<?>> optionalClass = Arrays.asList(modelClass.getDeclaredClasses())
-		.stream().filter(clazz -> clazz.getName().equals(RaoGenerationContract.INITIALIZATION_SCOPE_CLASS)).findFirst();
+		.stream().filter(clazz -> clazz.getSimpleName().equals(RaoGenerationContract.INITIALIZATION_SCOPE_CLASS)).findFirst();
 
 		if (optionalClass.isPresent()) {
 			return optionalClass.get();

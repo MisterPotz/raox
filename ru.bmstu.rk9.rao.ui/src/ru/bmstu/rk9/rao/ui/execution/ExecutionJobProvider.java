@@ -1,6 +1,5 @@
 package ru.bmstu.rk9.rao.ui.execution;
 
-import java.lang.reflect.Constructor;
 import java.util.stream.Collectors;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -11,9 +10,11 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
-import ru.bmstu.rk9.rao.jvmmodel.SimulatorIdContract;
+import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
+import ru.bmstu.rk9.rao.lib.simulator.utils.SimulatorReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
@@ -61,34 +62,12 @@ public class ExecutionJobProvider {
 				ExportTraceHandler.reset();
 				SerializationConfigView.initNames();
 
-				CurrentSimulator.set(new Simulator());
+				ISimulator simulator = new Simulator();
+				simulator.setSimulatorId(42);
+				CurrentSimulator.set(simulator);
 				SimulatorPreinitializationInfo preinitializationInfo = parser.getSimulatorPreinitializationInfo();
 
 				// TODO this is where we must plan the creation of model instances and run the simulations
-
-				Constructor<?> modelConstructor = 
-				ReflectionUtils.safeGetConstructor(preinitializationInfo.getSimulatorCommonModelInfo().getModelClass(), SimulatorIdContract.SIMULATOR_ID_CLASS);
-				
-				if (modelConstructor == null) {
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui",
-							"Simulator preinitialization failed");
-				}
-				
-				Object modelInstance = ReflectionUtils.safeNewInstance(Object.class, modelConstructor, 42);
-
-				if (modelInstance == null) {
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui",
-							"Simulator preinitialization failed");
-				}
-
-				Object initializationScopeInstance = ReflectionUtils.safeGet(Object.class,
-						preinitializationInfo.getSimulatorCommonModelInfo()
-								.getInitializationScopeField(),
-						modelInstance);
-
-				if (initializationScopeInstance == null) {
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed");
-				}
 
 				try {
 					/**
@@ -108,10 +87,16 @@ public class ExecutionJobProvider {
 					e.printStackTrace();
 					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Model postprocessing failed", e);
 				}
+				
+				Object initializationScopeInstance = SimulatorReflectionUtils
+						.getInitializationField(simulator.getModelInstance(), parser
+								.getSimulatorPreinitializationInfo()
+								.getSimulatorCommonModelInfo()) ;
+	
 
 				display.syncExec(
-						() -> AnimationView.initialize(parser.getAnimationFrames().stream().map(frameProvider -> {
-							return frameProvider.apply(initializationScopeInstance);
+						() -> AnimationView.initialize(parser.getAnimationFrames().stream().map(frameConstructor -> {
+							return ReflectionUtils.safeNewInstance(AnimationFrame.class, frameConstructor, initializationScopeInstance);
 						}).collect(Collectors.toList())));
 
 				try {

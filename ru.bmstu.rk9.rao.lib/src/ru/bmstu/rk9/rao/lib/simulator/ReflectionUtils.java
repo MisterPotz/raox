@@ -7,8 +7,9 @@ import java.lang.reflect.InvocationTargetException;
 public class ReflectionUtils {
 	public static <T> T safeNewInstance(Class<T> targetClass, Constructor<?> constructor, Object ... arguments) {
 		try {
+			constructor.setAccessible(true);
 			Object newInstance = constructor.newInstance(arguments);
-			if (newInstance.getClass().equals(targetClass)) {
+			if (newInstance != null && targetClass.isAssignableFrom(newInstance.getClass())) {
 				return (T) newInstance;
 			}
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
@@ -29,8 +30,9 @@ public class ReflectionUtils {
 	
 	public static <T> T safeGet(Class<T> targetClass, Field field, Object object) {
 		try {
+			field.setAccessible(true);
 			Object fieldObject = field.get(object);
-			if (fieldObject.getClass().equals(targetClass)) {
+			if (fieldObject != null && targetClass.isAssignableFrom(fieldObject.getClass())) {
 				return (T) fieldObject;
 			}
 			return null;

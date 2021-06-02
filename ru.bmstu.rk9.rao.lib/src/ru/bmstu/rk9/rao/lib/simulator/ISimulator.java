@@ -43,4 +43,8 @@ public interface ISimulator {
 	public void setModelInstance(Object modelInstance);
 
 	public Object getModelInstance();
+	
+	public void setSimulatorId(Integer simulatorId);
+	
+	public Integer getSimulatorId();
 }

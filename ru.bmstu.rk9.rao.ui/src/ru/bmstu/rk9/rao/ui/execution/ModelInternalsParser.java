@@ -28,6 +28,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
+import org.eclipse.xtext.util.ReflectionUtil;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 import org.eclipse.xtext.xbase.typesystem.references.LightweightTypeReference;
@@ -48,6 +49,7 @@ import ru.bmstu.rk9.rao.lib.process.Block;
 import ru.bmstu.rk9.rao.lib.resource.ComparableResource;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorInitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorCommonModelInfo;
@@ -72,7 +74,7 @@ public class ModelInternalsParser {
 
 	private final List<Class<?>> animationClasses = new ArrayList<>();
 	private final List<Class<?>> tupleClasses = new ArrayList<>();
-	private final List<Function<Object, AnimationFrame>> animationFrames = new ArrayList<>();
+	private final /* AnimationFrame */ List<Constructor<?>> animationFrames = new ArrayList<>();
 	private final List<Field> resultFields = new ArrayList<>();
 
 	private URLClassLoader classLoader;
@@ -403,17 +405,10 @@ public class ModelInternalsParser {
 		// setUpBlocks();
 
 		for (Class<?> animationClass : animationClasses) {
-			Function<Object, AnimationFrame> frame = (Object initializationScopeClass) -> {
-				try {
-					Constructor<?> constructor = animationClass.getConstructor(initializationScopeClass.getClass());
-					AnimationFrame newFrame = (AnimationFrame) constructor.newInstance(initializationScopeClass);
-					return newFrame;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				return null;
-			};
-			animationFrames.add(frame);
+			Constructor<?> constructor = 
+					ReflectionUtils.safeGetConstructor(animationClass, simulatorCommonModelInfo.getInitializationScopeClass());
+
+			animationFrames.add(constructor);
 		}
 	}
 
@@ -428,8 +423,7 @@ public class ModelInternalsParser {
 		}
 	}
 
-	public final List<Function<Object, AnimationFrame>> getAnimationFrames() {
-
+	public final List<Constructor<?>> getAnimationFrames() {
 		return animationFrames;
 	}
 

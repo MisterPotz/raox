@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import ru.bmstu.rk9.rao.lib.contract.RaoGenerationContract;
 import ru.bmstu.rk9.rao.lib.database.Database;
 import ru.bmstu.rk9.rao.lib.dpt.AbstractDecisionPoint;
 import ru.bmstu.rk9.rao.lib.dpt.DPTManager;
@@ -27,25 +28,53 @@ import ru.bmstu.rk9.rao.lib.simulator.utils.SimulatorReflectionUtils;
 public class Simulator implements ISimulator {
 	private Object modelInstance;
 	private Object initializationScopeInstance;
-
+	private Integer simulatorId;
 
 	private void assertHasModel() {
 		if (modelInstance == null) {
 			throw new IllegalStateException("model was not passed to a simulator before calling the methods that require the model presence within the simulator");
 		}
 	}
+	
+	private void assertHasId() {
+		if (simulatorId == null) {
+			throw new IllegalStateException("simulatorid was not set");
+		}
+	}
 
 	@Override
 	public void preinitilize(SimulatorPreinitializationInfo preinitializationInfo) {
-		assertHasModel();
-
-		// set some info 
-		initializeInitializationScopeInstance(preinitializationInfo.getSimulatorCommonModelInfo());
-
+		
 		modelState = new ModelState(preinitializationInfo.resourceClasses);
 		database = new Database(preinitializationInfo.modelStructure);
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
 		logger = new Logger();
+
+		assertHasId();
+
+		Constructor<?> modelConstructor = 
+		ReflectionUtils.safeGetConstructor(preinitializationInfo.getSimulatorCommonModelInfo().getModelClass(), RaoGenerationContract.SIMULATOR_ID_CLASS);
+		
+		
+		if (modelConstructor == null) {
+			System.out.println("Simulator preinitialization failed");
+			return;		}
+		
+		Object modelInstance = ReflectionUtils.safeNewInstance(Object.class, modelConstructor, simulatorId);
+
+		if (modelInstance == null) {
+			System.out.println("Simulator preinitialization failed");
+			return;		
+			
+		}
+		
+		setModelInstance(modelInstance);
+		// set some info 
+		initializeInitializationScopeInstance(preinitializationInfo.getSimulatorCommonModelInfo());
+
+		
+		assertHasModel();
+
 
 		for (Constructor<?> resourcePreinitializer : preinitializationInfo.resourcePreinitializerCreators) {
 			Runnable runnableInstance = ReflectionUtils.safeNewInstance(Runnable.class, resourcePreinitializer, initializationScopeInstance);
@@ -54,6 +83,7 @@ public class Simulator implements ISimulator {
 			}		
 		}
 	}
+	
 
 	@Override
 	public void initialize(SimulatorInitializationInfo initializationInfo) {
@@ -236,5 +266,15 @@ public class Simulator implements ISimulator {
 		if (initializationScopeInstance == null) {
 			initializationScopeInstance = SimulatorReflectionUtils.getInitializationField(getModelInstance(), info);
 		}
+	}
+
+	@Override
+	public void setSimulatorId(Integer simulatorId) {
+		this.simulatorId = simulatorId;
+	}
+
+	@Override
+	public Integer getSimulatorId() {
+		return simulatorId;
 	}
 }
