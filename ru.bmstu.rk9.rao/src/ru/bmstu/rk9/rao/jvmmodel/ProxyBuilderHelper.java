@@ -31,7 +31,7 @@ public class ProxyBuilderHelper {
 	private final JvmTypesBuilder jvmTypesBuilder;
 	private final IJvmModelAssociations associations;
 	private final JvmTypeReferenceBuilder jvmTypeReferenceBuilder;
-
+	private boolean useHiddenFieldsName = false;
 	private final ProxyBuilderHelperUtil util;
 	/**
 	 * if client doesn't decide to associate a builder - this value will be left
@@ -85,7 +85,7 @@ public class ProxyBuilderHelper {
 				p.getParameters().add(param);
 			}
 
-			jvmTypesBuilder.setBody(p, util.createConstructorBody(p));
+			jvmTypesBuilder.setBody(p, util.createConstructorBody(p, useHiddenFieldsName));
 		});
 
 		constructorOfBuildedClass = createdCostructor;
@@ -105,7 +105,7 @@ public class ProxyBuilderHelper {
 	 */
 	public JvmConstructor createSimulatorIdConstructorForBuildedClass() {
 		return SimulatorIdCodeUtil.createSimulatorIdConstructor(jvmTypesBuilder, jvmTypeReferenceBuilder,
-				sourceElement);
+				sourceElement, useHiddenFieldsName);
 	}
 
 	/**
@@ -115,8 +115,14 @@ public class ProxyBuilderHelper {
 	 *         that this builder creates
 	 */
 	public List<JvmField> createFieldsForBuildedClass(JvmFormalParameter... givenParams) {
+		final String prefix;
+		if (useHiddenFieldsName) {
+			prefix = GeneratedCodeContract.HIDDEN_FIELD_NAME_PREFIX;
+		} else {
+			prefix = "";
+		}
 		List<JvmField> s = Arrays.asList(givenParams).stream().map(it -> {
-			return jvmTypesBuilder.toField(sourceElement, it.getName(), it.getParameterType());
+			return jvmTypesBuilder.toField(sourceElement, prefix + it.getName(), it.getParameterType());
 		}).collect(Collectors.toList());
 
 		ArrayList<JvmField> toRet = new ArrayList<JvmField>();
@@ -127,8 +133,8 @@ public class ProxyBuilderHelper {
 
 	public List<JvmMember> createNecessaryMembersForBuildedClass() {
 		return Arrays.asList(
-				SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement),
-				SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement));
+				SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement, useHiddenFieldsName),
+				SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement, useHiddenFieldsName));
 	}
 
 	/**
@@ -148,7 +154,7 @@ public class ProxyBuilderHelper {
 
 			// default constructor consisting solely of simulatorid
 			members.add(CodeGenerationUtil.associateConstructor(jvmTypesBuilder, sourceElement,
-					getBuilderClassConstructorParameters(), null));
+					getBuilderClassConstructorParameters(), "", null));
 			members.add(SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, jvmTypeReferenceBuilder,
 					sourceElement));
 			members.add(SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, jvmTypeReferenceBuilder,
@@ -161,6 +167,14 @@ public class ProxyBuilderHelper {
 		return builderClass;
 	}
 
+	public String getPrivateParameterName(String parameterName) {
+		if (useHiddenFieldsName) {
+			return GeneratedCodeContract.HIDDEN_FIELD_NAME_PREFIX + parameterName;
+		} else {
+			return parameterName;
+		}
+	}
+	
 	public List<JvmFormalParameter> getBuilderClassConstructorParameters() {
 		return Arrays.asList(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder,
 				sourceElement));
@@ -293,6 +307,10 @@ public class ProxyBuilderHelper {
 //	
 	public ProxyBuilderFeatures createFeatures() {
 		return new ProxyBuilderFeaturesImpl();
+	}
+	
+	public void setUseHiddenFieldName(boolean use) {
+		this.useHiddenFieldsName = use;
 	}
 
 	public static String createBuilderName(String buildedClassName) {

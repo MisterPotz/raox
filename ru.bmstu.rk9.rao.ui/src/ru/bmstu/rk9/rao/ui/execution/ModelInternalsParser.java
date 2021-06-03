@@ -189,9 +189,7 @@ public class ModelInternalsParser {
 
 		List<Class<?>> declaredClasses = Arrays.asList(modelClass.getDeclaredClasses());
 		// need to check for initialization scope first
-		Class<?> initializationScope = findClassAndDo(declaredClasses, (Class<?> clazz) -> {
-			return clazz.getSimpleName().equals(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS);
-		}, null);
+		Class<?> initializationScope = simulatorCommonModelInfo.getInitializationScopeClass();
 
 		EList<RaoEntity> entities = model.getObjects();
 

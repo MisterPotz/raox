@@ -36,17 +36,34 @@ class CodeGenerationUtil {
 			'''
 		]
 	}
+	
+	def static JvmOperation associateGetter(
+		extension JvmTypesBuilder currentJvmTypesBuilder,
+		EObject raoEntity,
+		String name,
+		JvmTypeReference typeRef, 
+		boolean useHiddenName
+	) {
+		val String prefix = if (useHiddenName) GeneratedCodeContract.HIDDEN_FIELD_NAME_PREFIX else "";
+		
+		return raoEntity.toMethod("get" + name.toFirstUpper(), typeRef) [
+			body = '''
+				return this.«prefix + name»;
+			'''
+		]
+	}
 
 	def static JvmConstructor associateConstructor(
 		extension JvmTypesBuilder builder,
 		EObject sourceObject,
 		List<JvmFormalParameter> parameters,
+		String prefix,
 		/* Nullable */
 		Procedure1<? super JvmConstructor> additionalBlock
 	) {
 		return sourceObject.toConstructor [
 			it.parameters.addAll(parameters)
-			body = createInitializingList(parameters.map[new NameableMember(it)])
+			body = createInitializingList(parameters.map[new NameableMember(it)], prefix)
 			if (additionalBlock !== null) {
 				additionalBlock.apply(it)
 			}
@@ -59,6 +76,14 @@ class CodeGenerationUtil {
 		return '''
 			«FOR param : parameters»
 			this.«param.name» = «param.name»;
+			«ENDFOR»
+		'''
+	}
+	
+	def static StringConcatenationClient createInitializingList(List<NameableMember> parameters, String prefix) {
+		return '''
+			«FOR param : parameters»
+			this.«prefix + param.name» = «param.name»;
 			«ENDFOR»
 		'''
 	}

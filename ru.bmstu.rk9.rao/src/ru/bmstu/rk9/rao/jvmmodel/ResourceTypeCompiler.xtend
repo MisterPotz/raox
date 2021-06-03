@@ -28,11 +28,11 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 		val typeQualifiedName = QualifiedName.create(parentJvmObject.qualifiedName, resourceType.name)
 		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, resourceType, false);
 		storage.addNewProxyBuilder(pBH)
-		
+		pBH.useHiddenFieldName = true
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 
 			return resourceType.toClass(typeQualifiedName) [
-				static = true
+				static = false
 
 				superTypes += typeRef(ru.bmstu.rk9.rao.lib.resource.ComparableResource, {
 					typeRef
@@ -113,7 +113,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 					members +=
 						resourceType.toMethod("get" + param.declaration.name.toFirstUpper, param.declaration.parameterType) [
 							body = '''
-								return «param.declaration.name»;
+								return «pBH.getPrivateParameterName(param.declaration.name)»;
 							'''
 						]
 					members += resourceType.toMethod("set" + param.declaration.name.toFirstUpper, typeRef(void)) [
@@ -124,7 +124,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 							if (isShallowCopy)
 								actual = ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().copyOnWrite(this);
 							
-							actual.«param.declaration.name» = «param.declaration.name»;
+							actual.«pBH.getPrivateParameterName(param.declaration.name)» = «param.declaration.name»;
 							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(actual,
 									ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.ALTERED);
 						'''
@@ -141,10 +141,11 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 							return true;
 						«ELSE»
 							return «String.join(" && ", resourceType.parameters.map[ p |
+								var String name = pBH.getPrivateParameterName(p.declaration.name) 
 						'''«IF p.declaration.parameterType.type instanceof JvmPrimitiveType
-								»this.«p.declaration.name» == other.«p.declaration.name»«
+								»this.«name» == other.«name»«
 							ELSE
-								»this.«p.declaration.name».equals(other.«p.declaration.name»)«
+								»this.«name».equals(other.«name»)«
 							ENDIF»
 						'''
 					])»;
@@ -160,7 +161,8 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 							copy.setNumber(this.number);
 							copy.setName(this.name);
 							«FOR param : resourceType.parameters»
-							copy.«param.declaration.name» = this.«param.declaration.name»;
+							«var String name = pBH.getPrivateParameterName(param.declaration.name) »
+							copy.«name» = this.«name»;
 							«ENDFOR»
 						
 							return copy;
@@ -196,18 +198,21 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						
 						int _currentPosition = «fixedWidthParametersSize + variableWidthParameters.size * DataType.INT.size»;
 						«FOR param : variableWidthParameters»
+						«var String name = pBH.getPrivateParameterName(param.declaration.name) »
+						
 							_positions.add(_currentPosition);
-							String «param.declaration.name»Value = String.valueOf(«param.declaration.name»);
-							byte[] «param.declaration.name»Bytes = «param.declaration.name»Value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-							int «param.declaration.name»Length = «param.declaration.name»Bytes.length;
-							_currentPosition += «param.declaration.name»Length + «DataType.INT.size»;
-							_totalSize += «param.declaration.name»Length + «2 * DataType.INT.size»;
+							String «name»Value = String.valueOf(«name»);
+							byte[] «name»Bytes = «name»Value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+							int «name»Length = «name»Bytes.length;
+							_currentPosition += «name»Length + «DataType.INT.size»;
+							_totalSize += «name»Length + «2 * DataType.INT.size»;
 						«ENDFOR»
 						
 						ByteBuffer buffer = ByteBuffer.allocate(_totalSize);
 						
 						«FOR param : fixedWidthParameters»
-							buffer.«param.serializeAsFixedWidth»;
+						«var String name = pBH.getPrivateParameterName(param.declaration.name) »
+							buffer.«param.serializeAsFixedWidth(name)»;
 						«ENDFOR»
 						
 						java.util.Iterator<Integer> _it = _positions.iterator();
@@ -216,8 +221,9 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						«ENDFOR»
 						
 						«FOR param : variableWidthParameters»
-							buffer.putInt(«param.declaration.name»Length);
-							buffer.put(«param.declaration.name»Bytes);
+						«var String name = pBH.getPrivateParameterName(param.declaration.name) »	
+							buffer.putInt(«name»Length);
+							buffer.put(«name»Bytes);
 						«ENDFOR»
 						
 						return buffer;
@@ -237,15 +243,16 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 		return param.getSize != 0
 	}
 
-	def private static serializeAsFixedWidth(FieldDeclaration param) {
+	def private static serializeAsFixedWidth(FieldDeclaration param, String name) {
 		val type = DataType.getByName(param.declaration.parameterType.simpleName)
+		
 		switch type {
 			case INT:
-				return '''putInt(«param.declaration.name»)'''
+				return '''putInt(«name»)'''
 			case DOUBLE:
-				return '''putDouble(«param.declaration.name»)'''
+				return '''putDouble(«name»)'''
 			case BOOLEAN:
-				return '''put(«param.declaration.name» ? (byte)1 : (byte)0)'''
+				return '''put(«name» ? (byte)1 : (byte)0)'''
 			default:
 				return '''/* INTERNAL ERROR: attempting to serialize type «param.declaration.parameterType.simpleName» as fixed width type */'''
 		}
