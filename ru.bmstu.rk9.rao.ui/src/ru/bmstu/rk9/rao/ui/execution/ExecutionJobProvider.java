@@ -77,6 +77,14 @@ public class ExecutionJobProvider {
 
 				display.syncExec(() -> AnimationView.initialize(parser.getAnimationFrames()));
 
+				/**
+				 * TODO: maybe use static class methods and varconst array as a argument to generateCombinations method so 
+				 * generating looks like -> combinations = VarConstManager.generateCombinations(parser.getVarConst())
+				 * Now u need to use getCombinations method to get them
+				*/
+				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
+				varconsts.generateCombinations();
+
 				try {
 					CurrentSimulator.initialize(parser.getSimulatorInitializationInfo());
 				} catch (Exception e) {
