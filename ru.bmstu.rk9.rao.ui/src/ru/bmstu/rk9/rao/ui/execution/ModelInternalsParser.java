@@ -421,7 +421,7 @@ public class ModelInternalsParser {
 			VarConst varconst = (VarConst) varconstClass.newInstance();
 			varconsts.add(varconst);
 		}
-
+		
 		for (Class<?> animationClass : animationClasses) {
 			Constructor<?> constructor = 
 					ReflectionUtils.safeGetConstructor(animationClass, simulatorCommonModelInfo.getInitializationScopeClass());

@@ -12,7 +12,6 @@ import ru.bmstu.rk9.rao.typesystem.RaoTypeComputer;
 @SuppressWarnings("restriction")
 public class RaoRuntimeModule extends ru.bmstu.rk9.rao.AbstractRaoRuntimeModule {
 
-	@Override
 	public void configureIScopeProviderDelegate(com.google.inject.Binder binder) {
 		binder.bind(org.eclipse.xtext.scoping.IScopeProvider.class)
 				.annotatedWith(
