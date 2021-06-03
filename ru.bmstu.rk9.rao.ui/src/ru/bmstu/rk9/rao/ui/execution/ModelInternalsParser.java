@@ -9,7 +9,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.eclipse.core.resources.IFile;
@@ -24,10 +28,12 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
+import org.eclipse.xtext.util.ReflectionUtil;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 import org.eclipse.xtext.xbase.typesystem.references.LightweightTypeReference;
 
+import ru.bmstu.rk9.rao.jvmmodel.GeneratedCodeContract;
 import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
 import ru.bmstu.rk9.rao.lib.database.Database.DataType;
 import ru.bmstu.rk9.rao.lib.dpt.AbstractDecisionPoint;
@@ -43,8 +49,10 @@ import ru.bmstu.rk9.rao.lib.process.Block;
 import ru.bmstu.rk9.rao.lib.resource.ComparableResource;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorInitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorCommonModelInfo;
 import ru.bmstu.rk9.rao.rao.PatternType;
 import ru.bmstu.rk9.rao.rao.RaoEntity;
 import ru.bmstu.rk9.rao.rao.RaoModel;
@@ -58,13 +66,15 @@ import ru.bmstu.rk9.rao.ui.gef.process.model.ProcessModelNode;
 public class ModelInternalsParser {
 	private final SimulatorPreinitializationInfo simulatorPreinitializationInfo = new SimulatorPreinitializationInfo();
 	private final SimulatorInitializationInfo simulatorInitializationInfo = new SimulatorInitializationInfo();
+	private final SimulatorCommonModelInfo simulatorCommonModelInfo = new SimulatorCommonModelInfo();
+
 	private final List<Class<?>> decisionPointClasses = new ArrayList<>();
 
 	private final ModelContentsInfo modelContentsInfo = new ModelContentsInfo();
 
 	private final List<Class<?>> animationClasses = new ArrayList<>();
 	private final List<Class<?>> tupleClasses = new ArrayList<>();
-	private final List<AnimationFrame> animationFrames = new ArrayList<>();
+	private final /* AnimationFrame */ List<Constructor<?>> animationFrames = new ArrayList<>();
 	private final List<Field> resultFields = new ArrayList<>();
 
 	private URLClassLoader classLoader;
@@ -142,51 +152,44 @@ public class ModelInternalsParser {
 		}
 	}
 
-	/** collects methods/classes that can change static state of model when called (but this method doesn't yet launch them) 
-	 * also collects serialization data about all fields/methods/classes (like resource types)
-	*/
+	/* Nullable */
+	private Class<?> findClassAndDo(List<Class<?>> classes, Predicate<Class<?>> predicate, Action action) {
+		Optional<Class<?>> optionalClass = classes.stream().filter(predicate).findFirst();
+
+		if (!optionalClass.isEmpty()) {
+			if (action != null) {
+				action.action(optionalClass.get());
+			}
+			return optionalClass.get();
+		}
+		return null;
+	}
+
+	private interface Action {
+		void action(Class<?> clazz);
+	}
+
+	/**
+	 * collects methods/classes that can change static state of model when called
+	 * (but this method doesn't yet launch them) also collects serialization data
+	 * about all fields/methods/classes (like resource types)
+	 */
 	@SuppressWarnings("unchecked")
 	public final void parseModel(RaoModel model, String modelClassName)
 			throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException,
 			IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
 		Class<?> modelClass = Class.forName(modelClassName, false, classLoader);
-		// the static context of the model is available 
 
-		/** 27/03/2021 the following lines of code collect model declared methods that change static values of model class and interact with
-		 * CurrentSimulator
-		 */
-		try {
-			/**
-			 * init method of the model, when called the state is changed and first event is
-			 * planned
-			 */
-			Class<?> init = Class.forName(modelClassName + "$init", false, classLoader);
-			Constructor<?> initConstructor = init.getDeclaredConstructor();
-			initConstructor.setAccessible(true);
-			simulatorInitializationInfo.initList.add((Runnable) initConstructor.newInstance());
-		} catch (ClassNotFoundException classException) {
-		}
+		this.simulatorCommonModelInfo.setModelClass(modelClass);
+		this.simulatorPreinitializationInfo.setSimulatorCommonModelInfo(simulatorCommonModelInfo);
+		this.simulatorInitializationInfo.setSimulatorCommonModelInfo(simulatorCommonModelInfo);	
 
-		try {
-			/** when called returns boolean, if true - must terminate */
-			Class<?> terminate = Class.forName(modelClassName + "$terminateCondition", false, classLoader);
-			Constructor<?> terminateConstructor = terminate.getDeclaredConstructor();
-			terminateConstructor.setAccessible(true);
-			simulatorInitializationInfo.terminateConditions.add((Supplier<Boolean>) terminateConstructor.newInstance());
-		} catch (ClassNotFoundException classException) {
-		}
+		// the static context of the model is available
 
-		try {
-			/** assign initial values to resources */
-			Class<?> resourcePreinitializer = Class.forName(modelClassName + "$resourcesPreinitializer", false,
-					classLoader);
-			Constructor<?> resourcePreinitializerConstructor = resourcePreinitializer.getDeclaredConstructor();
-			resourcePreinitializerConstructor.setAccessible(true);
-			simulatorPreinitializationInfo.resourcePreinitializers
-					.add((Runnable) resourcePreinitializerConstructor.newInstance());
-		} catch (ClassNotFoundException classException) {
-		}
+		List<Class<?>> declaredClasses = Arrays.asList(modelClass.getDeclaredClasses());
+		// need to check for initialization scope first
+		Class<?> initializationScope = simulatorCommonModelInfo.getInitializationScopeClass();
 
 		EList<RaoEntity> entities = model.getObjects();
 
@@ -301,8 +304,9 @@ public class ModelInternalsParser {
 				continue;
 			}
 
-			/** named resource is an instance of resource type
-			 * find declared instances of each resource type and save them to their jsons (json of resource types)
+			/**
+			 * named resource is an instance of resource type find declared instances of
+			 * each resource type and save them to their jsons (json of resource types)
 			 */
 			if (entity instanceof ru.bmstu.rk9.rao.rao.ResourceDeclaration) {
 				XExpression constructor = ((ru.bmstu.rk9.rao.rao.ResourceDeclaration) entity).getConstructor();
@@ -334,17 +338,14 @@ public class ModelInternalsParser {
 			}
 		}
 
-		for (Class<?> nestedModelClass : modelClass.getDeclaredClasses()) {
-			if (ComparableResource.class.isAssignableFrom(nestedModelClass)) {
-				simulatorPreinitializationInfo.resourceClasses.add(nestedModelClass);
-				continue;
-			}
-
+		// going through classes that are declared at initialization scope nested class
+		// in model
+		for (Class<?> nestedModelClass : initializationScope.getDeclaredClasses()) {
+			// TODO make sure that the info that this class is not static is marked
 			if (Logic.class.isAssignableFrom(nestedModelClass)) {
 				decisionPointClasses.add(nestedModelClass);
 				continue;
 			}
-
 			if (Search.class.isAssignableFrom(nestedModelClass)) {
 				decisionPointClasses.add(nestedModelClass);
 				continue;
@@ -363,68 +364,64 @@ public class ModelInternalsParser {
 				nestedModelClass.getDeclaredClasses();
 				continue;
 			}
+
 		}
 
 		/** look only for abstract results */
-		for (Field field : modelClass.getDeclaredFields()) {
+		for (Field field : initializationScope.getDeclaredFields()) {
 			if (AbstractResult.class.isAssignableFrom(field.getType()))
 				resultFields.add(field);
 		}
 
-		/** 27/03/2021 ??? not sure where it is used  */
-		for (Method method : modelClass.getDeclaredMethods()) {
-			if (!method.getReturnType().equals(Boolean.TYPE))
-				continue;
-
-			if (method.getParameterCount() > 0)
-				continue;
-
-			Supplier<Boolean> supplier = new Supplier<Boolean>() {
-				@Override
-				public Boolean get() {
-					try {
-						return (boolean) method.invoke(null);
-					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-						e.printStackTrace();
-						throw new RaoLibException("Internal error invoking function " + method.getName());
-					}
-				}
-			};
-			modelContentsInfo.booleanFunctions.put(NamingHelper.createFullNameForMember(method), supplier);
-		}
+		/** 27/03/2021 ??? not sure where it is used */
+		// for (Method method : modelClass.getDeclaredMethods()) {
+		// if (!method.getReturnType().equals(Boolean.TYPE))
+		// continue;
+		//
+		// if (method.getParameterCount() > 0)
+		// continue;
+		//
+		// Supplier<Boolean> supplier = () -> {
+		// try {
+		// return (boolean) method.invoke(null);
+		// } catch (IllegalAccessException | IllegalArgumentException |
+		// InvocationTargetException e) {
+		// e.printStackTrace();
+		// throw new RaoLibException("Internal error invoking function " +
+		// method.getName());
+		// }
+		// };
+		// modelContentsInfo.booleanFunctions.put(NamingHelper.createFullNameForMember(method),
+		// supplier);
+		// }
 	}
 
 	public final void postprocess() throws IllegalArgumentException, IllegalAccessException, InstantiationException,
 			InvocationTargetException, ClassNotFoundException, IOException, CoreException {
-		for (Field resultField : resultFields) {
-			resultField.setAccessible(true);
-			AbstractResult<?> result = (AbstractResult<?>) resultField.get(null);
+		simulatorInitializationInfo.setResultFields(resultFields);
+		simulatorInitializationInfo.setDecisionPointClasses(decisionPointClasses);
+		// setUpBlocks();
 
-			String name = NamingHelper.createFullNameForMember(resultField);
-			result.setName(name);
-			simulatorInitializationInfo.results.add(result);
+		for (Class<?> animationClass : animationClasses) {
+			Constructor<?> constructor = 
+					ReflectionUtils.safeGetConstructor(animationClass, simulatorCommonModelInfo.getInitializationScopeClass());
+
+			animationFrames.add(constructor);
 		}
+	}
 
-		for (Class<?> decisionPointClass : decisionPointClasses) {
-			AbstractDecisionPoint dpt = (AbstractDecisionPoint) decisionPointClass.newInstance();
-			simulatorInitializationInfo.decisionPoints.add(dpt);
-		}
-
+	private void setUpBlocks() throws ClassNotFoundException, IOException, CoreException {
+		// TODO this is connected to blocks functionality (probably), let's check for it later
 		for (IResource processFile : BuildUtil.getAllFilesInProject(project, "proc")) {
 			ProcessModelNode model = ProcessEditor.readModelFromFile((IFile) processFile);
 			if (model == null)
 				model = new ProcessModelNode();
 			List<Block> blocks = BlockConverter.convertModelToBlocks(model, modelContentsInfo);
-			simulatorInitializationInfo.processBlocks.addAll(blocks);
-		}
-
-		for (Class<?> animationClass : animationClasses) {
-			AnimationFrame frame = (AnimationFrame) animationClass.newInstance();
-			animationFrames.add(frame);
+			simulatorInitializationInfo.getProcessBlocks().addAll(blocks);
 		}
 	}
 
-	public final List<AnimationFrame> getAnimationFrames() {
+	public final List<Constructor<?>> getAnimationFrames() {
 		return animationFrames;
 	}
 

@@ -39,4 +39,12 @@ public interface ISimulator {
 	public List<AbstractResult<?>> getResults();
 
 	public Logger getLogger();
+
+	public void setModelInstance(Object modelInstance);
+
+	public Object getModelInstance();
+	
+	public void setSimulatorId(Integer simulatorId);
+	
+	public Integer getSimulatorId();
 }

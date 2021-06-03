@@ -15,7 +15,25 @@ class SimulatorIdCodeUtil {
 	def static JvmFormalParameter createSimulatorIdParameter(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder, EObject context) {
 		return (context.toParameter(SimulatorIdContract.SIMULATOR_ID_NAME, typeRef(SimulatorIdContract.SIMULATOR_ID_CLASS)));
 	}
+	
+//	def static JvmFormalParameter createSimulatorIdParameter(
+//		extension JvmTypesBuilder builder,
+//		extension JvmTypeReferenceBuilder typerefBuilder, 
+//		EObject context,
+//		boolean useHiddenName
+//	) {
+//		val String prefix = if (useHiddenName) GeneratedCodeContract.HIDDEN_FIELD_NAME_PREFIX else "";
+//		return (context.toParameter(prefix + SimulatorIdContract.SIMULATOR_ID_NAME, typeRef(SimulatorIdContract.SIMULATOR_ID_CLASS)));
+//	}
+	
 
+	def static JvmField createSimulatorIdField(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder, EObject raoEntity, boolean useHiddenName) {
+		val String prefix = if (useHiddenName) GeneratedCodeContract.HIDDEN_FIELD_NAME_PREFIX else "";
+		return raoEntity.toField(prefix + SimulatorIdContract.SIMULATOR_ID_NAME, typeRef(SimulatorIdContract.SIMULATOR_ID_CLASS)) [
+			final = true
+		];
+	}
+	
 	def static JvmField createSimulatorIdField(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder, EObject raoEntity) {
 		return raoEntity.toField(SimulatorIdContract.SIMULATOR_ID_NAME, typeRef(SimulatorIdContract.SIMULATOR_ID_CLASS)) [
 			final = true
@@ -25,13 +43,26 @@ class SimulatorIdCodeUtil {
 	def protected static JvmConstructor createSimulatorIdConstructor(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder, EObject entity) {		
 		val params = new ArrayList();
 		params.add(createSimulatorIdParameter(builder, typerefBuilder, entity));
-		return CodeGenerationUtil.associateConstructor(builder, entity, params) [constructor |
+		return CodeGenerationUtil.associateConstructor(builder, entity, params, "") [constructor |
 			constructor.visibility = JvmVisibility.PUBLIC
 		]
+	}
+	
+	def protected static JvmConstructor createSimulatorIdConstructor(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder, EObject entity, boolean useHiddenName) {		
+		val params = new ArrayList();
+		params.add(createSimulatorIdParameter(builder, typerefBuilder, entity));
+		val String prefix = if (useHiddenName) GeneratedCodeContract.HIDDEN_FIELD_NAME_PREFIX else "";
 		
+		return CodeGenerationUtil.associateConstructor(builder, entity, params, prefix) [constructor |
+			constructor.visibility = JvmVisibility.PUBLIC
+		]
 	}
 	
 	def protected static JvmOperation createSimulatorIdGetter(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder,EObject raoEntity) {
 		return CodeGenerationUtil.associateGetter(builder, raoEntity, SimulatorIdContract.SIMULATOR_ID_NAME, typeRef(SimulatorIdContract.SIMULATOR_ID_CLASS))	}
+		
+	def protected static JvmOperation createSimulatorIdGetter(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder,EObject raoEntity, boolean useHiddenName) {
+		return CodeGenerationUtil.associateGetter(builder, raoEntity, SimulatorIdContract.SIMULATOR_ID_NAME, typeRef(SimulatorIdContract.SIMULATOR_ID_CLASS), useHiddenName)	}
+		
 	
 }

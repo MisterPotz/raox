@@ -22,6 +22,14 @@ class ProxyBuilderHelperUtil {
 		'''
 	}
 	
+	def StringConcatenationClient createConstructorBody(JvmConstructor jvmConstructor, boolean useHiddenNames) {
+		return '''
+			«FOR param : jvmConstructor.parameters»this.«IF useHiddenNames»_«ELSE»«""»«ENDIF»«param.name» = «param.name»;
+							«ENDFOR»
+			
+		'''
+	}
+	
 	def static String createLineOfBuilderFieldInitialization(String thisVariableName, String builderClassName) {
 		return '''this.«thisVariableName»  = new «builderClassName»(this.«SimulatorIdContract.SIMULATOR_ID_NAME»);'''
 	}
