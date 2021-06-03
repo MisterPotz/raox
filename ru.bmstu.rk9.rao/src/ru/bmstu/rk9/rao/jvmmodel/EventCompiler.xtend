@@ -10,6 +10,7 @@ import java.util.ArrayList
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
+import java.util.Arrays
 
 class EventCompiler extends RaoEntityCompiler {
 
@@ -32,12 +33,20 @@ class EventCompiler extends RaoEntityCompiler {
 
 				// partially delegate creation of features to ProxyBuilderHelper here
 				val parametersList = new ArrayList<JvmFormalParameter>();
-
 				parametersList.add(event.toParameter("time", typeRef(double)));
-				parametersList.addAll(event.parameters.map[it.toParameter(it.name, it.parameterType)])
-
-				eventClass.members += pBH.createConstructorForBuildedClass(parametersList);
-				eventClass.members += pBH.createFieldsForBuildedClass(parametersList);
+				
+				// these fields will go into local private fields of the generated event
+				val fieldParametersList = new ArrayList<JvmFormalParameter>();
+				fieldParametersList.addAll(event.parameters.map[it.toParameter(it.name, it.parameterType)])
+	
+				val unitedList = new ArrayList<JvmFormalParameter>();
+				unitedList.addAll(parametersList)
+				unitedList.addAll(fieldParametersList)
+				
+				eventClass.members += pBH.createConstructorForBuildedClass(
+					unitedList
+				);
+				eventClass.members += pBH.createFieldsForBuildedClass(fieldParametersList);
 				eventClass.members += pBH.createNecessaryMembersForBuildedClass()
 				
 				// because we need to have a builder class that has method 'plan' which will look like a static one
