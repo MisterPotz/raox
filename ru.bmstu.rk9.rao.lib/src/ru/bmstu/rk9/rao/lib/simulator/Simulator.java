@@ -15,6 +15,7 @@ import ru.bmstu.rk9.rao.lib.event.Event;
 import ru.bmstu.rk9.rao.lib.event.EventScheduler;
 import ru.bmstu.rk9.rao.lib.logger.Logger;
 import ru.bmstu.rk9.rao.lib.modeldata.StaticModelData;
+import ru.bmstu.rk9.rao.lib.naming.NamingHelper;
 import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.process.Block;
 import ru.bmstu.rk9.rao.lib.process.Process;
@@ -111,7 +112,13 @@ public class Simulator implements ISimulator {
 	}
 
 	private static ResultManager createResultManager(List<Field> results, Object initializationScopeInstance) {
-		return new ResultManager(results.stream().map(field -> ReflectionUtils.safeGet(AbstractResult.class, field, initializationScopeInstance))
+		return new ResultManager(results.stream()
+		.map(field -> {
+			AbstractResult absRes = (AbstractResult) ReflectionUtils.safeGet(AbstractResult.class, field, initializationScopeInstance);
+			String name = NamingHelper.createFullNameForMember(field);
+			absRes.setName(name);
+			return absRes;
+		})
 		.collect(Collectors.toList()));
 	}
 
