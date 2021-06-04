@@ -53,6 +53,7 @@ import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorInitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorCommonModelInfo;
+import ru.bmstu.rk9.rao.lib.varconst.VarConst;
 import ru.bmstu.rk9.rao.rao.PatternType;
 import ru.bmstu.rk9.rao.rao.RaoEntity;
 import ru.bmstu.rk9.rao.rao.RaoModel;
@@ -69,6 +70,9 @@ public class ModelInternalsParser {
 	private final SimulatorCommonModelInfo simulatorCommonModelInfo = new SimulatorCommonModelInfo();
 
 	private final List<Class<?>> decisionPointClasses = new ArrayList<>();
+
+	private final List<Class<?>> varconstClasses = new ArrayList<>();
+	private final List<VarConst> varconsts = new ArrayList<>();
 
 	private final ModelContentsInfo modelContentsInfo = new ModelContentsInfo();
 
@@ -234,6 +238,12 @@ public class ModelInternalsParser {
 			String name = modelClassName + "." + entity.getName();
 
 			/** fill in found events */
+			if (entity instanceof ru.bmstu.rk9.rao.rao.VarConst) {
+				simulatorPreinitializationInfo.modelStructure.getJSONArray(ModelStructureConstants.EVENTS)
+				.put(new JSONObject().put(ModelStructureConstants.NAME, name));
+				continue;
+			}
+
 			if (entity instanceof ru.bmstu.rk9.rao.rao.Event) {
 				simulatorPreinitializationInfo.modelStructure.getJSONArray(ModelStructureConstants.EVENTS)
 						.put(new JSONObject().put(ModelStructureConstants.NAME, name));
@@ -342,6 +352,11 @@ public class ModelInternalsParser {
 		// in model
 		for (Class<?> nestedModelClass : initializationScope.getDeclaredClasses()) {
 			// TODO make sure that the info that this class is not static is marked
+			if (VarConst.class.isAssignableFrom(nestedModelClass)) {
+				varconstClasses.add(nestedModelClass);
+				continue;
+			}
+			
 			if (Logic.class.isAssignableFrom(nestedModelClass)) {
 				decisionPointClasses.add(nestedModelClass);
 				continue;
@@ -402,6 +417,11 @@ public class ModelInternalsParser {
 		simulatorInitializationInfo.setDecisionPointClasses(decisionPointClasses);
 		// setUpBlocks();
 
+		for (Class<?> varconstClass : varconstClasses) {
+			VarConst varconst = (VarConst) varconstClass.newInstance();
+			varconsts.add(varconst);
+		}
+		
 		for (Class<?> animationClass : animationClasses) {
 			Constructor<?> constructor = 
 					ReflectionUtils.safeGetConstructor(animationClass, simulatorCommonModelInfo.getInitializationScopeClass());
@@ -423,6 +443,10 @@ public class ModelInternalsParser {
 
 	public final List<Constructor<?>> getAnimationFrames() {
 		return animationFrames;
+	}
+	
+	public List<VarConst> getVarConsts() {
+		return varconsts;
 	}
 
 	public final void closeClassLoader() {

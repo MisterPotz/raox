@@ -99,6 +99,14 @@ public class ExecutionJobProvider {
 							return ReflectionUtils.safeNewInstance(AnimationFrame.class, frameConstructor, initializationScopeInstance);
 						}).collect(Collectors.toList())));
 
+				/**
+				 * TODO: maybe use static class methods and varconst array as a argument to generateCombinations method so 
+				 * generating looks like -> combinations = VarConstManager.generateCombinations(parser.getVarConst())
+				 * Now u need to use getCombinations method to get them
+				*/
+				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
+				varconsts.generateCombinations();
+
 				try {
 					/** launch init#run */
 					CurrentSimulator.initialize(parser.getSimulatorInitializationInfo());
