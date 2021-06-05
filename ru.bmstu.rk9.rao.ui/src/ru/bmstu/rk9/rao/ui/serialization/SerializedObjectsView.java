@@ -49,11 +49,11 @@ import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.plot.PlotView;
 import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
+import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 
-public class SerializedObjectsView extends ViewPart implements UiSimulatorDependent {
+public class SerializedObjectsView extends RaoView {
 
 	static TreeViewer serializedObjectsTreeViewer;
-	public static final String ID = "ru.bmstu.rk9.rao.ui.SerializedObjectsView";
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
 	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	

@@ -20,12 +20,15 @@ import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
+import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ST;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -37,7 +40,6 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.themes.ITheme;
 import org.eclipse.ui.themes.IThemeManager;
 import org.osgi.framework.Bundle;
@@ -48,10 +50,9 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.export.ExportResultsHandler;
 import ru.bmstu.rk9.rao.ui.internal.RaoActivator;
+import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 
-public class ResultsView extends ViewPart {
-	public static final String ID = "ru.bmstu.rk9.rao.ui.ResultsView"; //$NON-NLS-1$
-
+public class ResultsView extends RaoView {	
 	private static IEclipsePreferences prefs = InstanceScope.INSTANCE.getNode("ru.bmstu.rk9.rao.ui");
 
 	private List<AbstractResult<?>> results;
@@ -84,10 +85,11 @@ public class ResultsView extends ViewPart {
 		return view;
 	}
 
+	
 	public void update() {
 		// TODO: change to SimulatorManager.getSimulator(this.getSimulatorId()).getResults()
 		this.results = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getResults();
-
+ 
 		if (!isInitialized())
 			return;
 
@@ -97,15 +99,16 @@ public class ResultsView extends ViewPart {
 		for (TreeItem model : tree.getItems())
 			model.setExpanded(true);
 	}
-
-	private static ScrolledComposite composite;
-	private static StyledText text;
-	private static Tree tree;
+	
+	private ScrolledComposite composite;
+	private StyledText text;
+	private Tree tree;
 
 	private static int nameWidth = prefs.getInt("ResultsNameColumnWidth", 200);
 	private static int valueWidth = prefs.getInt("ResultsValueColumnWidth", 200);
 
-	public static void savePreferences() {
+	public void savePreferences() {
+		prefs.putBoolean("ResultsViewAsText", viewAsText);
 		prefs.putInt("ResultsNameColumnWidth", nameWidth);
 		prefs.putInt("ResultsValueColumnWidth", valueWidth);
 	}
@@ -255,7 +258,7 @@ public class ResultsView extends ViewPart {
 		tree.setHeaderVisible(true);
 
 		TreeColumn nameCol = new TreeColumn(tree, SWT.NONE);
-		nameCol.setWidth(nameWidth);
+ 		nameCol.setWidth(nameWidth);
 		nameCol.setText("Name");
 		nameCol.addControlListener(new ControlListener() {
 			@Override
@@ -265,6 +268,16 @@ public class ResultsView extends ViewPart {
 
 			@Override
 			public void controlMoved(ControlEvent e) {
+			}
+		});
+
+//		TODO: handle this on another abstract level (in RaoView, for example) 
+		composite.addDisposeListener(new DisposeListener() {
+
+			@Override
+			public void widgetDisposed(DisposeEvent event) {
+				if (!opened.isEmpty() && opened.containsKey(currentWidget))
+					opened.remove(currentWidget);
 			}
 		});
 
@@ -377,11 +390,10 @@ public class ResultsView extends ViewPart {
 		}
 	}
 
-	private static boolean isInitialized() {
+	private boolean isInitialized() {
 		return tree != null && text != null && !tree.isDisposed() && !text.isDisposed();
 	}
-
+	
 	@Override
-	public void setFocus() {
-	}
+	public void setFocus() {}
 }

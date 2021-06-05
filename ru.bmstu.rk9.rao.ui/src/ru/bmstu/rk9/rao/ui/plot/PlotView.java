@@ -122,7 +122,6 @@ public class PlotView extends ViewPart implements UiSimulatorDependent {
 		verticalSlider.setVisible(false);
 		plotFrame.setSliders(horizontalSlider, verticalSlider);
 		plotFrame.addDisposeListener(new DisposeListener() {
-
 			@Override
 			public void widgetDisposed(DisposeEvent event) {
 				if (!openedPlotMap.isEmpty() && openedPlotMap.containsKey(partNode))

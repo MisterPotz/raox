@@ -54,7 +54,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.part.ViewPart;
 
 import ru.bmstu.rk9.rao.lib.database.Database;
 import ru.bmstu.rk9.rao.lib.database.Database.Entry;
@@ -76,20 +75,21 @@ import ru.bmstu.rk9.rao.ui.graph.GraphControl.FrameInfo;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
+import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 import ru.bmstu.rk9.rao.ui.trace.TraceView.SearchHelper.SearchResult;
 import ru.bmstu.rk9.rao.ui.trace.Tracer.TraceOutput;
 import ru.bmstu.rk9.rao.ui.trace.Tracer.TraceType;
 
-public class TraceView extends ViewPart implements UiSimulatorDependent {
-	public static final String ID = "ru.bmstu.rk9.rao.ui.TraceView";
+public class TraceView extends RaoView {
 	private SimulatorSubscriberManager simulatorSubscriberManager;
 	private RealTimeSubscriberManager realTimeSubscriberManager;
+
 	static TableViewer viewer;
 	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 	// ---------------------------- VIEW SETUP ----------------------------- //
-	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
+	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― // 
 
 	private FrameInfo determineSearchInfo(TraceOutput traceOutput, int stringNum) {
 		SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager()
@@ -469,7 +469,7 @@ public class TraceView extends ViewPart implements UiSimulatorDependent {
 		return viewer != null && !viewer.getTable().isDisposed() && viewer.getContentProvider() != null
 				&& viewer.getLabelProvider() != null;
 	}
-
+	
 	@Override
 	public void setFocus() {
 	}

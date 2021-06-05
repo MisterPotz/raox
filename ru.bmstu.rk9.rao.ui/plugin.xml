@@ -1017,6 +1017,14 @@
            name="Status"
            restorable="true">
      </view>
+     // TODO: Test view
+      <view
+           category="ru.bmstu.rk9.rao.ui.views"
+           class="ru.bmstu.rk9.rao.ui.monitorview.MonitorView"
+           id="ru.bmstu.rk9.rao.ui.MonitorView"
+           name="Monitoring"
+           restorable="true">
+     </view>
      <view
            category="ru.bmstu.rk9.rao.ui.views"
            class="ru.bmstu.rk9.rao.ui.animation.AnimationView"

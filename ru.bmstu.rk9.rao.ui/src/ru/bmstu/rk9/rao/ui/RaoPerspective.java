@@ -6,7 +6,9 @@ import org.eclipse.ui.IPerspectiveFactory;
 import org.eclipse.ui.console.IConsoleConstants;
 
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
+import ru.bmstu.rk9.rao.ui.monitorview.MonitorView;
 import ru.bmstu.rk9.rao.ui.plot.PlotView;
+import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfigView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView;
@@ -39,20 +41,18 @@ public class RaoPerspective implements IPerspectiveFactory {
 
 	private void addAssociatedViews() {
 		IFolderLayout middleLeft = factory.createFolder("middleLeft", IPageLayout.LEFT, 0.2f, factory.getEditorArea());
-		middleLeft.addView(SerializedObjectsView.ID);
+		middleLeft.addView(MonitorView.ID);
 
 		IFolderLayout topLeft = factory.createFolder("topLeft", IPageLayout.TOP, 0.6f, "middleLeft");
 		topLeft.addView(IPageLayout.ID_PROJECT_EXPLORER);
 
 		IFolderLayout bottomLeft = factory.createFolder("bottomLeft", IPageLayout.BOTTOM, 0.6f, "topLeft");
-		bottomLeft.addView(SerializationConfigView.ID);
-
+		bottomLeft.addView(SerializationConfigView.ID);	
+		
 		IFolderLayout bottom = factory.createFolder("bottom", IPageLayout.BOTTOM, 0.7f, factory.getEditorArea());
 		bottom.addView(IPageLayout.ID_PROBLEM_VIEW);
 		bottom.addView(IConsoleConstants.ID_CONSOLE_VIEW);
-		bottom.addView(ConsoleView.ID);
-		bottom.addView(TraceView.ID);
-		bottom.addView(ResultsView.ID);
+		bottom.addView(RaoView.getIdForView(ConsoleView.class));
 		bottom.addView(IPageLayout.ID_PROP_SHEET);
 
 		IFolderLayout bottomRight = factory.createFolder("bottomRight", IPageLayout.RIGHT, 0.75f, "bottom");

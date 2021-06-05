@@ -38,8 +38,6 @@ public interface ISimulator {
 
 	public SimulationStopCode run();
 
-	public List<AbstractResult<?>> getResults();
-
 	public Logger getLogger();
 
 	public void setModelInstance(Object modelInstance);
@@ -49,4 +47,6 @@ public interface ISimulator {
 	public void setSimulatorId(SimulatorId simulatorId);
 	
 	public SimulatorId getSimulatorId();
+	
+	public List<AbstractResult<?>> getResults();
 }
