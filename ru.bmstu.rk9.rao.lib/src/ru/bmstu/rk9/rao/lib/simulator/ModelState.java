@@ -11,9 +11,28 @@ import ru.bmstu.rk9.rao.lib.exception.RaoLibException;
 import ru.bmstu.rk9.rao.lib.resource.ComparableResource;
 import ru.bmstu.rk9.rao.lib.resource.Resource;
 import ru.bmstu.rk9.rao.lib.resource.ResourceManager;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
-public class ModelState {
-	public ModelState(Collection<Class<?>> resourceClasses) {
+public class ModelState implements SimulatorDependent {
+	private SimulatorId simulatorId;
+	
+	@Override
+	public SimulatorId getSimulatorId() {
+	return simulatorId;
+	}
+
+	private ISimulator getSimulator() {
+		return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+	}
+
+	private SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
+	
+	public ModelState(Collection<Class<?>> resourceClasses, SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
 		for (Class<?> resourceClass : resourceClasses) {
 			if (!ComparableResource.class.isAssignableFrom(resourceClass))
 				throw new RaoLibException(
@@ -92,7 +111,7 @@ public class ModelState {
 	}
 
 	public void deploy() {
-		CurrentSimulator.setModelState(this);
+		getSimulator().setModelState(this);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -114,6 +133,7 @@ public class ModelState {
 			copy.resourceManagers.put(entry.getKey(),
 					isShallow ? entry.getValue().shallowCopy() : entry.getValue().deepCopy());
 		}
+		copy.simulatorId = simulatorId;
 
 		return copy;
 	}

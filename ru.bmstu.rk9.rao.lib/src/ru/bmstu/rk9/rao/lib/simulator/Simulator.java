@@ -22,14 +22,20 @@ import ru.bmstu.rk9.rao.lib.process.Process;
 import ru.bmstu.rk9.rao.lib.process.Process.ProcessStatus;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.result.ResultManager;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
 import ru.bmstu.rk9.rao.lib.simulator.utils.SimulatorReflectionUtils;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public class Simulator implements ISimulator {
 	private Object modelInstance;
 	private Object initializationScopeInstance;
-	private Integer simulatorId;
+	private SimulatorId simulatorId;
+
+	public Simulator() {
+		this.simulatorId = SimulatorId.generateSimulatorId();
+		eventScheduler = new EventScheduler(simulatorId);
+	}
 
 	private void assertHasModel() {
 		if (modelInstance == null) {
@@ -46,8 +52,8 @@ public class Simulator implements ISimulator {
 	@Override
 	public void preinitilize(SimulatorPreinitializationInfo preinitializationInfo) {
 		
-		modelState = new ModelState(preinitializationInfo.resourceClasses);
-		database = new Database(preinitializationInfo.modelStructure);
+		modelState = new ModelState(preinitializationInfo.resourceClasses, getSimulatorId());
+		database = new Database(preinitializationInfo.modelStructure, getSimulatorId());
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
 		logger = new Logger();
 
@@ -101,17 +107,17 @@ public class Simulator implements ISimulator {
 		database.addMemorizedResourceEntries(null, null, null);
 	}
 
-	private static DPTManager createDPTManager(List<Constructor<?>> decisionPointConstructors, Object initializationScopeInstance) {
+	private DPTManager createDPTManager(List<Constructor<?>> decisionPointConstructors, Object initializationScopeInstance) {
 		return new DPTManager(decisionPointConstructors.stream().map(constructor ->
 		 ReflectionUtils.safeNewInstance(AbstractDecisionPoint.class, constructor, initializationScopeInstance))
-		 .collect(Collectors.toList()));
+		 .collect(Collectors.toList()), getSimulatorId());
 	}
 
 	private static Process createProcess(List<Block> processBlocks, Object initializationScopeInstance) {
 		return new Process(processBlocks);
 	}
 
-	private static ResultManager createResultManager(List<Field> results, Object initializationScopeInstance) {
+	private ResultManager createResultManager(List<Field> results, Object initializationScopeInstance) {
 		return new ResultManager(results.stream()
 		.map(field -> {
 			AbstractResult absRes = (AbstractResult) ReflectionUtils.safeGet(AbstractResult.class, field, initializationScopeInstance);
@@ -119,7 +125,7 @@ public class Simulator implements ISimulator {
 			absRes.setName(name);
 			return absRes;
 		})
-		.collect(Collectors.toList()));
+		.collect(Collectors.toList()), getSimulatorId());
 	}
 
 	private void setTerminateConditions(SimulatorInitializationInfo initializationInfo) {
@@ -167,7 +173,7 @@ public class Simulator implements ISimulator {
 		return time;
 	}
 
-	private EventScheduler eventScheduler = new EventScheduler();
+	private final EventScheduler eventScheduler;
 
 	@Override
 	public void pushEvent(Event event) {
@@ -230,7 +236,7 @@ public class Simulator implements ISimulator {
 				continue;
 			}
 
-			ProcessStatus processStatus = processManager.scan();
+			ProcessStatus processStatus = processManager.scan(getSimulatorId());
 			if (processStatus == ProcessStatus.SUCCESS) {
 				notifyChange(ExecutionState.STATE_CHANGED);
 				continue;
@@ -276,12 +282,12 @@ public class Simulator implements ISimulator {
 	}
 
 	@Override
-	public void setSimulatorId(Integer simulatorId) {
+	public void setSimulatorId(SimulatorId simulatorId) {
 		this.simulatorId = simulatorId;
 	}
 
 	@Override
-	public Integer getSimulatorId() {
+	public SimulatorId getSimulatorId() {
 		return simulatorId;
 	}
 }

@@ -5,13 +5,13 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
-import ru.bmstu.rk9.rao.rao.VarConst
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.HashMap
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import ru.bmstu.rk9.rao.lib.lambdaexpression.LambdaExpression
 import org.eclipse.xtext.common.types.impl.JvmFormalParameterImplCustom
+import ru.bmstu.rk9.rao.rao.VarConst
 
 class VarConstCompiler extends RaoEntityCompiler {
 

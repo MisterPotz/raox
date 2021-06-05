@@ -119,7 +119,7 @@ public class ModelInternalsParser {
 
 		URL[] urls = new URL[] { modelURL };
 
-		classLoader = new URLClassLoader(urls, CurrentSimulator.class.getClassLoader());
+		classLoader = new URLClassLoader(urls, SimulatorWrapper.class.getClassLoader());
 
 		simulatorPreinitializationInfo.modelStructure.put(ModelStructureConstants.NAME, project.getName());
 		simulatorPreinitializationInfo.modelStructure.put(ModelStructureConstants.LOCATION,

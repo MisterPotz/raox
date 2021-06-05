@@ -6,10 +6,32 @@ import ru.bmstu.rk9.rao.lib.database.Database.ProcessEntryType;
 import ru.bmstu.rk9.rao.lib.database.Database.TypeSize;
 import ru.bmstu.rk9.rao.lib.process.Process.BlockStatus;
 import ru.bmstu.rk9.rao.lib.resource.Resource;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
-public class Seize implements Block {
+public class Seize implements Block, SimulatorDependent {
+	private SimulatorId simulatorId;
 
+	@Override
+	public SimulatorId getSimulatorId() {
+	return simulatorId;
+	}
+
+	@Override
+	public void setSimulatorId(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+	}
+
+	private ISimulator getSimulator() {
+	return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+	}
+
+	private SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
 	public Seize(Resource resource) {
 		this.resource = resource;
 	}
@@ -28,7 +50,8 @@ public class Seize implements Block {
 	}
 
 	@Override
-	public BlockStatus check() {
+	public BlockStatus check(SimulatorId simulatorId) {
+		setSimulatorId(simulatorId);
 		if (!resource.isAccessible())
 			return BlockStatus.NOTHING_TO_DO;
 		if (transactStorage.hasTransact())
@@ -39,9 +62,9 @@ public class Seize implements Block {
 			return BlockStatus.NOTHING_TO_DO;
 
 		ByteBuffer data = ByteBuffer.allocate(TypeSize.INT * 2);
-		int resourceTypeNumber = CurrentSimulator.getStaticModelData().getResourceTypeNumber(resource.getTypeName());
+		int resourceTypeNumber = getSimulator().getStaticModelData().getResourceTypeNumber(resource.getTypeName());
 		data.putInt(resourceTypeNumber).putInt(resource.getNumber());
-		CurrentSimulator.getDatabase().addProcessEntry(ProcessEntryType.SEIZE, transact.getNumber(), data);
+		getSimulator().getDatabase().addProcessEntry(ProcessEntryType.SEIZE, transact.getNumber(), data);
 		transactStorage.pushTransact(transact);
 		resource.take();
 		return BlockStatus.SUCCESS;

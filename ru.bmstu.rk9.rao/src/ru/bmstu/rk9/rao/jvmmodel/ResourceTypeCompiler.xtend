@@ -56,8 +56,8 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 							parameters += resourceType.toParameter(param.declaration.name, param.declaration.parameterType)
 						body = '''
 							«resourceType.name» resource = new «resourceType.name»(«String.join(", ", features.buildedClassParameters)»);
-							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().addResource(resource);
-							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(resource,
+							getSimulator().getModelState().addResource(resource);
+							getSimulator().getDatabase().memorizeResourceEntry(resource,
 									ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.CREATED);
 							return resource;
 						'''
@@ -77,7 +77,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						visibility = JvmVisibility.PUBLIC
 						final = true
 						body = '''
-							return ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().getAll(«resourceType.name».class);
+							return getSimulator().getModelState().getAll(«resourceType.name».class);
 						'''
 					]
 
@@ -87,7 +87,7 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 						visibility = JvmVisibility.PUBLIC
 						final = true
 						body = '''
-							return ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().getAccessible(«resourceType.name».class);
+							return getSimulator().getModelState().getAccessible(«resourceType.name».class);
 						'''
 					]
 				]
@@ -103,9 +103,9 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 					final = true
 					annotations += overrideAnnotation()
 					body = '''
-						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().eraseResource(this);
-						ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(this,
-								ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.ERASED);
+					getSimulator().getModelState().eraseResource(this);
+					getSimulator().getDatabase().memorizeResourceEntry(this,
+							ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.ERASED);
 					'''
 				]
 				
@@ -122,10 +122,10 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 							«resourceType.name» actual = this;
 							
 							if (isShallowCopy)
-								actual = ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getModelState().copyOnWrite(this);
+								actual = getSimulator().getModelState().copyOnWrite(this);
 							
-							actual.«pBH.getPrivateParameterName(param.declaration.name)» = «param.declaration.name»;
-							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.getDatabase().memorizeResourceEntry(actual,
+							actual._«param.declaration.name» = «param.declaration.name»;
+							getSimulator().getDatabase().memorizeResourceEntry(actual,
 									ru.bmstu.rk9.rao.lib.database.Database.ResourceEntryType.ALTERED);
 						'''
 					]

@@ -2,9 +2,9 @@ package ru.bmstu.rk9.rao.lib.pattern;
 
 import ru.bmstu.rk9.rao.lib.database.SerializationConstants;
 import ru.bmstu.rk9.rao.lib.event.Event;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 
 public abstract class Operation extends Pattern {
+	
 	@Override
 	public final void run() {
 		begin();
@@ -22,12 +22,13 @@ public abstract class Operation extends Pattern {
 	}
 
 	private final void planEnd() {
-		CurrentSimulator.pushEvent(new OperationEvent(CurrentSimulator.getTime() + duration()));
+		getSimulator().pushEvent(new OperationEvent(getSimulator().getTime() + duration()));
 	}
 
 	private class OperationEvent extends Event {
 		OperationEvent(double time) {
 			this.time = time;
+			setSimulatorId(getSimulatorId());
 		}
 
 		@Override
@@ -38,8 +39,8 @@ public abstract class Operation extends Pattern {
 		@Override
 		protected void execute() {
 			Operation.this.end();
-			CurrentSimulator.getDatabase().addOperationEndEntry(Operation.this);
-			CurrentSimulator.getDatabase().addMemorizedResourceEntries(
+			getSimulator().getDatabase().addOperationEndEntry(Operation.this);
+			getSimulator().getDatabase().addMemorizedResourceEntries(
 					Operation.this.getTypeName() + "." + SerializationConstants.CREATED_RESOURCES, null, null);
 			finish();
 		}

@@ -2,6 +2,7 @@ package ru.bmstu.rk9.rao.lib.process;
 
 import java.util.ArrayList;
 import java.util.List;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public class Process {
 
@@ -11,10 +12,10 @@ public class Process {
 
 	private final List<Block> blocks = new ArrayList<Block>();
 
-	public ProcessStatus scan() {
+	public ProcessStatus scan(SimulatorId simulatorId) {
 		boolean needCheckAgain = false;
 		for (Block block : blocks) {
-			BlockStatus blockStatus = block.check();
+			BlockStatus blockStatus = block.check(simulatorId);
 			if (blockStatus == BlockStatus.SUCCESS)
 				return ProcessStatus.SUCCESS;
 			if (blockStatus == BlockStatus.CHECK_AGAIN)

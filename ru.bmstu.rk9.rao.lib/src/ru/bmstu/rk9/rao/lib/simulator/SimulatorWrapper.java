@@ -10,20 +10,25 @@ import ru.bmstu.rk9.rao.lib.logger.Logger;
 import ru.bmstu.rk9.rao.lib.modeldata.StaticModelData;
 import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
-public class CurrentSimulator {
-	private static ISimulator currentSimulator = null;
-
-	public static void set(ISimulator simulator) {
+public class SimulatorWrapper implements SimulatorDependent {
+	private ISimulator currentSimulator = null;
+	private SimulatorState currentSimulatorState = SimulatorState.DEINITIALIZED;
+	private final Notifier<SimulatorState> simulatorStateNotifier;
+	
+	public SimulatorWrapper(ISimulator simulator) {
 		setCurrentSimulatorState(SimulatorState.DEINITIALIZED);
 		currentSimulator = simulator;
+		this.simulatorStateNotifier =  new Notifier<SimulatorState>(SimulatorState.class);
 	}
 
-	public static synchronized void preinitialize() {
+	public synchronized void preinitialize() {
 		preinitialize(new SimulatorPreinitializationInfo());
 	}
 
-	public static synchronized void preinitialize(SimulatorPreinitializationInfo preinitializationInfo) {
+	public synchronized void preinitialize(SimulatorPreinitializationInfo preinitializationInfo) {
 		if (isRunning)
 			throw new RaoLibException("Cannot start new simulation while previous one is still running");
 
@@ -37,7 +42,7 @@ public class CurrentSimulator {
 		setCurrentSimulatorState(SimulatorState.PREINITIALIZED);
 	}
 
-	public static synchronized void initialize(SimulatorInitializationInfo initializationInfo) {
+	public synchronized void initialize(SimulatorInitializationInfo initializationInfo) {
 		if (currentSimulatorState != SimulatorState.PREINITIALIZED)
 			throw new RaoLibException("Simulation wasn't correctly preinitialized");
 
@@ -45,65 +50,60 @@ public class CurrentSimulator {
 		setCurrentSimulatorState(SimulatorState.INITIALIZED);
 	}
 
-	private static SimulatorState currentSimulatorState = SimulatorState.DEINITIALIZED;
-
 	public enum SimulatorState {
 		INITIALIZED, DEINITIALIZED, PREINITIALIZED
 	};
 
-	private static final void setCurrentSimulatorState(SimulatorState simulatorState) {
-		if (simulatorState == CurrentSimulator.currentSimulatorState)
+	private final void setCurrentSimulatorState(SimulatorState simulatorState) {
+		if (this.currentSimulatorState == simulatorState)
 			return;
 
-		CurrentSimulator.currentSimulatorState = simulatorState;
+		this.currentSimulatorState = simulatorState;
 		simulatorStateNotifier.notifySubscribers(simulatorState);
 	}
 
-	public static final void notifyError() {
+	public final void notifyError() {
 		onFinish(SystemEntryType.RUN_TIME_ERROR);
 		setCurrentSimulatorState(SimulatorState.DEINITIALIZED);
 	}
 
-	private static final Notifier<SimulatorState> simulatorStateNotifier = new Notifier<SimulatorState>(
-			SimulatorState.class);
-
-	public static final Notifier<SimulatorState> getSimulatorStateNotifier() {
+	public final Notifier<SimulatorState> getSimulatorStateNotifier() {
 		return simulatorStateNotifier;
 	}
 
-	public static boolean isInitialized() {
+	public boolean isInitialized() {
 		return currentSimulatorState == SimulatorState.INITIALIZED;
 	}
 
-	public static boolean isRunning() {
+	public boolean isRunning() {
 		return isRunning;
 	}
 
-	public static Database getDatabase() {
+	public Database getDatabase() {
 		return currentSimulator.getDatabase();
 	}
 
-	public static StaticModelData getStaticModelData() {
+	public StaticModelData getStaticModelData() {
 		return currentSimulator.getStaticModelData();
 	}
 
-	public static ModelState getModelState() {
+	public ModelState getModelState() {
 		return currentSimulator.getModelState();
 	}
 
-	public static void setModelState(ModelState modelState) {
+	public void setModelState(ModelState modelState) {
 		currentSimulator.setModelState(modelState);
 	}
 
-	public static double getTime() {
+	public double getTime() {
 		return currentSimulator.getTime();
 	}
 
-	public static void pushEvent(Event event) {
+	public void pushEvent(Event event) {
 		currentSimulator.pushEvent(event);
 	}
 
-	public static Logger getLogger() {
+	public Logger getLogger() {
 		return currentSimulator.getLogger();
 	}
 
@@ -111,21 +111,21 @@ public class CurrentSimulator {
 		EXECUTION_STARTED, EXECUTION_COMPLETED, EXECUTION_ABORTED, STATE_CHANGED, TIME_CHANGED, SEARCH_STEP
 	};
 
-	public static Notifier<ExecutionState> getExecutionStateNotifier() {
+	public Notifier<ExecutionState> getExecutionStateNotifier() {
 		return currentSimulator.getExecutionStateNotifier();
 	}
 
-	private static void notifyChange(ExecutionState category) {
+	private void notifyChange(ExecutionState category) {
 		currentSimulator.notifyChange(category);
 	}
 
-	public static List<AbstractResult<?>> getResults() {
+	public List<AbstractResult<?>> getResults() {
 		return currentSimulator.getResults();
 	}
 
-	private static volatile boolean isRunning = false;
+	private volatile boolean isRunning = false;
 
-	public static synchronized void stopExecution() {
+	public synchronized void stopExecution() {
 		if (currentSimulatorState != SimulatorState.INITIALIZED)
 			return;
 
@@ -133,17 +133,21 @@ public class CurrentSimulator {
 		notifyChange(ExecutionState.EXECUTION_ABORTED);
 	}
 
+	public ISimulator getSimulator() {
+		return currentSimulator;
+	}
+
 	public enum SimulationStopCode {
 		USER_INTERRUPT, NO_MORE_EVENTS, TERMINATE_CONDITION, RUNTIME_ERROR, SIMULATION_CONTINUES
 	}
 
-	public static SimulationStopCode run() {
+	public SimulationStopCode run() {
 		isRunning = true;
 
 		return stop(currentSimulator.run());
 	}
 
-	private static void onFinish(Database.SystemEntryType simFinishType) {
+	private void onFinish(Database.SystemEntryType simFinishType) {
 		try {
 			currentSimulator.getDatabase().addSystemEntry(simFinishType);
 			notifyChange(ExecutionState.EXECUTION_COMPLETED);
@@ -152,7 +156,7 @@ public class CurrentSimulator {
 		}
 	}
 
-	private static SimulationStopCode stop(SimulationStopCode code) {
+	private SimulationStopCode stop(SimulationStopCode code) {
 		Database.SystemEntryType simFinishType;
 		switch (code) {
 		case USER_INTERRUPT:
@@ -173,5 +177,10 @@ public class CurrentSimulator {
 
 		onFinish(simFinishType);
 		return code;
+	}
+
+	@Override
+	public SimulatorId getSimulatorId() {
+		return currentSimulator.getSimulatorId();
 	}
 }

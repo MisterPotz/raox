@@ -6,13 +6,39 @@ import java.util.List;
 import java.util.Set;
 
 import ru.bmstu.rk9.rao.lib.notification.Subscription.SubscriptionType;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulatorState;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulatorState;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
-public abstract class DefferedSubscriberManager<T> {
-	private enum InitializationState {
-		INITIALIZED, NOT_INITIALIZED, UNDEFINED
-	};
+public abstract class DefferedSubscriberManager<T> implements SimulatorDependent {
+	protected abstract void unregisterExecutionSubscribers();
+
+	protected Set<SubscriptionType> subscriptionFlags = EnumSet.noneOf(SubscriptionType.class);
+	protected final Set<T> subscribersInfo = new HashSet<T>();
+	private boolean initializationFired = false;
+	private boolean needFire = true;
+	private boolean targetInitialized = false;
+	private final SimulatorId simulatorId;
+
+	@Override
+	public SimulatorId getSimulatorId() {
+		return simulatorId;
+	}
+
+	protected ISimulator getSimulator() {
+		return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+	}
+
+	protected SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
+
+	public DefferedSubscriberManager(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+	}
 
 	private InitializationState initializationState = InitializationState.NOT_INITIALIZED;
 
@@ -29,14 +55,14 @@ public abstract class DefferedSubscriberManager<T> {
 		this.subscribersInfo.addAll(subscribersInfo);
 		this.subscriptionFlags.addAll(flags);
 
-		CurrentSimulator.getSimulatorStateNotifier().addSubscriber(initializationSubscriber, SimulatorState.INITIALIZED,
+		getSimulatorWrapper().getSimulatorStateNotifier().addSubscriber(initializationSubscriber, SimulatorState.INITIALIZED,
 				EnumSet.of(SubscriptionType.IGNORE_ACCUMULATED));
-		CurrentSimulator.getSimulatorStateNotifier().addSubscriber(deinitializationSubscriber,
+		getSimulatorWrapper().getSimulatorStateNotifier().addSubscriber(deinitializationSubscriber,
 				SimulatorState.DEINITIALIZED, EnumSet.of(SubscriptionType.IGNORE_ACCUMULATED));
 
 		initializationState = InitializationState.INITIALIZED;
 
-		if (!subscriptionFlags.contains(SubscriptionType.IGNORE_ACCUMULATED) && CurrentSimulator.isInitialized())
+		if (!subscriptionFlags.contains(SubscriptionType.IGNORE_ACCUMULATED) && getSimulatorWrapper().isInitialized())
 			initializationSubscriber.fireChange();
 	}
 
@@ -46,12 +72,12 @@ public abstract class DefferedSubscriberManager<T> {
 					"DefferedSubscriberManager should be initialized, but " + "it's state is " + initializationState);
 		initializationState = InitializationState.UNDEFINED;
 
-		if (CurrentSimulator.isInitialized() && needFire)
+		if (getSimulatorWrapper().isInitialized() && needFire)
 			deinitializationSubscriber.fireChange();
 
-		CurrentSimulator.getSimulatorStateNotifier().removeSubscriber(initializationSubscriber,
+		getSimulatorWrapper().getSimulatorStateNotifier().removeSubscriber(initializationSubscriber,
 				SimulatorState.INITIALIZED);
-		CurrentSimulator.getSimulatorStateNotifier().removeSubscriber(deinitializationSubscriber,
+		getSimulatorWrapper().getSimulatorStateNotifier().removeSubscriber(deinitializationSubscriber,
 				SimulatorState.DEINITIALIZED);
 
 		subscribersInfo.clear();
@@ -95,11 +121,7 @@ public abstract class DefferedSubscriberManager<T> {
 		}
 	};
 
-	protected abstract void unregisterExecutionSubscribers();
-
-	protected Set<SubscriptionType> subscriptionFlags = EnumSet.noneOf(SubscriptionType.class);
-	protected final Set<T> subscribersInfo = new HashSet<T>();
-	private boolean initializationFired = false;
-	private boolean needFire = true;
-	private boolean targetInitialized = false;
+	private enum InitializationState {
+		INITIALIZED, NOT_INITIALIZED, UNDEFINED
+	};
 }

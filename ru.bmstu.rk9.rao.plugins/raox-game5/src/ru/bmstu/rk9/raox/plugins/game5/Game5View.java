@@ -66,7 +66,7 @@ import org.json.simple.parser.ParseException;
 
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.lib.notification.Subscription.SubscriptionType;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.execution.ExecutionManager;

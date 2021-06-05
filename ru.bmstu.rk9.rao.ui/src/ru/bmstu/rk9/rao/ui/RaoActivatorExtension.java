@@ -41,6 +41,11 @@ public class RaoActivatorExtension extends RaoActivator {
 			"Simulation should be stopped prior to shutdown!", MessageDialog.ERROR,
 			new String[] { "Force Shutdown", "OK" }, 1);
 
+	public static TargetSimulatorManager getTargetSimulatorManager() {
+		return RaoActivatorExtension.getInstance().getInjector(RaoActivator.RU_BMSTU_RK9_RAO_RAO)
+				.getInstance(TargetSimulatorManager.class);
+	}
+
 	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);

@@ -7,10 +7,21 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
-public abstract class Logic extends AbstractDecisionPoint {
-	public Logic() {
+public abstract class Logic extends AbstractDecisionPoint implements SimulatorDependent {
+	private final SimulatorId simulatorId;
+
+	@Override
+	public SimulatorId getSimulatorId() {
+		return simulatorId;
+	}
+	
+	public Logic(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
 		initializeActivities();
 		init();
 	}
@@ -76,7 +87,7 @@ public abstract class Logic extends AbstractDecisionPoint {
 	private boolean checkActivities() {
 		for (Activity activity : activities)
 			if (activity.execute()) {
-				CurrentSimulator.getDatabase().addDecisionEntry(this, activity);
+				SimulatorManagerImpl.getInstance().getSimulator(simulatorId).getDatabase().addDecisionEntry(this, activity);
 				activity.getPattern().addResourceEntriesToDatabase(null, null);
 
 				return true;

@@ -62,7 +62,7 @@ class EventCompiler extends RaoEntityCompiler {
 
 						body = '''
 							«typeRef(GeneratedCodeContract.INITIALIZATION_SCOPE_CLASS + "." + event.name)» event = «GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD».new «eventClass.simpleName»(«String.join(", ", builderFeatures.buildedClassParameters)»);
-							ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.pushEvent(event);
+							getSimulator().pushEvent(event);
 						'''
 					]
 				]
