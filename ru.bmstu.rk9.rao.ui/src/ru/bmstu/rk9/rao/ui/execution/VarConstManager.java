@@ -3,6 +3,10 @@ package ru.bmstu.rk9.rao.ui.execution;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import ru.bmstu.rk9.rao.lib.varconst.VarConst;
 
 public class VarConstManager {
@@ -40,6 +44,15 @@ public class VarConstManager {
 			generateCombinations(values, depth + 1, combination);
 			combination.remove(combination.size() - 1);
 		}
+	}
+	
+	public HashMap<String, Double> listToHashMap(List<Double> values) {
+		HashMap<String, Double> hashMap = new HashMap<>();
+		
+	    IntStream.range(0, Math.min(values.size(), vcs.size()))
+	            .mapToObj(i -> Map.entry(vcs.get(i).getName(), values.get(i)))
+	            .forEach(entry -> hashMap.put(entry.getKey(), entry.getValue()));
+        return hashMap;
 	}
 	
 	private List< List<Double> > generateValuesMatrix() {

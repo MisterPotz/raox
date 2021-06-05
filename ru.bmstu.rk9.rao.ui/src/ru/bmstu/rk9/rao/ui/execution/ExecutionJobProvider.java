@@ -1,5 +1,7 @@
 package ru.bmstu.rk9.rao.ui.execution;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -11,17 +13,17 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
 import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.SimulationStopCode;
 import ru.bmstu.rk9.rao.lib.simulator.utils.SimulatorReflectionUtils;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationInfo;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.export.ExportTraceHandler;
-import ru.bmstu.rk9.rao.ui.gef.process.ProcessParsingException;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfigView;
 import ru.bmstu.rk9.rao.ui.simulation.StatusView;
@@ -43,12 +45,8 @@ public class ExecutionJobProvider {
 		final Job executionJob = new Job(project.getName() + " execution") {
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
-				final Display display = PlatformUI.getWorkbench().getDisplay();
 				final ModelInternalsParser parser = new ModelInternalsParser(project, resourceSetProvider,
 						typeResolver);
-
-				ConsoleView.clearConsoleText();
-
 				try {
 					parser.parse();
 				} catch (Exception e) {
@@ -57,48 +55,12 @@ public class ExecutionJobProvider {
 				} finally {
 					parser.closeClassLoader();
 				}
-
-				// TODO mess directly below, generalize in some way?
+				ConsoleView.clearConsoleText();
 				ExportTraceHandler.reset();
 				SerializationConfigView.initNames();
-
-				ISimulator simulator = new Simulator();
-				simulator.setSimulatorId(42);
-				CurrentSimulator.set(simulator);
 				SimulatorPreinitializationInfo preinitializationInfo = parser.getSimulatorPreinitializationInfo();
 
-				// TODO this is where we must plan the creation of model instances and run the simulations
-
-				try {
-					/**
-					 * change state of static context of model via running resourcePreinitializers
-					 */
-					CurrentSimulator.preinitialize(preinitializationInfo);
-				} catch (Exception e) {
-					e.printStackTrace();
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e);
-				}
-
-				try {
-					parser.postprocess();
-				} catch (ProcessParsingException e) {
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "invalid block parameter", e);
-				} catch (Exception e) {
-					e.printStackTrace();
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Model postprocessing failed", e);
-				}
 				
-				Object initializationScopeInstance = SimulatorReflectionUtils
-						.getInitializationField(simulator.getModelInstance(), parser
-								.getSimulatorPreinitializationInfo()
-								.getSimulatorCommonModelInfo()) ;
-	
-
-				display.syncExec(
-						() -> AnimationView.initialize(parser.getAnimationFrames().stream().map(frameConstructor -> {
-							return ReflectionUtils.safeNewInstance(AnimationFrame.class, frameConstructor, initializationScopeInstance);
-						}).collect(Collectors.toList())));
-
 				/**
 				 * TODO: maybe use static class methods and varconst array as a argument to generateCombinations method so 
 				 * generating looks like -> combinations = VarConstManager.generateCombinations(parser.getVarConst())
@@ -106,58 +68,17 @@ public class ExecutionJobProvider {
 				*/
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations();
-
-				try {
-					/** launch init#run */
-					CurrentSimulator.initialize(parser.getSimulatorInitializationInfo());
-				} catch (Exception e) {
-					e.printStackTrace();
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator initialization failed", e);
+								
+				for (List<Double> iterable_element : varconsts.getCombinations().subList(0, 2)) {
+					IStatus runningResult = runSeparateSimulator(
+							varconsts.listToHashMap(iterable_element),
+							parser);
+					if (IStatus.ERROR == runningResult.getCode()) {
+						return runningResult;
+					}
 				}
-
-				final long startTime = System.currentTimeMillis();
-				StatusView.setStartTime(startTime);
-				ConsoleView.addLine("Started model " + project.getName());
-
-				SimulationStopCode simulationResult;
-
-				try {
-					simulationResult = CurrentSimulator.run();
-				} catch (Throwable e) {
-					e.printStackTrace();
-					ConsoleView.addLine("Execution error\n");
-					ConsoleView.addLine("Call stack:");
-					ConsoleView.printStackTrace(e);
-					CurrentSimulator.notifyError();
-
-					if (e instanceof Error)
-						throw e;
-
-					return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Execution failed", e);
-				} finally {
-					display.syncExec(() -> AnimationView.deinitialize());
-				}
-
-				switch (simulationResult) {
-				case TERMINATE_CONDITION:
-					ConsoleView.addLine("Stopped by terminate condition");
-					break;
-				case USER_INTERRUPT:
-					ConsoleView.addLine("Model terminated by user");
-					break;
-				case NO_MORE_EVENTS:
-					ConsoleView.addLine("No more events");
-					break;
-				default:
-					ConsoleView.addLine("Runtime error");
-					break;
-				}
-
-				display.asyncExec(() -> ResultsView.update());
-
-				ConsoleView.addLine("Time elapsed: " + String.valueOf(System.currentTimeMillis() - startTime) + "ms");
-
 				return Status.OK_STATUS;
+
 			}
 
 			@Override
@@ -169,45 +90,46 @@ public class ExecutionJobProvider {
 		executionJob.setPriority(Job.LONG);
 		return executionJob;
 	}
-
-	private IStatus runSeparateModel(Simulator simulator, ModelInternalsParser modelInternalParser) {
+	
+	private IStatus runSeparateSimulator(
+			HashMap<String, Double> combination,
+			ModelInternalsParser readyParser
+			
+			) {	
+		final Display display = PlatformUI.getWorkbench().getDisplay();
 		ConsoleView.clearConsoleText();
-
-		final Display display = PlatformUI.getWorkbench().getDisplay(); 
-
-		try {
-			modelInternalParser.parse();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Model parsing failed", e);
-		} finally {
-			modelInternalParser.closeClassLoader();
-		}
+		ExportTraceHandler.reset();
+		SerializationConfigView.initNames();
 		
+		ISimulator simulator = new Simulator();
 		SimulatorWrapper simulatorWrapper = new SimulatorWrapper(simulator);
-		ISimulatorManager simulatorManager = RaoActivatorExtension.getTargetSimulatorManager().getSimulatorManager();
-		simulatorManager.addSimulatorWrapper(simulatorWrapper);
+		SimulatorManagerImpl.getInstance().addSimulator(simulator);
 
+		// TODO this is where we must plan the creation of model instances and run the simulations
 		try {
-			simulatorWrapper.preinitialize(modelInternalParser.getSimulatorPreinitializationInfo());
+			/**
+			 * change state of static context of model via running resourcePreinitializers
+			 */
+			simulatorWrapper.preinitialize(readyParser.getSimulatorPreinitializationInfo());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e);
 		}
-
-		try {
-			modelInternalParser.postprocess();
-		} catch (ProcessParsingException e) {
-			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "invalid block parameter", e);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Model postprocessing failed", e);
-		}
-
-		display.syncExec(() -> AnimationView.initialize(modelInternalParser.getAnimationFrames()));
 		
+		Object initializationScopeInstance = SimulatorReflectionUtils
+				.getInitializationField(simulator.getModelInstance(), readyParser
+						.getSimulatorPreinitializationInfo()
+						.getSimulatorCommonModelInfo()) ;
+
+
+		display.syncExec(
+				() -> AnimationView.initialize(readyParser.getAnimationFrames().stream().map(frameConstructor -> {
+					return ReflectionUtils.safeNewInstance(AnimationFrame.class, frameConstructor, initializationScopeInstance);
+				}).collect(Collectors.toList())));
+
 		try {
-			simulatorWrapper.initialize(modelInternalParser.getSimulatorInitializationInfo());
+			/** launch init#run */
+			simulatorWrapper.initialize(readyParser.getSimulatorInitializationInfo());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator initialization failed", e);
@@ -237,27 +159,23 @@ public class ExecutionJobProvider {
 		}
 
 		switch (simulationResult) {
-		case TERMINATE_CONDITION:
-			ConsoleView.addLine("Stopped by terminate condition");
-			break;
-		case USER_INTERRUPT:
-			ConsoleView.addLine("Model terminated by user");
-			break;
-		case NO_MORE_EVENTS:
-			ConsoleView.addLine("No more events");
-			break;
-		default:
-			ConsoleView.addLine("Runtime error");
-			break;
-		}
-		
-		ExportTraceHandler.reset();
-		SerializationConfigView.initNames();
+			case TERMINATE_CONDITION:
+				ConsoleView.addLine("Stopped by terminate condition");
+				break;
+			case USER_INTERRUPT:
+				ConsoleView.addLine("Model terminated by user");
+				break;
+			case NO_MORE_EVENTS:
+				ConsoleView.addLine("No more events");
+				break;
+			default:
+				ConsoleView.addLine("Runtime error");
+				break;
+			}
 
 		display.asyncExec(() -> ResultsView.update());
 
 		ConsoleView.addLine("Time elapsed: " + String.valueOf(System.currentTimeMillis() - startTime) + "ms");
-
 
 		return Status.OK_STATUS;
 	}

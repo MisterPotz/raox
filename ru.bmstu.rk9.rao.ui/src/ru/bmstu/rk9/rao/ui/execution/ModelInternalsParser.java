@@ -71,7 +71,6 @@ public class ModelInternalsParser {
 
 	private final List<Class<?>> decisionPointClasses = new ArrayList<>();
 
-	private final List<Class<?>> varconstClasses = new ArrayList<>();
 	private final List<VarConst> varconsts = new ArrayList<>();
 
 	private final ModelContentsInfo modelContentsInfo = new ModelContentsInfo();
@@ -348,6 +347,8 @@ public class ModelInternalsParser {
 			}
 		}
 
+		List<Class<?>> varconstClasses = new ArrayList<>();
+
 		// going through classes that are declared at initialization scope nested class
 		// in model
 		for (Class<?> nestedModelClass : initializationScope.getDeclaredClasses()) {
@@ -387,7 +388,24 @@ public class ModelInternalsParser {
 			if (AbstractResult.class.isAssignableFrom(field.getType()))
 				resultFields.add(field);
 		}
+		
+		simulatorInitializationInfo.setResultFields(resultFields);
+		simulatorInitializationInfo.setDecisionPointClasses(decisionPointClasses);
+		// setUpBlocks();
 
+		for (Class<?> varconstClass : varconstClasses) {
+			Constructor<?> constructor = ReflectionUtils.safeGetConstructor(varconstClass);
+			constructor.setAccessible(true);
+			VarConst varconst = (VarConst) constructor.newInstance();
+			varconsts.add(varconst);
+		}
+		
+		for (Class<?> animationClass : animationClasses) {
+			Constructor<?> constructor = 
+					ReflectionUtils.safeGetConstructor(animationClass, simulatorCommonModelInfo.getInitializationScopeClass());
+
+			animationFrames.add(constructor);
+		}
 		/** 27/03/2021 ??? not sure where it is used */
 		// for (Method method : modelClass.getDeclaredMethods()) {
 		// if (!method.getReturnType().equals(Boolean.TYPE))
@@ -409,25 +427,6 @@ public class ModelInternalsParser {
 		// modelContentsInfo.booleanFunctions.put(NamingHelper.createFullNameForMember(method),
 		// supplier);
 		// }
-	}
-
-	public final void postprocess() throws IllegalArgumentException, IllegalAccessException, InstantiationException,
-			InvocationTargetException, ClassNotFoundException, IOException, CoreException {
-		simulatorInitializationInfo.setResultFields(resultFields);
-		simulatorInitializationInfo.setDecisionPointClasses(decisionPointClasses);
-		// setUpBlocks();
-
-		for (Class<?> varconstClass : varconstClasses) {
-			VarConst varconst = (VarConst) varconstClass.newInstance();
-			varconsts.add(varconst);
-		}
-		
-		for (Class<?> animationClass : animationClasses) {
-			Constructor<?> constructor = 
-					ReflectionUtils.safeGetConstructor(animationClass, simulatorCommonModelInfo.getInitializationScopeClass());
-
-			animationFrames.add(constructor);
-		}
 	}
 
 	private void setUpBlocks() throws ClassNotFoundException, IOException, CoreException {
