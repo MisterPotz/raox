@@ -26,7 +26,9 @@ import ru.bmstu.rk9.rao.lib.logger.Logger;
 import ru.bmstu.rk9.rao.lib.logger.LoggerSubscriberManager.LoggerSubscriberInfo;
 import ru.bmstu.rk9.rao.lib.logger.LoggerSubscriberManager;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
+import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 
 public class ConsoleView extends ViewPart {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.ConsoleView"; //$NON-NLS-1$
@@ -34,6 +36,22 @@ public class ConsoleView extends ViewPart {
 	private static StyledText styledText;
 
 	private static String text = "";
+
+	private LoggerSubscriberManager loggerSubscriberManager;
+	
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+	
+	private final Subscriber loggingSubscriber = new Subscriber() {
+		@Override
+		public void fireChange() {
+			Logger logger = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getLogger();
+			String line;
+
+			while ((line = logger.poll()) != null) {
+				addLine(line);
+			}
+		}
+	};
 
 	@Override
 	public void createPartControl(Composite parent) {
@@ -71,27 +89,24 @@ public class ConsoleView extends ViewPart {
 	}
 
 	private final void initializeSubscribers() {
-		loggerSubscriberManager.initialize(
-				Arrays.asList(new LoggerSubscriberInfo(loggingSubscriber, Logger.NotificationCategory.NEW_LOG_ENTRY)));
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (loggerSubscriberManager == null) {
+				loggerSubscriberManager = new LoggerSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
+			}
+			loggerSubscriberManager.initialize(
+					Arrays.asList(new LoggerSubscriberInfo(loggingSubscriber, Logger.NotificationCategory.NEW_LOG_ENTRY)));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitializeSubscribers();
+		});
 	}
 
 	private final void deinitializeSubscribers() {
-		loggerSubscriberManager.deinitialize();
-	}
-
-	private LoggerSubscriberManager loggerSubscriberManager = new LoggerSubscriberManager();
-
-	private final Subscriber loggingSubscriber = new Subscriber() {
-		@Override
-		public void fireChange() {
-			Logger logger = CurrentSimulator.getLogger();
-			String line;
-
-			while ((line = logger.poll()) != null) {
-				addLine(line);
-			}
+		if (loggerSubscriberManager != null) {
+			loggerSubscriberManager.deinitialize();
 		}
-	};
+		loggerSubscriberManager = null;
+	}
 
 	private void updateTextFont() {
 		IThemeManager themeManager = PlatformUI.getWorkbench().getThemeManager();

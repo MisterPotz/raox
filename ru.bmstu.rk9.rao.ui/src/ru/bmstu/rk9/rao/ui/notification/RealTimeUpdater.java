@@ -11,25 +11,49 @@ import org.eclipse.ui.PlatformUI;
 
 import ru.bmstu.rk9.rao.lib.database.Database;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorDependent;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
+import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationModeDispatcher;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
+import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
-public class RealTimeUpdater {
 
+public class RealTimeUpdater implements UiSimulatorDependent {
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+	private SimulatorSubscriberManager subscriberRegistrationManager;
+	
 	public RealTimeUpdater() {
-		subscriberRegistrationManager.initialize(
-				Arrays.asList(new SimulatorSubscriberInfo(simulationStartSubscriber, ExecutionState.EXECUTION_STARTED),
-						new SimulatorSubscriberInfo(simulationStopSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+		initializeSubscribers();
 	}
 
-	private final SimulatorSubscriberManager subscriberRegistrationManager = new SimulatorSubscriberManager();
-
+	private final void initializeSubscribers() {
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (subscriberRegistrationManager == null) {
+				subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+			}
+			subscriberRegistrationManager.initialize(
+					Arrays.asList(new SimulatorSubscriberInfo(simulationStartSubscriber, ExecutionState.EXECUTION_STARTED),
+							new SimulatorSubscriberInfo(simulationStopSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitialize();
+		});
+	}
+	
 	public final void deinitialize() {
-		subscriberRegistrationManager.deinitialize();
+		if (subscriberRegistrationManager != null) {
+			subscriberRegistrationManager.deinitialize();
+		}
+		subscriberRegistrationManager = null;
 	}
 
 	public final void addScheduledAction(Runnable runnable) {
@@ -42,7 +66,7 @@ public class RealTimeUpdater {
 
 	private final void start() {
 		display = PlatformUI.getWorkbench().getDisplay();
-		CurrentSimulator.getDatabase().getNotifier().addSubscriber(databaseSubscriber,
+		getTargetSimulator().getDatabase().getNotifier().addSubscriber(databaseSubscriber,
 				Database.NotificationCategory.ENTRY_ADDED);
 
 		timer = new Timer();

@@ -19,7 +19,10 @@ import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
 import ru.bmstu.rk9.rao.lib.animation.Background;
 import ru.bmstu.rk9.rao.lib.animation.RaoColor;
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
+import ru.bmstu.rk9.rao.ui.TargetSimulatorManager;
+import ru.bmstu.rk9.rao.ui.internal.RaoActivator;
 
 public class AnimationContextSWT implements AnimationContext {
 	private Display display;
@@ -246,7 +249,8 @@ public class AnimationContextSWT implements AnimationContext {
 	private final Image getOrCreateImage(String name) {
 		Image image = images.get(name);
 		if (image == null) {
-			final IPath projectLocation = new Path(CurrentSimulator.getStaticModelData().getModelStructure()
+			SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
+			final IPath projectLocation = new Path(currentSimulatorWrapper.getStaticModelData().getModelStructure()
 					.getString(ModelStructureConstants.LOCATION));
 			image = new Image(display, projectLocation.append(name).toString());
 			images.put(name, image);

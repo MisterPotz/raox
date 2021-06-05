@@ -48,17 +48,24 @@ import org.eclipse.xtext.ui.editor.model.IXtextModelListener;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.rao.RaoModel;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.execution.BuildUtil;
+import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfig.SerializationNode;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
+import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
 import com.google.inject.Inject;
 
-public class SerializationConfigView extends ViewPart {
+public class SerializationConfigView extends ViewPart implements UiSimulatorDependent {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.SerializationConfigView";
+
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 	// ---------------------------------- API ------------------------------ //
@@ -446,16 +453,28 @@ public class SerializationConfigView extends ViewPart {
 	// ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
 	private final void initializeSubscribers() {
-		subscriberRegistrationManager.initialize(
-				Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
-						new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (subscriberRegistrationManager == null) {
+				subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+			}
+			subscriberRegistrationManager.initialize(
+					Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
+							new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitializeSubscribers();
+		});
+
 	}
 
 	private final void deinitializeSubscribers() {
-		subscriberRegistrationManager.deinitialize();
+		if (subscriberRegistrationManager != null) {
+			subscriberRegistrationManager.deinitialize();
+		}
+		subscriberRegistrationManager = null;
 	}
 
-	private final static SimulatorSubscriberManager subscriberRegistrationManager = new SimulatorSubscriberManager();
+	private static SimulatorSubscriberManager subscriberRegistrationManager;
 
 	private final static Subscriber enableSubscriber = new Subscriber() {
 		@Override

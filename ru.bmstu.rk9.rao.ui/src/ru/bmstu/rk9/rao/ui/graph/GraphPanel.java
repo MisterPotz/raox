@@ -44,10 +44,13 @@ import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.IndexType;
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
 import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
+import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.graph.GraphControl.FrameInfo;
 import ru.bmstu.rk9.rao.ui.graph.GraphInfoWindow.InfoElement;
 import ru.bmstu.rk9.rao.ui.graph.TreeBuilder.GraphInfo;
@@ -55,37 +58,81 @@ import ru.bmstu.rk9.rao.ui.graph.TreeBuilder.Node;
 import ru.bmstu.rk9.rao.ui.graph.TreeBuilder.ParentChange;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView.ConditionalMenuItem;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 
 public class GraphPanel extends JPanel implements GraphApi {
-
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	private static final long serialVersionUID = 1668866556340389760L;
+	private SimulatorSubscriberManager simulationSubscriberManager;
+	private RealTimeSubscriberManager realTimeSubscriberManager;
+	private final mxGraph graph;
+	private final mxCompactTreeLayout layout;
+	private final mxGraphComponent graphComponent;
 
-	static private class GraphMenuItem extends ConditionalMenuItem {
-
-		public GraphMenuItem(Menu parent) {
-			super(parent, "Graph");
-		}
-
+	private final Subscriber commonSubscriber = new Subscriber() {
 		@Override
-		public boolean isEnabled(CollectedDataNode node) {
-			Index index = node.getIndex();
-			if (index == null)
-				return false;
-
-			return index.getType() == IndexType.SEARCH;
+		public void fireChange() {
+			PlatformUI.getWorkbench().getDisplay().asyncExec(realTimeUpdateRunnable);
 		}
+	};
 
+	private final Runnable realTimeUpdateRunnable = new Runnable() {
 		@Override
-		public void show(CollectedDataNode node) {
-			Index index = node.getIndex();
-			if (index == null)
+		public void run() {
+			if (isFinished)
 				return;
+			graph.getModel().beginUpdate();
+			isFinished = treeBuilder.updateTree();
+			try {
+				updateVertices();
+				mxRectangle graphBounds = graph.getBoundsForCells(vertexByNode.values().toArray(), false, false, false);
+				if (graphBounds == null)
+					return;
 
-			int dptNumber = index.getNumber();
-			String frameName = node.getName();
-			FrameInfo frameInfo = new FrameInfo(dptNumber, frameName);
-			GraphControl.openFrameWindow(frameInfo);
+				if (graphBounds.getWidth() > getWidth()) {
+					layout.setMoveTree(true);
+					zoomToFit();
+				} else {
+					layout.execute(graph.getDefaultParent());
+				}
+
+				if (isFinished)
+					onFinish();
+			} finally {
+				if (isFinished)
+					deinitializeSubscribers();
+				graph.getModel().endUpdate();
+			}
 		}
+	};
+	
+	private final void initializeSubscribers() {
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (simulationSubscriberManager == null) {
+				simulationSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
+			}
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			simulationSubscriberManager.initialize(
+					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
+							new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitializeSubscribers();
+		});
+	}
+
+	final void deinitializeSubscribers() {
+		if (simulationSubscriberManager != null) {
+			simulationSubscriberManager.deinitialize();
+		}
+		if (realTimeSubscriberManager != null) {
+			realTimeSubscriberManager.deinitialize();
+		}
+		simulationSubscriberManager = null;
+		realTimeSubscriberManager = null;
 	}
 
 	static public ConditionalMenuItem createConditionalMenuItem(Menu parent) {
@@ -138,7 +185,7 @@ public class GraphPanel extends JPanel implements GraphApi {
 
 		setProportions();
 
-		final boolean useShortNames = CurrentSimulator.getStaticModelData().getModelStructure()
+		final boolean useShortNames = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getModelStructure()
 				.getInt(ModelStructureConstants.NUMBER_OF_MODELS) == 1;
 		treeBuilder = new TreeBuilder(dptNum, useShortNames);
 		isFinished = treeBuilder.updateTree();
@@ -192,8 +239,9 @@ public class GraphPanel extends JPanel implements GraphApi {
 		});
 
 		graphEventNotifier.addSubscriber(graphInfoWindowOpenedSubscriber, GraphEvent.GRAPHINFO_WINDOW_OPENED);
-		if (!isFinished)
+		if (!isFinished) {
 			initializeSubscribers();
+		}
 	}
 
 	final void onDispose() {
@@ -291,61 +339,6 @@ public class GraphPanel extends JPanel implements GraphApi {
 	// --------------------------- SUBSCRIPTIONS --------------------------- //
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
-	private final void initializeSubscribers() {
-		simulationSubscriberManager.initialize(
-				Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
-						new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
-		realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-	}
-
-	final void deinitializeSubscribers() {
-		simulationSubscriberManager.deinitialize();
-		realTimeSubscriberManager.deinitialize();
-	}
-
-	private final SimulatorSubscriberManager simulationSubscriberManager = new SimulatorSubscriberManager();
-	private final RealTimeSubscriberManager realTimeSubscriberManager = new RealTimeSubscriberManager();
-
-	private final mxGraph graph;
-	private final mxCompactTreeLayout layout;
-	private final mxGraphComponent graphComponent;
-
-	private final Subscriber commonSubscriber = new Subscriber() {
-		@Override
-		public void fireChange() {
-			PlatformUI.getWorkbench().getDisplay().asyncExec(realTimeUpdateRunnable);
-		}
-	};
-
-	private final Runnable realTimeUpdateRunnable = new Runnable() {
-		@Override
-		public void run() {
-			if (isFinished)
-				return;
-			graph.getModel().beginUpdate();
-			isFinished = treeBuilder.updateTree();
-			try {
-				updateVertices();
-				mxRectangle graphBounds = graph.getBoundsForCells(vertexByNode.values().toArray(), false, false, false);
-				if (graphBounds == null)
-					return;
-
-				if (graphBounds.getWidth() > getWidth()) {
-					layout.setMoveTree(true);
-					zoomToFit();
-				} else {
-					layout.execute(graph.getDefaultParent());
-				}
-
-				if (isFinished)
-					onFinish();
-			} finally {
-				if (isFinished)
-					deinitializeSubscribers();
-				graph.getModel().endUpdate();
-			}
-		}
-	};
 
 	private final void onFinish() {
 		colorNodes();
@@ -760,4 +753,33 @@ public class GraphPanel extends JPanel implements GraphApi {
 	public final int getRelativeHeight(double ratio) {
 		return (int) (getHeight() * ratio);
 	}
+	
+	static private class GraphMenuItem extends ConditionalMenuItem {
+
+		public GraphMenuItem(Menu parent) {
+			super(parent, "Graph");
+		}
+
+		@Override
+		public boolean isEnabled(CollectedDataNode node) {
+			Index index = node.getIndex();
+			if (index == null)
+				return false;
+
+			return index.getType() == IndexType.SEARCH;
+		}
+
+		@Override
+		public void show(CollectedDataNode node) {
+			Index index = node.getIndex();
+			if (index == null)
+				return;
+
+			int dptNumber = index.getNumber();
+			String frameName = node.getName();
+			FrameInfo frameInfo = new FrameInfo(dptNumber, frameName);
+			GraphControl.openFrameWindow(frameInfo);
+		}
+	}
+
 }

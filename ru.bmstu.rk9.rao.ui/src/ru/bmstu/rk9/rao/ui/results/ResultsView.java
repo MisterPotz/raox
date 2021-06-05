@@ -40,8 +40,10 @@ import org.eclipse.ui.themes.IThemeManager;
 import org.osgi.framework.Bundle;
 
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.export.ExportResultsHandler;
+import ru.bmstu.rk9.rao.ui.internal.RaoActivator;
 
 public class ResultsView extends ViewPart {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.ResultsView"; //$NON-NLS-1$
@@ -53,7 +55,7 @@ public class ResultsView extends ViewPart {
 	private static boolean viewAsText = prefs.getBoolean("ResultsViewAsText", false);
 
 	public static void update() {
-		ResultsView.results = CurrentSimulator.getResults();
+		ResultsView.results = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getResults();
 
 		if (!isInitialized())
 			return;

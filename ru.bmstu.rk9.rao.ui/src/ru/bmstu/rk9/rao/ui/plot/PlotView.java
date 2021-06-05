@@ -45,30 +45,42 @@ import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.Index;
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.PatternIndex;
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.plot.PlotDataParser.DataParserResult;
 import ru.bmstu.rk9.rao.ui.plot.PlotDataParser.PlotItem;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView.ConditionalMenuItem;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
+import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
-public class PlotView extends ViewPart {
+public class PlotView extends ViewPart implements UiSimulatorDependent {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.PlotView";
 	private final static Map<CollectedDataNode, Integer> openedPlotMap = new HashMap<CollectedDataNode, Integer>();
 	private static int secondaryID = 0;
-
-	public static Map<CollectedDataNode, Integer> getOpenedPlotMap() {
-		return openedPlotMap;
-	}
-
-	public static void addToOpenedPlotMap(final CollectedDataNode node, final int secondaryID) {
-		openedPlotMap.put(node, secondaryID);
-	}
-
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+	private SimulatorSubscriberManager simulatorSubscriberManager;
+	private RealTimeSubscriberManager realTimeSubscriberManager;
 	private PlotFrame plotFrame;
+	private PlotDataParser plotDataParser;
 	private CollectedDataNode partNode;
+	private final RealTimeUpdateRunnable realTimeUpdateRunnable = new RealTimeUpdateRunnable(false);
+	private final Subscriber commonSubcriber = new Subscriber() {
+		@Override
+		public void fireChange() {
+			PlatformUI.getWorkbench().getDisplay().asyncExec(realTimeUpdateRunnable);
+		}
+	};
+
+	private final Subscriber endSubscriber = new Subscriber() {
+		@Override
+		public void fireChange() {
+			realTimeUpdateRunnable.changeLastValueFlag();
+			PlatformUI.getWorkbench().getDisplay().asyncExec(realTimeUpdateRunnable);
+		}
+	};
 
 	public PlotFrame getFrame() {
 		return plotFrame;
@@ -133,25 +145,228 @@ public class PlotView extends ViewPart {
 	}
 
 	private final void initializeSubscribers() {
-		simulatorSubscriberManager.initialize(
-				Arrays.asList(new SimulatorSubscriberInfo(commonSubcriber, ExecutionState.EXECUTION_STARTED),
-						new SimulatorSubscriberInfo(endSubscriber, ExecutionState.EXECUTION_COMPLETED)));
-		realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (simulatorSubscriberManager == null) {
+				simulatorSubscriberManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+			}
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			simulatorSubscriberManager.initialize(
+					Arrays.asList(new SimulatorSubscriberInfo(commonSubcriber, ExecutionState.EXECUTION_STARTED),
+							new SimulatorSubscriberInfo(endSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitializeSubscribers();
+		});
 	}
 
 	private final void deinitializeSubscribers() {
-		simulatorSubscriberManager.deinitialize();
-		realTimeSubscriberManager.deinitialize();
+		if (simulatorSubscriberManager != null) {
+			simulatorSubscriberManager.deinitialize();
+		}
+		if (realTimeSubscriberManager != null) {
+			realTimeSubscriberManager.deinitialize();
+		}
+		realTimeSubscriberManager = null;
+		simulatorSubscriberManager = null;
 	}
-
-	private final SimulatorSubscriberManager simulatorSubscriberManager = new SimulatorSubscriberManager();
-	private final RealTimeSubscriberManager realTimeSubscriberManager = new RealTimeSubscriberManager();
-	private PlotDataParser plotDataParser;
-
+	
 	private final boolean readyForInput() {
 		return plotFrame != null && !plotFrame.isDisposed();
 	}
 
+	@Override
+	public void setFocus() {
+	}
+
+	public void plotXY(final XYSeriesCollection dataset) {
+		final JFreeChart chart = createChart(dataset);
+		plotFrame.setChart(chart);
+		plotFrame.setDomainZoomable(false);
+		plotFrame.setRangeZoomable(false);
+	}
+
+	private JFreeChart createChart(final XYDataset dataset) {
+		final JFreeChart chart = FilteringPlotFactory.createXYStepChart("", "Time", "Value", dataset,
+				PlotOrientation.VERTICAL, true, false, false);
+
+		final XYPlot plot = chart.getXYPlot();
+
+		Color white = new Color(0xFF, 0XFF, 0xFF);
+		plot.setBackgroundPaint(white);
+		Color grey = new Color(0x99, 0x99, 0x99);
+		plot.setDomainGridlinePaint(grey);
+		plot.setRangeGridlinePaint(grey);
+		plot.getRenderer().setSeriesStroke(0, new BasicStroke((float) 2.5));
+
+		NumberAxis rangeAxis = new NumberAxis();
+		rangeAxis.setAutoRangeIncludesZero(true);
+		plot.setRangeAxis(rangeAxis);
+
+		final NumberAxis domainAxis = new NumberAxis();
+		domainAxis.setAutoRangeIncludesZero(true);
+		plot.setDomainAxis(domainAxis);
+
+		double horizontalMaximum = domainAxis.getRange().getLength();
+		double verticalMaximum = rangeAxis.getRange().getLength();
+		plotFrame.setChartMaximum(horizontalMaximum, verticalMaximum);
+
+		return chart;
+	}
+	
+	static public ConditionalMenuItem createConditionalMenuItemExportCsv(Menu parent) {
+		return new ExportCsvMenuItem(parent);
+	}
+
+	static public ConditionalMenuItem createConditionalMenuItemExportJson(Menu parent) {
+		return new ExportJsonMenuItem(parent);
+	}
+
+	static public ConditionalMenuItem createConditionalMenuItem(Menu parent) {
+		return new PlotMenuItem(parent);
+	}
+	
+	public static Map<CollectedDataNode, Integer> getOpenedPlotMap() {
+		return openedPlotMap;
+	}
+
+	public static void addToOpenedPlotMap(final CollectedDataNode node, final int secondaryID) {
+		openedPlotMap.put(node, secondaryID);
+	}
+	
+	private abstract static class ExportMenuItem extends ConditionalMenuItem {
+		private String exportFormat;
+
+		public ExportMenuItem(Menu parent, String exportFormat) {
+			super(parent, "Export to " + exportFormat.toUpperCase());
+			this.exportFormat = exportFormat;
+		}
+
+		@Override
+		public boolean isEnabled(CollectedDataNode node) {
+			Index index = node.getIndex();
+
+			if (PlotView.getOpenedPlotMap().containsKey(node)) {
+				if (index == null)
+					return false;
+
+				switch (index.getType()) {
+				case RESOURCE_PARAMETER:
+					return true;
+				case RESULT:
+					return true;
+				case PATTERN:
+					PatternIndex patternIndex = (PatternIndex) index;
+					int patternNumber = patternIndex.getNumber();
+					String patternType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getPatternType(patternNumber);
+					return patternType.equals(ModelStructureConstants.OPERATION);
+				default:
+					return false;
+				}
+			} else {
+				return false;
+			}
+		}
+
+		abstract protected void write(Writer writer, List<PlotItem> dataset) throws IOException;
+
+		@Override
+		public void show(CollectedDataNode node) {
+			FileDialog fileDialog = new FileDialog(getDisplay().getActiveShell(), SWT.SAVE);
+			fileDialog.setText("Export to " + exportFormat.toUpperCase());
+			String[] filter = { "*." + exportFormat.toLowerCase(), "*.*" };
+			fileDialog.setFilterExtensions(filter);
+
+			String fileName = fileDialog.open();
+			if (fileName != null && fileName.length() > 0) {
+				PlotDataParser parser = new PlotDataParser(node);
+				DataParserResult result = parser.parseEntries();
+
+				try (Writer writer = new BufferedWriter(
+						new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8"))) {
+					write(writer, result.dataset);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	static private class ExportCsvMenuItem extends ExportMenuItem {
+		public ExportCsvMenuItem(Menu parent) {
+			super(parent, "csv");
+		}
+
+		@Override
+		protected void write(Writer writer, List<PlotItem> dataset) throws IOException {
+			writer.write("x,y\n");
+			for (PlotItem pi : dataset) {
+				writer.write(String.valueOf(pi.x) + "," + String.valueOf(pi.y) + "\n");
+			}
+		}
+	}
+	
+	static private class ExportJsonMenuItem extends ExportMenuItem {
+		public ExportJsonMenuItem(Menu parent) {
+			super(parent, "json");
+		}
+
+		@Override
+		protected void write(Writer writer, List<PlotItem> dataset) throws IOException {
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			String data = gson.toJson(dataset);
+			writer.write(data);
+		}
+	}
+	
+	static private class PlotMenuItem extends ConditionalMenuItem {
+		public PlotMenuItem(Menu parent) {
+			super(parent, "Plot");
+		}
+
+		@Override
+		public boolean isEnabled(CollectedDataNode node) {
+			Index index = node.getIndex();
+			if (index == null)
+				return false;
+
+			switch (index.getType()) {
+			case RESOURCE_PARAMETER:
+				return true;
+			case RESULT:
+				return true;
+			case PATTERN:
+				PatternIndex patternIndex = (PatternIndex) index;
+				int patternNumber = patternIndex.getNumber();
+				String patternType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getPatternType(patternNumber);
+				return patternType.equals(ModelStructureConstants.OPERATION);
+			default:
+				return false;
+			}
+		}
+
+		@Override
+		public void show(CollectedDataNode node) {
+			try {
+				if (PlotView.getOpenedPlotMap().containsKey(node)) {
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(PlotView.ID,
+							String.valueOf(PlotView.getOpenedPlotMap().get(node)), IWorkbenchPage.VIEW_ACTIVATE);
+				} else {
+					PlotView newView = (PlotView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
+							.showView(PlotView.ID, String.valueOf(secondaryID), IWorkbenchPage.VIEW_ACTIVATE);
+					PlotView.addToOpenedPlotMap(node, secondaryID);
+					secondaryID++;
+
+					newView.initialize(node);
+				}
+			} catch (PartInitException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	private class RealTimeUpdateRunnable implements Runnable {
 		private boolean isLastEntry;
 
@@ -212,217 +427,18 @@ public class PlotView extends ViewPart {
 					List<XYDataItem> seriesitems = newSeries.getItems();
 
 					if (seriesitems.get(0).equals(seriesitems.get(1))) {
-						newSeries.add(CurrentSimulator.getTime(), seriesitems.get(1).getY());
+						newSeries.add(RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getTime(), seriesitems.get(1).getY());
 						plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
 						plotFrame.updateSliders();
 					}
 				} else if (newSeries.getItemCount() == 1) {
 					@SuppressWarnings("unchecked")
 					List<XYDataItem> seriesitems = newSeries.getItems();
-					newSeries.add(CurrentSimulator.getTime(), seriesitems.get(0).getY());
+					newSeries.add(RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getTime(), seriesitems.get(0).getY());
 					plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
 					plotFrame.updateSliders();
 				}
 			}
 		}
 	};
-
-	private final RealTimeUpdateRunnable realTimeUpdateRunnable = new RealTimeUpdateRunnable(false);
-
-	private final Subscriber commonSubcriber = new Subscriber() {
-		@Override
-		public void fireChange() {
-			PlatformUI.getWorkbench().getDisplay().asyncExec(realTimeUpdateRunnable);
-		}
-	};
-
-	private final Subscriber endSubscriber = new Subscriber() {
-		@Override
-		public void fireChange() {
-			realTimeUpdateRunnable.changeLastValueFlag();
-			PlatformUI.getWorkbench().getDisplay().asyncExec(realTimeUpdateRunnable);
-		}
-	};
-
-	@Override
-	public void setFocus() {
-	}
-
-	public void plotXY(final XYSeriesCollection dataset) {
-		final JFreeChart chart = createChart(dataset);
-		plotFrame.setChart(chart);
-		plotFrame.setDomainZoomable(false);
-		plotFrame.setRangeZoomable(false);
-	}
-
-	private JFreeChart createChart(final XYDataset dataset) {
-		final JFreeChart chart = FilteringPlotFactory.createXYStepChart("", "Time", "Value", dataset,
-				PlotOrientation.VERTICAL, true, false, false);
-
-		final XYPlot plot = chart.getXYPlot();
-
-		Color white = new Color(0xFF, 0XFF, 0xFF);
-		plot.setBackgroundPaint(white);
-		Color grey = new Color(0x99, 0x99, 0x99);
-		plot.setDomainGridlinePaint(grey);
-		plot.setRangeGridlinePaint(grey);
-		plot.getRenderer().setSeriesStroke(0, new BasicStroke((float) 2.5));
-
-		NumberAxis rangeAxis = new NumberAxis();
-		rangeAxis.setAutoRangeIncludesZero(true);
-		plot.setRangeAxis(rangeAxis);
-
-		final NumberAxis domainAxis = new NumberAxis();
-		domainAxis.setAutoRangeIncludesZero(true);
-		plot.setDomainAxis(domainAxis);
-
-		double horizontalMaximum = domainAxis.getRange().getLength();
-		double verticalMaximum = rangeAxis.getRange().getLength();
-		plotFrame.setChartMaximum(horizontalMaximum, verticalMaximum);
-
-		return chart;
-	}
-
-	private abstract static class ExportMenuItem extends ConditionalMenuItem {
-		private String exportFormat;
-
-		public ExportMenuItem(Menu parent, String exportFormat) {
-			super(parent, "Export to " + exportFormat.toUpperCase());
-			this.exportFormat = exportFormat;
-		}
-
-		@Override
-		public boolean isEnabled(CollectedDataNode node) {
-			Index index = node.getIndex();
-
-			if (PlotView.getOpenedPlotMap().containsKey(node)) {
-				if (index == null)
-					return false;
-
-				switch (index.getType()) {
-				case RESOURCE_PARAMETER:
-					return true;
-				case RESULT:
-					return true;
-				case PATTERN:
-					PatternIndex patternIndex = (PatternIndex) index;
-					int patternNumber = patternIndex.getNumber();
-					String patternType = CurrentSimulator.getStaticModelData().getPatternType(patternNumber);
-					return patternType.equals(ModelStructureConstants.OPERATION);
-				default:
-					return false;
-				}
-			} else {
-				return false;
-			}
-		}
-
-		abstract protected void write(Writer writer, List<PlotItem> dataset) throws IOException;
-
-		@Override
-		public void show(CollectedDataNode node) {
-			FileDialog fileDialog = new FileDialog(getDisplay().getActiveShell(), SWT.SAVE);
-			fileDialog.setText("Export to " + exportFormat.toUpperCase());
-			String[] filter = { "*." + exportFormat.toLowerCase(), "*.*" };
-			fileDialog.setFilterExtensions(filter);
-
-			String fileName = fileDialog.open();
-			if (fileName != null && fileName.length() > 0) {
-				PlotDataParser parser = new PlotDataParser(node);
-				DataParserResult result = parser.parseEntries();
-
-				try (Writer writer = new BufferedWriter(
-						new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8"))) {
-					write(writer, result.dataset);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	}
-
-	static private class ExportCsvMenuItem extends ExportMenuItem {
-		public ExportCsvMenuItem(Menu parent) {
-			super(parent, "csv");
-		}
-
-		@Override
-		protected void write(Writer writer, List<PlotItem> dataset) throws IOException {
-			writer.write("x,y\n");
-			for (PlotItem pi : dataset) {
-				writer.write(String.valueOf(pi.x) + "," + String.valueOf(pi.y) + "\n");
-			}
-		}
-	}
-
-	static private class ExportJsonMenuItem extends ExportMenuItem {
-		public ExportJsonMenuItem(Menu parent) {
-			super(parent, "json");
-		}
-
-		@Override
-		protected void write(Writer writer, List<PlotItem> dataset) throws IOException {
-			Gson gson = new GsonBuilder().setPrettyPrinting().create();
-			String data = gson.toJson(dataset);
-			writer.write(data);
-		}
-	}
-
-	static private class PlotMenuItem extends ConditionalMenuItem {
-		public PlotMenuItem(Menu parent) {
-			super(parent, "Plot");
-		}
-
-		@Override
-		public boolean isEnabled(CollectedDataNode node) {
-			Index index = node.getIndex();
-			if (index == null)
-				return false;
-
-			switch (index.getType()) {
-			case RESOURCE_PARAMETER:
-				return true;
-			case RESULT:
-				return true;
-			case PATTERN:
-				PatternIndex patternIndex = (PatternIndex) index;
-				int patternNumber = patternIndex.getNumber();
-				String patternType = CurrentSimulator.getStaticModelData().getPatternType(patternNumber);
-				return patternType.equals(ModelStructureConstants.OPERATION);
-			default:
-				return false;
-			}
-		}
-
-		@Override
-		public void show(CollectedDataNode node) {
-			try {
-				if (PlotView.getOpenedPlotMap().containsKey(node)) {
-					PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(PlotView.ID,
-							String.valueOf(PlotView.getOpenedPlotMap().get(node)), IWorkbenchPage.VIEW_ACTIVATE);
-				} else {
-					PlotView newView = (PlotView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-							.showView(PlotView.ID, String.valueOf(secondaryID), IWorkbenchPage.VIEW_ACTIVATE);
-					PlotView.addToOpenedPlotMap(node, secondaryID);
-					secondaryID++;
-
-					newView.initialize(node);
-				}
-			} catch (PartInitException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	static public ConditionalMenuItem createConditionalMenuItemExportCsv(Menu parent) {
-		return new ExportCsvMenuItem(parent);
-	}
-
-	static public ConditionalMenuItem createConditionalMenuItemExportJson(Menu parent) {
-		return new ExportJsonMenuItem(parent);
-	}
-
-	static public ConditionalMenuItem createConditionalMenuItem(Menu parent) {
-		return new PlotMenuItem(parent);
-	}
 }

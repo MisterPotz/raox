@@ -10,13 +10,14 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.PlatformUI;
 
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 
 //TODO export to location chosen by user
 
 public class ExportPrintWriter {
 	final static PrintWriter initializeWriter(String suffix) {
-		final String projectName = CurrentSimulator.getStaticModelData().getModelStructure()
+		final String projectName = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getModelStructure()
 				.getString(ModelStructureConstants.NAME);
 		final IPath projectPath = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName).getLocation();
 		final IPath filePath = projectPath.append(projectName + suffix);

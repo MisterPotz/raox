@@ -28,18 +28,21 @@ import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.themes.ITheme;
 import org.eclipse.ui.themes.IThemeManager;
 
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 
-public class StatusView extends ViewPart {
+public class StatusView extends ViewPart implements UiSimulatorDependent {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.StatusView"; //$NON-NLS-1$
-
+	private RealTimeSubscriberManager realTimeSubscriberManager;
 	private static StatusView INSTANCE;
 
 	private ScrolledComposite scrolledComposite;
 	private RowLayout scrolledCompositeLayout;
 
 	private Composite composite;
-
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+	
 	public static class Element extends Composite {
 		private Label label;
 		private Text text;
@@ -198,14 +201,23 @@ public class StatusView extends ViewPart {
 	}
 
 	private final void initializeSubscribers() {
-		realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitializeSubscribers();
+		});
 	}
 
 	private final void deinitializeSubscribers() {
-		realTimeSubscriberManager.deinitialize();
+		if (realTimeSubscriberManager != null) {
+			realTimeSubscriberManager.deinitialize();
+		}
+		realTimeSubscriberManager = null;
 	}
-
-	private final RealTimeSubscriberManager realTimeSubscriberManager = new RealTimeSubscriberManager();
 
 	private void updateScrolledCompositeSize() {
 		int h = 0, v = 0;

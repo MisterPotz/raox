@@ -38,20 +38,25 @@ import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.Index;
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.IndexType;
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.ResourceIndex;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.graph.GraphPanel;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.plot.PlotView;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
+import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
-public class SerializedObjectsView extends ViewPart {
+public class SerializedObjectsView extends ViewPart implements UiSimulatorDependent {
 
 	static TreeViewer serializedObjectsTreeViewer;
 	public static final String ID = "ru.bmstu.rk9.rao.ui.SerializedObjectsView";
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
-
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+	
 	public abstract static class ConditionalMenuItem extends MenuItem {
 
 		public ConditionalMenuItem(Menu parent, String name) {
@@ -139,21 +144,38 @@ public class SerializedObjectsView extends ViewPart {
 		deinitializeSubscribers();
 		super.dispose();
 	}
-
+	
 	private final void initializeSubscribers() {
-		subscriberSubscriberManager.initialize(
-				Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
-						new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
-		realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (subscriberSubscriberManager == null) {
+				subscriberSubscriberManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+			}
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			subscriberSubscriberManager.initialize(
+					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
+							new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitializeSubscribers();
+		});
 	}
 
 	private final void deinitializeSubscribers() {
-		subscriberSubscriberManager.deinitialize();
-		realTimeSubscriberManager.deinitialize();
+		if (subscriberSubscriberManager != null) {
+			subscriberSubscriberManager.deinitialize();
+		}
+		if (realTimeSubscriberManager != null) {
+			realTimeSubscriberManager.deinitialize();
+		}
+		subscriberSubscriberManager = null;
+		realTimeSubscriberManager = null;
 	}
 
-	private final SimulatorSubscriberManager subscriberSubscriberManager = new SimulatorSubscriberManager();
-	private final RealTimeSubscriberManager realTimeSubscriberManager = new RealTimeSubscriberManager();
+	private SimulatorSubscriberManager subscriberSubscriberManager;
+	private RealTimeSubscriberManager realTimeSubscriberManager;
 
 	@Override
 	public void setFocus() {
@@ -186,7 +208,8 @@ public class SerializedObjectsView extends ViewPart {
 					if (!readyForInput())
 						return;
 
-					CollectedDataNode root = CurrentSimulator.getDatabase().getIndexHelper().getTree();
+					CollectedDataNode root = RaoActivatorExtension.getTargetSimulatorManager()
+							.getTargetSimulatorWrapper().getDatabase().getIndexHelper().getTree();
 
 					PlatformUI.getWorkbench().getDisplay().asyncExec(() -> serializedObjectsTreeViewer.setInput(root));
 				}

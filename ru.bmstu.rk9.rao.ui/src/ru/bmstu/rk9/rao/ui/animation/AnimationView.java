@@ -35,12 +35,37 @@ import org.eclipse.ui.part.ViewPart;
 
 import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
 import ru.bmstu.rk9.rao.lib.animation.Background;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationModeDispatcher;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
+import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener.OnEventReceiver;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
 
 public class AnimationView extends ViewPart {
+	private RealTimeSubscriberManager realTimeSubscriberManager;
+	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+	
+	private final void initializeSubscribers() {
+		listener.asSimulatorOnAndOnPostChange((event) -> {
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
+		listener.asSimulatorPreOffAndPreChange((event) -> {
+			deinitializeSubscribers();
+		});
+	}
 
+	private final void deinitializeSubscribers() {
+		if (realTimeSubscriberManager != null) {
+			realTimeSubscriberManager.deinitialize();
+		}
+		realTimeSubscriberManager = null;
+	}
+	
 	public static int getFrameListSize() {
 		return lastListWidth;
 	}
@@ -291,10 +316,10 @@ public class AnimationView extends ViewPart {
 
 		if (frames != null)
 			initializeFrames();
-
-		realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		
+		initializeSubscribers();
 	}
-
+	
 	@Override
 	public void setFocus() {
 	}
@@ -309,11 +334,9 @@ public class AnimationView extends ViewPart {
 		return isInitialized() && animationContext != null && currentFrame != null;
 	}
 
-	private final RealTimeSubscriberManager realTimeSubscriberManager = new RealTimeSubscriberManager();
-
 	@Override
 	public void dispose() {
-		realTimeSubscriberManager.deinitialize();
+		deinitializeSubscribers();
 		super.dispose();
 	}
 }

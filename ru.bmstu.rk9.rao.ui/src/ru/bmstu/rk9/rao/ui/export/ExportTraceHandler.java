@@ -11,7 +11,9 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 
 import ru.bmstu.rk9.rao.lib.database.Database.Entry;
-import ru.bmstu.rk9.rao.lib.simulator.CurrentSimulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
+import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.trace.LegacyTracer;
 import ru.bmstu.rk9.rao.ui.trace.Tracer;
 import ru.bmstu.rk9.rao.ui.trace.Tracer.TraceOutput;
@@ -71,14 +73,14 @@ public class ExportTraceHandler extends AbstractHandler {
 	private final static void exportTraceRegular() {
 		if (!ready())
 			return;
-
-		Tracer tracer = new Tracer(CurrentSimulator.getStaticModelData());
+		SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
+		Tracer tracer = new Tracer(currentSimulatorWrapper.getStaticModelData());
 
 		PrintWriter writer = ExportPrintWriter.initializeWriter(".trc");
 		if (writer == null)
 			return;
 
-		for (Entry entry : CurrentSimulator.getDatabase().getAllEntries()) {
+		for (Entry entry : currentSimulatorWrapper.getDatabase().getAllEntries()) {
 			TraceOutput output = tracer.parseSerializedData(entry);
 			if (output != null)
 				writer.println(output.content());
@@ -93,7 +95,7 @@ public class ExportTraceHandler extends AbstractHandler {
 			return;
 
 		if (legacyTracer == null) {
-			legacyTracer = new LegacyTracer();
+			legacyTracer = new LegacyTracer(RaoSimulatorHelper.getTargetSimulatorId());
 			legacyTracer.parseAllEntries();
 		}
 
@@ -110,7 +112,10 @@ public class ExportTraceHandler extends AbstractHandler {
 	}
 
 	private final static boolean ready() {
-		return CurrentSimulator.isInitialized() && !CurrentSimulator.getDatabase().getAllEntries().isEmpty();
+
+		return RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().isInitialized()
+				&& !RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+						.getDatabase().getAllEntries().isEmpty();
 	}
 
 	public final static void reset() {
