@@ -9,15 +9,16 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.Assignment
 import ru.bmstu.rk9.rao.rao.Pattern
 import ru.bmstu.rk9.rao.rao.DefaultMethod
-import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper
 import ru.bmstu.rk9.rao.rao.RaoModel
 import ru.bmstu.rk9.rao.rao.Logic
 import ru.bmstu.rk9.rao.rao.Search
 import ru.bmstu.rk9.rao.rao.Frame
 import ru.bmstu.rk9.rao.rao.DataSource
 import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper.AbstractMethodInfo
+import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper
 
 class RaoProposalProvider extends AbstractRaoProposalProvider {
+	
 	override completeKeyword(Keyword keyword, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
 		super.completeKeyword(keyword, context, acceptor)
 	}

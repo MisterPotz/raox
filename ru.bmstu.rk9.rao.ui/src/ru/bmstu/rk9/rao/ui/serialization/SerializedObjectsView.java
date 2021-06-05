@@ -44,6 +44,7 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
+import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.graph.GraphPanel;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.plot.PlotView;
@@ -148,7 +149,7 @@ public class SerializedObjectsView extends RaoView {
 	private final void initializeSubscribers() {
 		listener.asSimulatorOnAndOnPostChange((event) -> {
 			if (subscriberSubscriberManager == null) {
-				subscriberSubscriberManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+				subscriberSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
 			}
 			if (realTimeSubscriberManager == null) {
 				realTimeSubscriberManager = new RealTimeSubscriberManager();

@@ -57,7 +57,7 @@ public class ResultsView extends RaoView {
 
 	private List<AbstractResult<?>> results;
 
-	private boolean viewAsText = prefs.getBoolean("ResultsViewAsText", false);
+	private boolean viewAsText = false;
 
 	private static final HashMap<SimulatorId, ResultsView> resultsViewMap = new HashMap<>();
 
@@ -107,8 +107,7 @@ public class ResultsView extends RaoView {
 	private static int nameWidth = prefs.getInt("ResultsNameColumnWidth", 200);
 	private static int valueWidth = prefs.getInt("ResultsValueColumnWidth", 200);
 
-	public void savePreferences() {
-		prefs.putBoolean("ResultsViewAsText", viewAsText);
+	public static void savePreferences() {
 		prefs.putInt("ResultsNameColumnWidth", nameWidth);
 		prefs.putInt("ResultsValueColumnWidth", valueWidth);
 	}

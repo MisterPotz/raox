@@ -10,30 +10,30 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.ui.monitorview.ConditionalMenuItem;
-import ru.bmstu.rk9.rao.ui.monitorview.Simulator;
 
 public abstract class RaoView extends ViewPart {
 	
 	public static String ID_PREFIX = "ru.bmstu.rk9.rao.ui.";
 	
-	protected final static Map<Simulator, Integer> opened = new HashMap<>();
-	protected Simulator currentWidget;
+	protected final static Map<SimulatorId , Integer> opened = new HashMap<>();
+	protected SimulatorId currentWidget;
 	private static int id = 0;
 	
-	public static Map<Simulator, Integer> getOpened() {
+	public static Map<SimulatorId, Integer> getOpened() {
 		return opened;
 	}
 	
-	public static void addToOpened(final Simulator simulator, final int id) {
+	public static void addToOpened(final SimulatorId simulator, final int id) {
 		opened.put(simulator, id);
 	}
 		
-	private final void initialize(Simulator simulator, String viewFullName) {
+	private final void initialize(SimulatorId simulator, String viewFullName) {
 		currentWidget = simulator;
 		// TODO: set different names for different kinds of views: 
 		// Results for Model 1 etc.
-		setPartName(viewFullName.substring(viewFullName.lastIndexOf('.') + 1, viewFullName.lastIndexOf('V')) + " " + String.valueOf(simulator.getID()));
+		setPartName(viewFullName.substring(viewFullName.lastIndexOf('.') + 1, viewFullName.lastIndexOf('V')) + " " + String.valueOf(simulator.getId()));
 	}
 	
 	private static class ConditionalMenuItemImpl extends ConditionalMenuItem {
@@ -49,12 +49,12 @@ public abstract class RaoView extends ViewPart {
 		}
 
 		@Override
-		public boolean isEnabled(Simulator simulator) {
+		public boolean isEnabled(SimulatorId simulator) {
 			return true;
 		}
 		
 		@Override
-		public void show(Simulator simulator) {
+		public void show(SimulatorId simulator) {
 			try {
 				RaoView newView = (RaoView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
 						.showView(getId(), String.valueOf(RaoView.id), IWorkbenchPage.VIEW_CREATE);

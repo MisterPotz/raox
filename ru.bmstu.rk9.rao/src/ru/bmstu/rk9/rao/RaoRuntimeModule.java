@@ -3,10 +3,7 @@ package ru.bmstu.rk9.rao;
 import org.eclipse.xtext.scoping.IScopeProvider;
 import org.eclipse.xtext.xbase.compiler.XbaseCompiler;
 import org.eclipse.xtext.xbase.scoping.batch.ImplicitlyImportedFeatures;
-import org.eclipse.xtext.xbase.typesystem.computation.ITypeComputer;
 import org.eclipse.xtext.xbase.typesystem.computation.XbaseTypeComputer;
-import org.eclipse.xtext.xbase.util.XExpressionHelper;
-
 import com.google.inject.name.Names;
 
 import ru.bmstu.rk9.rao.compiler.RaoCompiler;
