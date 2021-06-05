@@ -55,7 +55,7 @@ public class Simulator implements ISimulator {
 		modelState = new ModelState(preinitializationInfo.resourceClasses, getSimulatorId());
 		database = new Database(preinitializationInfo.modelStructure, getSimulatorId());
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
-		logger = new Logger();
+		logger = new Logger(); 
 
 		assertHasId();
 

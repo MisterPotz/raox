@@ -173,7 +173,9 @@ public class ExecutionJobProvider {
 				break;
 			}
 
-		display.asyncExec(() -> ResultsView.update());
+		ResultsView resultsView = ResultsView.getViewFor(simulator.getSimulatorId());
+
+		display.asyncExec(() -> resultsView.update());
 
 		ConsoleView.addLine("Time elapsed: " + String.valueOf(System.currentTimeMillis() - startTime) + "ms");
 

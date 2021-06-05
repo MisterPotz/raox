@@ -1,6 +1,9 @@
 package ru.bmstu.rk9.rao.ui.results;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -41,6 +44,7 @@ import org.osgi.framework.Bundle;
 
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.export.ExportResultsHandler;
 import ru.bmstu.rk9.rao.ui.internal.RaoActivator;
@@ -50,12 +54,39 @@ public class ResultsView extends ViewPart {
 
 	private static IEclipsePreferences prefs = InstanceScope.INSTANCE.getNode("ru.bmstu.rk9.rao.ui");
 
-	private static List<AbstractResult<?>> results;
+	private List<AbstractResult<?>> results;
 
-	private static boolean viewAsText = prefs.getBoolean("ResultsViewAsText", false);
+	private boolean viewAsText = prefs.getBoolean("ResultsViewAsText", false);
 
-	public static void update() {
-		ResultsView.results = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getResults();
+	private static final HashMap<SimulatorId, ResultsView> resultsViewMap = new HashMap<>();
+
+	public SimulatorId getSimulatorId() {
+		Set<Entry<SimulatorId, ResultsView>> entrySet = resultsViewMap.entrySet();
+
+		for (Entry<SimulatorId, ResultsView> entry : entrySet) { 
+			if (entry.getValue().equals(this))
+				return entry.getKey();
+		}
+		return null;
+	}
+
+	private static void addView(SimulatorId simulatorId, ResultsView view) {
+		resultsViewMap.put(simulatorId, view);
+	}
+
+	public static ResultsView getViewFor(SimulatorId simulatorId) {
+		ResultsView view = resultsViewMap.get(simulatorId);
+
+		if (view == null) {
+			view = new ResultsView();
+			ResultsView.addView(simulatorId, view);
+		}
+		return view;
+	}
+
+	public void update() {
+		// TODO: change to SimulatorManager.getSimulator(this.getSimulatorId()).getResults()
+		this.results = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getResults();
 
 		if (!isInitialized())
 			return;
@@ -75,40 +106,39 @@ public class ResultsView extends ViewPart {
 	private static int valueWidth = prefs.getInt("ResultsValueColumnWidth", 200);
 
 	public static void savePreferences() {
-		prefs.putBoolean("ResultsViewAsText", viewAsText);
 		prefs.putInt("ResultsNameColumnWidth", nameWidth);
 		prefs.putInt("ResultsValueColumnWidth", valueWidth);
 	}
 
-	private static IActionBars actionBars;
-	private static IToolBarManager toolbarMgr;
+	private IActionBars actionBars;
+	private IToolBarManager toolbarMgr;
 
 	private static abstract class SwitchAction extends Action {
 		public abstract void updateLook();
 	}
 
 	private static final String TREE_TEXT_SWITCH_ID = "ResultsView.actions.treeTextSwitch";
-	private static SwitchAction actionTreeTextSwitch = new SwitchAction() {
-		ImageDescriptor text, tree;
+	private SwitchAction actionTreeTextSwitch = new SwitchAction() {
+		ImageDescriptor textImageDescriptor, treeImageDescriptor;
 
 		{
 			Bundle ui = Platform.getBundle("ru.bmstu.rk9.rao.ui");
 			setId(TREE_TEXT_SWITCH_ID);
 
-			text = ImageDescriptor.createFromURL(FileLocator.find(ui, new Path("icons/script-text.png"), null));
-			tree = ImageDescriptor.createFromURL(FileLocator.find(ui, new Path("icons/tree.png"), null));
+			textImageDescriptor = ImageDescriptor.createFromURL(FileLocator.find(ui, new Path("icons/script-text.png"), null));
+			treeImageDescriptor = ImageDescriptor.createFromURL(FileLocator.find(ui, new Path("icons/tree.png"), null));
 		}
 
 		@Override
 		public void updateLook() {
 			if (viewAsText) {
 				setText("View as tree");
-				setImageDescriptor(tree);
-				composite.setContent(ResultsView.text);
+				setImageDescriptor(treeImageDescriptor);
+				composite.setContent(text);
 			} else {
 				setText("View as text");
-				setImageDescriptor(text);
-				composite.setContent(ResultsView.tree);
+				setImageDescriptor(textImageDescriptor);
+				composite.setContent(tree);
 			}
 
 			switchActionsSet(viewAsText);
@@ -122,7 +152,7 @@ public class ResultsView extends ViewPart {
 	};
 
 	private static final String EXPAND_ALL_ID = "ResultsView.actions.expandAll";
-	private static Action actionExpandAll = new Action() {
+	private Action actionExpandAll = new Action() {
 		{
 			setId(EXPAND_ALL_ID);
 
@@ -142,7 +172,7 @@ public class ResultsView extends ViewPart {
 	};
 
 	private static final String COLLAPSE_ALL_ID = "ResultsView.actions.collapseAll";
-	private static Action actionCollapseAll = new Action() {
+	private Action actionCollapseAll = new Action() {
 		{
 			setId(COLLAPSE_ALL_ID);
 
@@ -162,7 +192,7 @@ public class ResultsView extends ViewPart {
 	};
 
 	private static final String COLLAPSE_MODELS_ID = "ResultsView.actions.collapseModels";
-	private static Action actionCollapseModels = new Action() {
+	private Action actionCollapseModels = new Action() {
 		{
 			setId(COLLAPSE_MODELS_ID);
 
@@ -182,7 +212,7 @@ public class ResultsView extends ViewPart {
 	};
 
 	private static final String EXPORT_RESULTS_ID = "ResultsView.actions.exportResults";
-	private static Action actionExportResults = new Action() {
+	private Action actionExportResults = new Action() {
 		{
 			setId(EXPORT_RESULTS_ID);
 
@@ -197,7 +227,7 @@ public class ResultsView extends ViewPart {
 		}
 	};
 
-	private static void switchActionsSet(boolean viewAsText) {
+	private void switchActionsSet(boolean viewAsText) {
 		if (viewAsText) {
 			toolbarMgr.remove(EXPAND_ALL_ID);
 			toolbarMgr.remove(COLLAPSE_ALL_ID);
