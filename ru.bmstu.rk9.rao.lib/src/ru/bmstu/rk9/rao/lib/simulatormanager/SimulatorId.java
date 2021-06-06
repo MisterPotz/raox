@@ -21,6 +21,11 @@ public class SimulatorId {
 		return new SimulatorId(SimulatorIdManager.getInstance().getNewId());
 	}
 
+	public static SimulatorId createFrom(String string) {
+		Long id = Long.parseLong(string);
+		return new SimulatorId(id);
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
