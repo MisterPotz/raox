@@ -21,7 +21,7 @@ import ru.bmstu.rk9.rao.lib.animation.RaoColor;
 import ru.bmstu.rk9.rao.lib.modeldata.ModelStructureConstants;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.TargetSimulatorManager;
+import ru.bmstu.rk9.rao.ui.TodoUndefinedCallPlaceException;
 import ru.bmstu.rk9.rao.ui.internal.RaoActivator;
 
 public class AnimationContextSWT implements AnimationContext {
@@ -249,11 +249,13 @@ public class AnimationContextSWT implements AnimationContext {
 	private final Image getOrCreateImage(String name) {
 		Image image = images.get(name);
 		if (image == null) {
-			SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
-			final IPath projectLocation = new Path(currentSimulatorWrapper.getStaticModelData().getModelStructure()
-					.getString(ModelStructureConstants.LOCATION));
-			image = new Image(display, projectLocation.append(name).toString());
-			images.put(name, image);
+			throw new TodoUndefinedCallPlaceException("tried to get current simulator for model structure");
+			// TODO get model structure  from modelparser or initialize it statically after creating first simulator instance 
+//			SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
+//			final IPath projectLocation = new Path(currentSimulatorWrapper.getStaticModelData().getModelStructure()
+//					.getString(ModelStructureConstants.LOCATION));
+//			image = new Image(display, projectLocation.append(name).toString());
+//			images.put(name, image);
 		}
 		return image;
 	}

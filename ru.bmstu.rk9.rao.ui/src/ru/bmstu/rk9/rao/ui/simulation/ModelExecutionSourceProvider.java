@@ -11,10 +11,10 @@ import org.eclipse.ui.services.ISourceProviderService;
 public class ModelExecutionSourceProvider extends AbstractSourceProvider {
 	public final static String ModelExecutionKey = "ru.bmstu.rk9.rao.ui.handlers.simulationState";
 
-	public enum SimulationState {
+	public enum SimulationLaunchState {
 		RUNNING("RUNNING"), STOPPED("STOPPED"), DISABLED("DISABLED");
 
-		SimulationState(String state) {
+		SimulationLaunchState(String state) {
 			this.state = state;
 		}
 
@@ -26,7 +26,7 @@ public class ModelExecutionSourceProvider extends AbstractSourceProvider {
 		}
 	}
 
-	private static String simulationState = SimulationState.STOPPED.toString();
+	private static String simulationState = SimulationLaunchState.STOPPED.toString();
 
 	public static String getSimulationState() {
 		return simulationState;

@@ -25,9 +25,6 @@ import ru.bmstu.rk9.rao.lib.logger.Logger;
 import ru.bmstu.rk9.rao.lib.logger.LoggerSubscriberManager.LoggerSubscriberInfo;
 import ru.bmstu.rk9.rao.lib.logger.LoggerSubscriberManager;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 
 public class ConsoleView extends RaoView {
@@ -39,17 +36,17 @@ public class ConsoleView extends RaoView {
 
 	private LoggerSubscriberManager loggerSubscriberManager;
 	
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
-	
 	private final Subscriber loggingSubscriber = new Subscriber() {
 		@Override
 		public void fireChange() {
-			Logger logger = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getLogger();
-			String line;
+			simNonNull(args -> {
+				Logger logger = args.getSimulatorWrapper().getLogger();
+				String line;
 
-			while ((line = logger.poll()) != null) {
-				addLine(line);
-			}
+				while ((line = logger.poll()) != null) {
+					addLine(line);
+				}
+			});
 		}
 	};
 
@@ -77,9 +74,7 @@ public class ConsoleView extends RaoView {
 
 		registerTextFontUpdateListener();
 		updateTextFont();
-
-		initializeSubscribers();
-	}
+		}
 
 	@Override
 	public void dispose() {
@@ -88,24 +83,8 @@ public class ConsoleView extends RaoView {
 		super.dispose();
 	}
 
-	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (loggerSubscriberManager == null) {
-				loggerSubscriberManager = new LoggerSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
-			}
-			loggerSubscriberManager.initialize(
-					Arrays.asList(new LoggerSubscriberInfo(loggingSubscriber, Logger.NotificationCategory.NEW_LOG_ENTRY)));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
-	}
-
 	private final void deinitializeSubscribers() {
-		if (loggerSubscriberManager != null) {
-			loggerSubscriberManager.deinitialize();
-		}
-		loggerSubscriberManager = null;
+		loggerSubscriberManager.deinitialize();
 	}
 
 	private void updateTextFont() {
@@ -167,5 +146,15 @@ public class ConsoleView extends RaoView {
 
 	@Override
 	public void setFocus() {
+	}
+
+	@Override
+	protected void initializeSimulatorRelated() {
+		simNonNull(args -> {
+			loggerSubscriberManager.initialize(
+				Arrays.asList(new LoggerSubscriberInfo(loggingSubscriber, Logger.NotificationCategory.NEW_LOG_ENTRY)));
+
+			loggerSubscriberManager = new LoggerSubscriberManager(args.getSimulatorId());		
+		});
 	}
 }

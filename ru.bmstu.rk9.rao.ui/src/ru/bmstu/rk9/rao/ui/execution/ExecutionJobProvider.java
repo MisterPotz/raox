@@ -58,8 +58,6 @@ public class ExecutionJobProvider {
 				ConsoleView.clearConsoleText();
 				ExportTraceHandler.reset();
 				SerializationConfigView.initNames();
-				SimulatorPreinitializationInfo preinitializationInfo = parser.getSimulatorPreinitializationInfo();
-
 
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations();
@@ -92,9 +90,6 @@ public class ExecutionJobProvider {
 			
 			) {	
 		final Display display = PlatformUI.getWorkbench().getDisplay();
-		ConsoleView.clearConsoleText();
-		ExportTraceHandler.reset();
-		SerializationConfigView.initNames();
 		
 		ISimulator simulator = new Simulator();
 		SimulatorWrapper simulatorWrapper = new SimulatorWrapper(simulator);

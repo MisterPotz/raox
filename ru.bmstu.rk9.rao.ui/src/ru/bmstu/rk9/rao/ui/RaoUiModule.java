@@ -34,8 +34,8 @@ public class RaoUiModule extends AbstractRaoUiModule {
 	public Class<? extends org.eclipse.xtext.ide.editor.syntaxcoloring.ISemanticHighlightingCalculator> bindIdeSemanticHighlightingCalculator() {
 		return RaoHighlightningCalculator.class;
 	}
-	
-	public void configureTargetSimulatorManager(com.google.inject.Binder binder) {
-		binder.bind(ru.bmstu.rk9.rao.ui.TargetSimulatorManager.class).to(ru.bmstu.rk9.rao.ui.TargetSimulatorManagerImpl.class).in(Scopes.SINGLETON);
-	} 
+//	
+//	public void configureTargetSimulatorManager(com.google.inject.Binder binder) {
+//		binder.bind(ru.bmstu.rk9.rao.ui.TargetSimulatorManager.class).to(ru.bmstu.rk9.rao.ui.TargetSimulatorManagerImpl.class).in(Scopes.SINGLETON);
+//	} 
 }

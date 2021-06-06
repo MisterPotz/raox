@@ -275,8 +275,8 @@ public class ResultsView extends RaoView {
 
 			@Override
 			public void widgetDisposed(DisposeEvent event) {
-				if (!opened.isEmpty() && opened.containsKey(currentWidget))
-					opened.remove(currentWidget);
+				if (!opened.isEmpty() && opened.containsKey(simulatorId))
+					opened.remove(simulatorId);
 			}
 		});
 

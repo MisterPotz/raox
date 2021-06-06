@@ -79,9 +79,7 @@ public class Simulator implements ISimulator {
 		// set some info 
 		initializeInitializationScopeInstance(preinitializationInfo.getSimulatorCommonModelInfo());
 
-		
 		assertHasModel();
-
 
 		for (Constructor<?> resourcePreinitializer : preinitializationInfo.resourcePreinitializerCreators) {
 			Runnable runnableInstance = ReflectionUtils.safeNewInstance(Runnable.class, resourcePreinitializer, initializationScopeInstance);

@@ -21,7 +21,7 @@ import ru.bmstu.rk9.rao.lib.notification.Subscription.SubscriptionType;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider;
-import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider.SimulationState;
+import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider.SimulationLaunchState;
 
 @SuppressWarnings("restriction")
 public class ExecutionManager {
@@ -65,7 +65,7 @@ public class ExecutionManager {
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
 				ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-						SimulationState.RUNNING.toString());
+						SimulationLaunchState.RUNNING.toString());
 				try {
 					BuildJobProvider modelBuilder = new BuildJobProvider(activeEditor, activeWorkbenchWindow, fsa,
 							resourceSetProvider, outputConfigurationProvider, validatorExtension);
@@ -77,14 +77,14 @@ public class ExecutionManager {
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 						ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-								SimulationState.STOPPED.toString());
+								SimulationLaunchState.STOPPED.toString());
 						return new Status(IStatus.ERROR, pluginId,
 								"Internal error while finishing preprocessing project");
 					}
 
 					if (preprocess.getResult() != Status.OK_STATUS) {
 						ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-								SimulationState.STOPPED.toString());
+								SimulationLaunchState.STOPPED.toString());
 						ConsoleView.addLine("Build failed");
 						return new Status(IStatus.CANCEL, pluginId, "Execution cancelled");
 					}
@@ -97,14 +97,14 @@ public class ExecutionManager {
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 							ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-									SimulationState.STOPPED.toString());
+									SimulationLaunchState.STOPPED.toString());
 							return new Status(IStatus.ERROR, pluginId,
 									"Internal error while finishing rebuilding project");
 						}
 
 						if (rebuild.getResult() != Status.OK_STATUS) {
 							ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-									SimulationState.STOPPED.toString());
+									SimulationLaunchState.STOPPED.toString());
 							ConsoleView.addLine("Build failed");
 							return new Status(IStatus.CANCEL, pluginId, "Execution cancelled");
 						}
@@ -117,20 +117,20 @@ public class ExecutionManager {
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 						ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-								SimulationState.STOPPED.toString());
+								SimulationLaunchState.STOPPED.toString());
 						return new Status(IStatus.ERROR, pluginId, "Internal error while finishing project validation");
 					}
 
 					if (validate.getResult() != Status.OK_STATUS) {
 						ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-								SimulationState.STOPPED.toString());
+								SimulationLaunchState.STOPPED.toString());
 						ConsoleView.addLine("Build failed");
 						return new Status(IStatus.CANCEL, pluginId, "Execution cancelled");
 					}
 
 					if (buildOnly) {
 						ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-								SimulationState.STOPPED.toString());
+								SimulationLaunchState.STOPPED.toString());
 
 						return Status.OK_STATUS;
 					}
@@ -157,7 +157,7 @@ public class ExecutionManager {
 				} finally {
 					executionManagerNotifier.removeAllSubscribers(ExecutionManagerState.BEFORE_RUN);
 					ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-							SimulationState.STOPPED.toString());
+							SimulationLaunchState.STOPPED.toString());
 				}
 			}
 		};
