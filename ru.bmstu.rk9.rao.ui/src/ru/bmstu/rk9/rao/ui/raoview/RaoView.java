@@ -24,15 +24,7 @@ public abstract class RaoView extends ViewPart {
 	
 	protected SimulatorId simulatorId;
 	private static int id = 0;
-	
-	public static Map<SimulatorId, Integer> getOpened() {
-		return opened;
-	}
-	
-	public static void addToOpened(final SimulatorId simulator, final int id) {
-		opened.put(simulator, id);
-	}
-	
+		
 	protected void setSimulatorId(SimulatorId simulatorId) {
 		assertNoSimulatorId(null);
 		this.simulatorId = simulatorId;
@@ -94,12 +86,11 @@ public abstract class RaoView extends ViewPart {
 		}
 		
 		@Override
-		public void show(SimulatorId simulator) {
+		public void show(SimulatorId simulatorId) {
 			try {
 				RaoView newView = (RaoView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-						.showView(getId(), String.valueOf(RaoView.id), IWorkbenchPage.VIEW_CREATE);
-				addToOpened(simulator, RaoView.id++);
-				newView.initialize(simulator, id);
+						.showView(getId(), String.valueOf(simulatorId.getId()), IWorkbenchPage.VIEW_CREATE);
+				newView.initialize(simulatorId, id);
 
 			} catch (PartInitException e) {
 				e.printStackTrace();
