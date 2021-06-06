@@ -58,8 +58,6 @@ public class ExecutionJobProvider {
 				ConsoleView.clearConsoleText();
 				ExportTraceHandler.reset();
 				SerializationConfigView.initNames();
-				SimulatorPreinitializationInfo preinitializationInfo = parser.getSimulatorPreinitializationInfo();
-
 				
 				/**
 				 * TODO: maybe use static class methods and varconst array as a argument to generateCombinations method so 
@@ -97,9 +95,6 @@ public class ExecutionJobProvider {
 			
 			) {	
 		final Display display = PlatformUI.getWorkbench().getDisplay();
-		ConsoleView.clearConsoleText();
-		ExportTraceHandler.reset();
-		SerializationConfigView.initNames();
 		
 		ISimulator simulator = new Simulator();
 		SimulatorWrapper simulatorWrapper = new SimulatorWrapper(simulator);
