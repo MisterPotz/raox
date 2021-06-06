@@ -11,7 +11,7 @@ import org.eclipse.ui.commands.IElementUpdater;
 import org.eclipse.ui.menus.UIElement;
 
 import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider;
-import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider.SimulationState;
+import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider.SimulationLaunchState;
 
 public abstract class AbstractUIElementUpdatingHandler extends AbstractHandler implements IElementUpdater {
 	public enum UIElementType {
@@ -49,7 +49,7 @@ public abstract class AbstractUIElementUpdatingHandler extends AbstractHandler i
 		IWorkbenchWindow activeWorkbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 
 		if (activeWorkbenchWindow == null) {
-			ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow, SimulationState.DISABLED.toString());
+			ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow, SimulationLaunchState.DISABLED.toString());
 			message = elementType.getDescription() + " Rao model: no active workbench window";
 		} else {
 			IEditorPart activeEditor = activeWorkbenchWindow.getActivePage().getActiveEditor();
@@ -58,14 +58,14 @@ public abstract class AbstractUIElementUpdatingHandler extends AbstractHandler i
 
 			if (projectToBuild == null) {
 				ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-						SimulationState.DISABLED.toString());
+						SimulationLaunchState.DISABLED.toString());
 				message = elementType.getDescription() + " Rao model: cannot select project to "
 						+ elementType.getTask();
 			} else {
 				message = elementType.getDescription() + " model " + projectToBuild.getName();
-				if (ModelExecutionSourceProvider.getSimulationState().equals(SimulationState.DISABLED.toString()))
+				if (ModelExecutionSourceProvider.getSimulationState().equals(SimulationLaunchState.DISABLED.toString()))
 					ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
-							SimulationState.STOPPED.toString());
+							SimulationLaunchState.STOPPED.toString());
 			}
 		}
 

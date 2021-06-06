@@ -31,7 +31,7 @@ import ru.bmstu.rk9.rao.ui.plot.PlotView;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfigView;
 import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider;
-import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider.SimulationState;
+import ru.bmstu.rk9.rao.ui.simulation.ModelExecutionSourceProvider.SimulationLaunchState;
 import ru.bmstu.rk9.rao.ui.simulation.RuntimeComponents;
 import ru.bmstu.rk9.rao.ui.simulation.SetSimulationScaleHandler;
 import ru.bmstu.rk9.rao.ui.simulation.SpeedSelectionToolbar;
@@ -123,7 +123,7 @@ public class RaoActivatorExtension extends RaoActivator {
 
 			final AtomicInteger result = new AtomicInteger(0);
 			if (sourceProvider.getCurrentState()
-					.get(ModelExecutionSourceProvider.ModelExecutionKey) == SimulationState.RUNNING.toString()) {
+					.get(ModelExecutionSourceProvider.ModelExecutionKey) == SimulationLaunchState.RUNNING.toString()) {
 				workbench.getDisplay().syncExec(new Runnable() {
 					@Override
 					public void run() {
