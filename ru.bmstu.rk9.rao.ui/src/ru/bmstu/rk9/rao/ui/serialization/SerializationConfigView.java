@@ -57,15 +57,12 @@ import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.execution.BuildUtil;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfig.SerializationNode;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
 import com.google.inject.Inject;
 
 public class SerializationConfigView extends ViewPart implements UiSimulatorDependent {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.SerializationConfigView";
-
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 	// ---------------------------------- API ------------------------------ //
@@ -453,17 +450,12 @@ public class SerializationConfigView extends ViewPart implements UiSimulatorDepe
 	// ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
 	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (subscriberRegistrationManager == null) {
-				subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
-			}
-			subscriberRegistrationManager.initialize(
-					Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
-							new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
+		if (subscriberRegistrationManager == null) {
+			subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+		}
+		subscriberRegistrationManager.initialize(
+				Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
+						new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
 
 	}
 

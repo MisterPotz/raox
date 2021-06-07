@@ -31,8 +31,9 @@ import org.eclipse.ui.themes.IThemeManager;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
+import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 
-public class StatusView extends ViewPart implements UiSimulatorDependent {
+public class StatusView extends RaoView {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.StatusView"; //$NON-NLS-1$
 	private RealTimeSubscriberManager realTimeSubscriberManager;
 	private static StatusView INSTANCE;
