@@ -63,20 +63,16 @@ import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulatorState;
-import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.export.ExportTraceHandler;
 import ru.bmstu.rk9.rao.ui.gef.process.ProcessColors;
 import ru.bmstu.rk9.rao.ui.graph.GraphControl;
 import ru.bmstu.rk9.rao.ui.graph.GraphControl.FrameInfo;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
-import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 import ru.bmstu.rk9.rao.ui.raoview.RaoView;
-import ru.bmstu.rk9.rao.ui.trace.TraceView.SearchHelper.SearchResult;
+import ru.bmstu.rk9.rao.ui.trace.TraceView.SearchResult;
 import ru.bmstu.rk9.rao.ui.trace.Tracer.TraceOutput;
 import ru.bmstu.rk9.rao.ui.trace.Tracer.TraceType;
 
@@ -84,16 +80,14 @@ public class TraceView extends RaoView {
 	private SimulatorSubscriberManager simulatorSubscriberManager;
 	private RealTimeSubscriberManager realTimeSubscriberManager;
 
-	static TableViewer viewer;
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+	TableViewer viewer;
 
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 	// ---------------------------- VIEW SETUP ----------------------------- //
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― // 
 
 	private FrameInfo determineSearchInfo(TraceOutput traceOutput, int stringNum) {
-		SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager()
-				.getTargetSimulatorWrapper();
+		SimulatorWrapper currentSimulatorWrapper = getSimulatorWrapper();
 		Entry entry = currentSimulatorWrapper.getDatabase().getAllEntries().get(stringNum);
 		final EntryType type = EntryType.values()[entry.getHeader().get(TypeSize.Internal.ENTRY_TYPE_OFFSET)];
 		final ByteBuffer header = Tracer.prepareBufferForReading(entry.getHeader());
@@ -186,7 +180,28 @@ public class TraceView extends RaoView {
 			}
 		});
 
-		viewer.setContentProvider(new TraceViewContentProvider());
+		viewer.setContentProvider(new ILazyContentProvider(){
+			private List<Entry> allEntries;
+
+			@Override
+			public void dispose() {
+			}
+		
+			@SuppressWarnings("unchecked")
+			@Override
+			public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+				allEntries = (List<Entry>) newInput;
+			}
+		
+			@Override
+			public void updateElement(int index) {
+				// TODO completely avoid that situation
+				if (allEntries != null && index < allEntries.size()) {
+					TraceOutput output = TraceView.tracer.parseSerializedData(allEntries.get(index));
+					viewer.replace(output, index);
+				}
+			}
+		});
 		viewer.setLabelProvider(new TraceViewLabelProvider());
 		viewer.setUseHashlookup(true);
 		viewer.getTable().setFont(fontRegistry.get(PreferenceConstants.EDITOR_TEXT_FONT));
@@ -214,8 +229,6 @@ public class TraceView extends RaoView {
 		});
 
 		configureToolbar();
-
-		initializeSubscribers();
 	}
 
 	@Override
@@ -224,26 +237,6 @@ public class TraceView extends RaoView {
 		super.dispose();
 	}
 	
-	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (simulatorSubscriberManager == null) {
-				simulatorSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
-			}
-			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
-			}
-			simulatorSubscriberManager
-					.initialize(Arrays.asList(new SimulatorSubscriberInfo(commonUpdater, ExecutionState.EXECUTION_STARTED),
-							new SimulatorSubscriberInfo(commonUpdater, ExecutionState.EXECUTION_COMPLETED)));
-			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-			RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getSimulatorStateNotifier()
-					.addSubscriber(tracerInitializer, SimulatorState.INITIALIZED);
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
-	}
-
 	private final void deinitializeSubscribers() {
 		if (simulatorSubscriberManager != null) {
 			simulatorSubscriberManager.deinitialize();
@@ -253,7 +246,7 @@ public class TraceView extends RaoView {
 		}
 		simulatorSubscriberManager = null;
 		realTimeSubscriberManager = null;
-		SimulatorWrapper simulatorWrapper = RaoSimulatorHelper.getTargetSimulatorWrapper();
+		SimulatorWrapper simulatorWrapper = getSimulatorWrapper();
 		if (simulatorWrapper != null)
 			simulatorWrapper.getSimulatorStateNotifier()
 				.removeSubscriber(tracerInitializer, SimulatorState.INITIALIZED);
@@ -262,7 +255,7 @@ public class TraceView extends RaoView {
 	private final void configureToolbar() {
 		IToolBarManager toolbarMgr = getViewSite().getActionBars().getToolBarManager();
 
-		toolbarMgr.add(new Action() {
+		toolbarMgr.add(new org.eclipse.jface.action.Action() {
 			ImageDescriptor image;
 
 			{
@@ -278,7 +271,7 @@ public class TraceView extends RaoView {
 			}
 		});
 
-		toolbarMgr.add(new Action() {
+		toolbarMgr.add(new org.eclipse.jface.action.Action() {
 			ImageDescriptor image;
 
 			{
@@ -301,7 +294,7 @@ public class TraceView extends RaoView {
 	// -------------------------- SEARCH AND COPY -------------------------- //
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
-	private final static void copyTraceLine() {
+	private final void copyTraceLine() {
 		String text = viewer.getTable().getSelection()[0].getText(0);
 		TextTransfer textTransfer = TextTransfer.getInstance();
 		Clipboard clipboard = new Clipboard(PlatformUI.getWorkbench().getDisplay());
@@ -309,15 +302,14 @@ public class TraceView extends RaoView {
 		clipboard.dispose();
 	}
 
-	static class SearchHelper {
-		public enum SearchResult {
-			FOUND, NOT_FOUND
-		};
+	public enum SearchResult {
+		FOUND, NOT_FOUND
+	}
 
-		public enum DialogState {
-			OPENED, CLOSED
-		};
-
+	public enum DialogState {
+		OPENED, CLOSED
+	}
+	class SearchHelper {
 		final void openDialog() {
 			if (dialogState == DialogState.CLOSED) {
 				currentDialog = new SearchDialog(viewer.getTable().getShell(), searchHelper);
@@ -404,9 +396,9 @@ public class TraceView extends RaoView {
 		private DialogState dialogState = DialogState.CLOSED;
 	}
 
-	private static SearchHelper searchHelper = new SearchHelper();
+	private SearchHelper searchHelper = new SearchHelper();
 
-	private final static void showFindDialog() {
+	private final void showFindDialog() {
 		searchHelper.openDialog();
 	}
 
@@ -414,58 +406,62 @@ public class TraceView extends RaoView {
 	// ------------------------- REAL TIME OUTPUT -------------------------- //
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
-	private static boolean shouldFollowOutput = true;
+	private boolean shouldFollowOutput = true;
 
-	private static boolean shouldFollowOutput() {
+	private boolean shouldFollowOutput() {
 		return shouldFollowOutput;
 	}
 
-	public static final Runnable realTimeUpdateRunnable = new Runnable() {
+	public final Runnable realTimeUpdateRunnable = new Runnable() {
 		@Override
 		public void run() {
 			if (!readyForInput())
 				return;
-			final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+			final List<Entry> allEntries = getSimulatorWrapper()
 					.getDatabase().getAllEntries();
 			final int size = allEntries.size();
 
-			TraceView.viewer.setItemCount(size);
-			if (TraceView.shouldFollowOutput())
-				TraceView.viewer.getTable().setTopIndex(size - 1);
+			viewer.setItemCount(size);
+			if (shouldFollowOutput())
+				viewer.getTable().setTopIndex(size - 1);
 		}
 	};
 
-	public static final Subscriber commonUpdater = new Subscriber() {
+	public final Subscriber commonUpdater = new Subscriber() {
 		@Override
 		public void fireChange() {
-			if (!readyForInput())
-				return;
+			simNonNull(args -> {
+				if (!readyForInput())
+					return;
 
-			final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries();
-			final int size = allEntries.size();
-			PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-				@Override
-				public void run() {
-					TraceView.viewer.setInput(allEntries);
-					TraceView.viewer.setItemCount(size);
+				final List<Entry> allEntries = args.getSimulatorWrapper().getDatabase().getAllEntries();
+				final int size = allEntries.size();
+				PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+					@Override
+					public void run() {
+						viewer.setInput(allEntries);
+						viewer.setItemCount(size);
 
-					if (TraceView.shouldFollowOutput())
-						TraceView.viewer.getTable().setTopIndex(size - 1);
+						if (shouldFollowOutput())
+							viewer.getTable().setTopIndex(size - 1);
 
-					viewer.refresh();
-				}
+						viewer.refresh();
+					}
+				});
 			});
 		}
 	};
 
-	private static final Subscriber tracerInitializer = new Subscriber() {
+	private final Subscriber tracerInitializer = new Subscriber() {
 		@Override
 		public void fireChange() {
-			tracer = new Tracer(RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData());
+			simNonNull(args -> {
+				tracer = new Tracer(args.getSimulatorWrapper().getStaticModelData());
+			});
 		}
 	};
 
-	public final static boolean readyForInput() {
+	public final boolean readyForInput() {
 		return viewer != null && !viewer.getTable().isDisposed() && viewer.getContentProvider() != null
 				&& viewer.getLabelProvider() != null;
 	}
@@ -473,35 +469,29 @@ public class TraceView extends RaoView {
 	@Override
 	public void setFocus() {
 	}
+
+	@Override
+	protected void initializeSimulatorRelated() {
+		simNonNull(args -> {
+			if (simulatorSubscriberManager == null) {
+				simulatorSubscriberManager = new SimulatorSubscriberManager(getSimulatorId());
+			}
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			simulatorSubscriberManager
+					.initialize(Arrays.asList(new SimulatorSubscriberInfo(commonUpdater, ExecutionState.EXECUTION_STARTED),
+							new SimulatorSubscriberInfo(commonUpdater, ExecutionState.EXECUTION_COMPLETED)));
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+			getSimulatorWrapper().getSimulatorStateNotifier()
+					.addSubscriber(tracerInitializer, SimulatorState.INITIALIZED);
+		});
+	}
 }
 
 // ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 // -------------------------------- PROVIDERS ------------------------------ //
 // ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
-
-class TraceViewContentProvider implements ILazyContentProvider {
-	private List<Entry> allEntries;
-
-	@Override
-	public void dispose() {
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-		allEntries = (List<Entry>) newInput;
-	}
-
-	@Override
-	public void updateElement(int index) {
-		// TODO completely avoid that situation
-		if (allEntries != null && index < allEntries.size()) {
-			TraceOutput output = TraceView.tracer.parseSerializedData(allEntries.get(index));
-			TraceView.viewer.replace(output, index);
-		}
-
-	}
-}
 
 class TraceViewLabelProvider implements ILabelProvider, IColorProvider {
 	private final EnumMap<TraceType, TraceColor> colorByType = new EnumMap<TraceType, TraceColor>(TraceType.class);

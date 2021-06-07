@@ -18,8 +18,11 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.part.ViewPart;
 
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.UiContract;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
+import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView;
 import ru.bmstu.rk9.rao.ui.trace.TraceView;
@@ -67,14 +70,15 @@ public class MonitorView extends ViewPart {
 	private void createViewer(Composite parent) {
 		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		
-		createColumns(parent);
+		createColumns(viewer);
+
 		Table table = viewer.getTable();
 		createMenu(table);
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
 		
 		viewer.setContentProvider(new ArrayContentProvider());
-		viewer.setInput(SimulatorManager.INSTANCE.getAll());
+		viewer.setInput(SimulatorManagerImpl.getInstance().getAvailableIds());
 		getSite().setSelectionProvider(viewer);
 		
 		GridData gridData = new GridData();
@@ -86,37 +90,40 @@ public class MonitorView extends ViewPart {
         viewer.getControl().setLayoutData(gridData);
 	}
 	
-	private void createColumns(Composite parent) {
+	private void createColumns(TableViewer viewer) {
 		String[] titles = {"Model ID", "Model Status"};
 		int[] bounds = {100, 100};
 		
 //		First column creation
-		TableViewerColumn column = createTableViewerColumn(titles[0], bounds[0], 0);
+		TableViewerColumn column = createTableViewerColumn(viewer, titles[0], bounds[0], 0);
 		column.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
 				// TODO Auto-generated method stub
-				Simulator model = (Simulator) element;
+				SimulatorId simulatorId = (SimulatorId) element;
 				
-				return String.valueOf(model.getID());
+				return String.valueOf(simulatorId);
 			}
 		});
 		
 //		Second column creation
-		column = createTableViewerColumn(titles[1], bounds[1], 1);
+		column = createTableViewerColumn(viewer, titles[1], bounds[1], 1);
 		column.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				// TODO Auto-generated method stub
-				Simulator model = (Simulator) element;			
-				ModelStatus modelStatus = model.getStatus();
+				SimulatorId simulatorId = (SimulatorId) element;			
 				
-				return modelStatus.toString();
+				// TODO: make feature to get simulator status
+				String simulatorState = new String("Not started.");
+				
+				return simulatorState;
 			}
 		});		
 	}
 
-	private TableViewerColumn createTableViewerColumn(String title, int bound, int colIndex) {
+	// where do i choose column place? colIndex isnt used anywhere
+
+	private TableViewerColumn createTableViewerColumn(TableViewer viewer, String title, int bound, int colIndex) {
 		TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.None);
 		TableColumn column = viewerColumn.getColumn();
 		
@@ -131,10 +138,10 @@ public class MonitorView extends ViewPart {
 	private void createMenu(Table table) {
 		Menu menu = new Menu(table);
 
-		conditionalMenuItems.add(ResultsView.createConditionalMenuItem(viewer, menu, UiContract.ID_RESULTS_VIEW));
-		conditionalMenuItems.add(TraceView.createConditionalMenuItem(viewer,  menu, UiContract.ID_TRACE_VIEW));
-		conditionalMenuItems.add(SerializedObjectsView.createConditionalMenuItem(viewer, menu, UiContract.ID_SERIALIZEDOBJS_VIEW));
-		conditionalMenuItems.add(ConsoleView.createConditionalMenuItem(viewer, menu, UiContract.ID_CONSOLE_VIEW));
+		conditionalMenuItems.add(ResultsView.createConditionalMenuItem(viewer, menu, ViewType.RESULTS));
+		conditionalMenuItems.add(TraceView.createConditionalMenuItem(viewer,  menu, ViewType.TRACE));
+		conditionalMenuItems.add(SerializedObjectsView.createConditionalMenuItem(viewer, menu, ViewType.SERIALIZED));
+		conditionalMenuItems.add(ConsoleView.createConditionalMenuItem(viewer, menu, ViewType.CONSOLE));
 		table.setMenu(menu);
 	}
 	
@@ -157,21 +164,22 @@ public class MonitorView extends ViewPart {
 			dialogState = DialogState.CLOSED;
 		}
 	
-		final FilterResult findStatus(ModelStatus status) {
-			List<Simulator> allSimulators = SimulatorManager.INSTANCE.getAll();
-			List<Simulator> filteredSimulators = new ArrayList<>();
+		final FilterResult findStatus(/* SimulatorStatuste */Integer status) {
+			List<SimulatorId> simulatorIds = SimulatorManagerImpl.getInstance().getAvailableIds();
+			List<SimulatorId> filteredSimulatorIds = new ArrayList<>();
 			boolean showAll = (status == null);
 			
-			if (allSimulators == null)
+			if (simulatorIds== null)
 				return FilterResult.NOT_FOUND;
 			
-			for(Simulator simulator : allSimulators) {
-				if (showAll || simulator.getStatus() == status)
-					filteredSimulators.add(simulator);
+			for (SimulatorId simulatorId : simulatorIds) {
+				Simulator simulator = (Simulator) SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
+				if (showAll || /* simulator.getStatus() == status */ true)
+					filteredSimulatorIds.add(simulatorId);
 			}
 			
-			viewer.setInput(filteredSimulators);
-			if (filteredSimulators.size() == 0)
+			viewer.setInput(filteredSimulatorIds);
+			if (filteredSimulatorIds.size() == 0)
 				return FilterResult.NOT_FOUND;
 			
 			return FilterResult.FOUND;

@@ -31,36 +31,27 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.part.ViewPart;
 
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode;
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.Index;
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.IndexType;
 import ru.bmstu.rk9.rao.lib.database.CollectedDataNode.ResourceIndex;
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
-import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
-import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
-import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.graph.GraphPanel;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.plot.PlotView;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
-import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 
 public class SerializedObjectsView extends RaoView {
-
-	static TreeViewer serializedObjectsTreeViewer;
+	TreeViewer serializedObjectsTreeViewer;
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
-	
-	public abstract static class ConditionalMenuItem extends MenuItem {
 
-		public ConditionalMenuItem(Menu parent, String name) {
+	public abstract class ConditionalMenuItem extends MenuItem {
+
+		protected ConditionalMenuItem(Menu parent, String name) {
 			super(parent, SWT.CASCADE);
 			setText(name);
 
@@ -136,8 +127,6 @@ public class SerializedObjectsView extends RaoView {
 				}
 			}
 		});
-
-		initializeSubscribers();
 	}
 
 	@Override
@@ -146,24 +135,6 @@ public class SerializedObjectsView extends RaoView {
 		super.dispose();
 	}
 	
-	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (subscriberSubscriberManager == null) {
-				subscriberSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
-			}
-			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
-			}
-			subscriberSubscriberManager.initialize(
-					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
-							new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
-			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
-	}
-
 	private final void deinitializeSubscribers() {
 		if (subscriberSubscriberManager != null) {
 			subscriberSubscriberManager.deinitialize();
@@ -182,22 +153,22 @@ public class SerializedObjectsView extends RaoView {
 	public void setFocus() {
 	}
 
-	public final static boolean readyForInput() {
+	public final boolean readyForInput() {
 		return serializedObjectsTreeViewer != null && !serializedObjectsTreeViewer.getTree().isDisposed()
 				&& serializedObjectsTreeViewer.getContentProvider() != null
 				&& serializedObjectsTreeViewer.getLabelProvider() != null;
 	}
 
-	public static final Runnable realTimeUpdateRunnable = new Runnable() {
+	public final Runnable realTimeUpdateRunnable = new Runnable() {
 		@Override
 		public void run() {
 			if (readyForInput()) {
-				SerializedObjectsView.serializedObjectsTreeViewer.refresh();
+				serializedObjectsTreeViewer.refresh();
 			}
 		}
 	};
 
-	public static final Subscriber commonSubscriber = new Subscriber() {
+	public final Subscriber commonSubscriber = new Subscriber() {
 		@Override
 		public void fireChange() {
 			if (!readyForInput())
@@ -209,14 +180,30 @@ public class SerializedObjectsView extends RaoView {
 					if (!readyForInput())
 						return;
 
-					CollectedDataNode root = RaoActivatorExtension.getTargetSimulatorManager()
-							.getTargetSimulatorWrapper().getDatabase().getIndexHelper().getTree();
+					CollectedDataNode root = getSimulatorWrapper().getDatabase().getIndexHelper().getTree();
 
 					PlatformUI.getWorkbench().getDisplay().asyncExec(() -> serializedObjectsTreeViewer.setInput(root));
 				}
 			});
 		}
 	};
+
+	@Override
+	protected void initializeSimulatorRelated() {
+		simNonNull(args -> {
+			if (subscriberSubscriberManager == null) {
+				subscriberSubscriberManager = new SimulatorSubscriberManager(args.getSimulatorId());
+			}
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			subscriberSubscriberManager.initialize(
+					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
+							new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
+		
+	}
 }
 
 class RaoSerializedObjectsContentProvider implements ITreeContentProvider {

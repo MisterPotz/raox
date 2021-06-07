@@ -49,13 +49,10 @@ import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
-import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.rao.RaoModel;
-import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.execution.BuildUtil;
-import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfig.SerializationNode;
 import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
