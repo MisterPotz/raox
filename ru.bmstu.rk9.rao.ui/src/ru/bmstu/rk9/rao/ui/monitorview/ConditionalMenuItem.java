@@ -29,9 +29,9 @@ public abstract class ConditionalMenuItem extends MenuItem {
 		addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				SimulatorId simulator = (SimulatorId) viewer.getTable().getSelection()[0]
-						.getData();
-				show(simulator);
+				SimulatorId simulatorId = SimulatorId.createFrom(viewer.getTable().getSelection()[0]
+						.getData().toString());
+				show(simulatorId);
 			}
 		});
 	}

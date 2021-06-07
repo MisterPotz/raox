@@ -7,7 +7,7 @@ package ru.bmstu.rk9.rao.lib.simulatormanager;
  */
 public class SimulatorId {
 	public static SimulatorId FOR_UI = new SimulatorId(-100);
-	private final long id;
+	private final Long id;
 
 	private SimulatorId(long id) {
 		this.id = id;
@@ -24,6 +24,11 @@ public class SimulatorId {
 	public static SimulatorId createFrom(String string) {
 		Long id = Long.parseLong(string);
 		return new SimulatorId(id);
+	}
+
+	@Override
+	public String toString() {
+		return id.toString();
 	}
 
 	@Override

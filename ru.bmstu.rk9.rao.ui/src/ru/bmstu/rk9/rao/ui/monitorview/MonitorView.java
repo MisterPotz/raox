@@ -22,6 +22,7 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.UiContract;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
+import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView;
 import ru.bmstu.rk9.rao.ui.trace.TraceView;
@@ -137,10 +138,10 @@ public class MonitorView extends ViewPart {
 	private void createMenu(Table table) {
 		Menu menu = new Menu(table);
 
-		conditionalMenuItems.add(ResultsView.createConditionalMenuItem(viewer, menu, UiContract.ID_RESULTS_VIEW));
-		conditionalMenuItems.add(TraceView.createConditionalMenuItem(viewer,  menu, UiContract.ID_TRACE_VIEW));
-		conditionalMenuItems.add(SerializedObjectsView.createConditionalMenuItem(viewer, menu, UiContract.ID_SERIALIZEDOBJS_VIEW));
-		conditionalMenuItems.add(ConsoleView.createConditionalMenuItem(viewer, menu, UiContract.ID_CONSOLE_VIEW));
+		conditionalMenuItems.add(ResultsView.createConditionalMenuItem(viewer, menu, ViewType.RESULTS));
+		conditionalMenuItems.add(TraceView.createConditionalMenuItem(viewer,  menu, ViewType.TRACE));
+		conditionalMenuItems.add(SerializedObjectsView.createConditionalMenuItem(viewer, menu, ViewType.SERIALIZED));
+		conditionalMenuItems.add(ConsoleView.createConditionalMenuItem(viewer, menu, ViewType.CONSOLE));
 		table.setMenu(menu);
 	}
 	
