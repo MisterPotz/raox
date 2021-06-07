@@ -33,16 +33,16 @@ import ru.bmstu.rk9.rao.ui.simulation.StatusView;
 
 @SuppressWarnings("restriction")
 public class ExecutionJobProvider {
+	private final IResourceSetProvider resourceSetProvider;
+	private final IProject project;
+	private final IBatchTypeResolver typeResolver;
+	
 	public ExecutionJobProvider(final IProject project, IResourceSetProvider resourceSetProvider,
 			IBatchTypeResolver typeResolver) {
 		this.project = project;
 		this.resourceSetProvider = resourceSetProvider;
 		this.typeResolver = typeResolver;
 	}
-
-	private final IResourceSetProvider resourceSetProvider;
-	private final IProject project;
-	private final IBatchTypeResolver typeResolver;
 
 	public final Job createExecutionJob() {
 		final Job executionJob = new Job(project.getName() + " execution") {
@@ -60,11 +60,6 @@ public class ExecutionJobProvider {
 				}
 				SerializationConfigView.initNames();
 
-				/**
-				 * TODO: maybe use static class methods and varconst array as a argument to generateCombinations method so 
-				 * generating looks like -> combinations = VarConstManager.generateCombinations(parser.getVarConst())
-				 * Now u need to use getCombinations method to get them
-				*/
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations();
 								

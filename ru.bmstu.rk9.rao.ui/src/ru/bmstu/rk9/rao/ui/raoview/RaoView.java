@@ -17,6 +17,7 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.monitorview.ConditionalMenuItem;
+import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 
 public abstract class RaoView extends ViewPart {
 	
@@ -24,15 +25,7 @@ public abstract class RaoView extends ViewPart {
 	
 	protected SimulatorId simulatorId;
 	private static int id = 0;
-	
-	public static Map<SimulatorId, Integer> getOpened() {
-		return opened;
-	}
-	
-	public static void addToOpened(final SimulatorId simulator, final int id) {
-		opened.put(simulator, id);
-	}
-	
+		
 	protected void setSimulatorId(SimulatorId simulatorId) {
 		assertNoSimulatorId(null);
 		this.simulatorId = simulatorId;
@@ -49,11 +42,9 @@ public abstract class RaoView extends ViewPart {
 		}
 	}
 	
-	private final void initialize(SimulatorId simulator, String viewFullName) {
-		// TODO: set different names for different kinds of views: 
-		// Results for Model 1 etc.
-		setPartName(viewFullName.substring(viewFullName.lastIndexOf('.') + 1, viewFullName.lastIndexOf('V')) + " " + String.valueOf(simulator.getId()));
-		setSimulatorId(simulator);
+	private final void initialize(SimulatorId simulatorId, String viewFullName) {
+		setPartName(viewFullName.substring(viewFullName.lastIndexOf('.') + 1, viewFullName.lastIndexOf('V')) + " " + simulatorId.toString());
+		setSimulatorId(simulatorId);
 	}
 	
 	protected abstract void initializeSimulatorRelated();
@@ -77,15 +68,15 @@ public abstract class RaoView extends ViewPart {
 	}
 	
 	private static class ConditionalMenuItemImpl extends ConditionalMenuItem {
-		private final String id;
+		private final ViewType viewType;
 		
-		public ConditionalMenuItemImpl(String viewId, TableViewer viewer, Menu parent) {
-			super(viewer, parent, viewId.substring(viewId.lastIndexOf('.') + 1, viewId.lastIndexOf('V')));
-			id = viewId;
+		public ConditionalMenuItemImpl(ViewType viewType, TableViewer viewer, Menu parent) {
+			super(viewer, parent, viewType.getId().substring(viewType.getId().lastIndexOf('.') + 1, viewType.getId().lastIndexOf('V')));
+			this.viewType = viewType;
 		}
 		
 		public String getId() {
-			return id;
+			return viewType.getId();
 		}
 
 		@Override
@@ -94,12 +85,11 @@ public abstract class RaoView extends ViewPart {
 		}
 		
 		@Override
-		public void show(SimulatorId simulator) {
+		public void show(SimulatorId simulatorId) {
 			try {
 				RaoView newView = (RaoView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-						.showView(getId(), String.valueOf(RaoView.id), IWorkbenchPage.VIEW_CREATE);
-				addToOpened(simulator, RaoView.id++);
-				newView.initialize(simulator, id);
+						.showView(getId(), simulatorId.toString(), IWorkbenchPage.VIEW_ACTIVATE);
+				newView.initialize(simulatorId, getId());
 
 			} catch (PartInitException e) {
 				e.printStackTrace();
@@ -108,8 +98,8 @@ public abstract class RaoView extends ViewPart {
 		
 	}
 	
-	public static ConditionalMenuItem createConditionalMenuItem(TableViewer viewer, Menu parent, String viewId) {
-		return new ConditionalMenuItemImpl(viewId, viewer, parent);
+	public static ConditionalMenuItem createConditionalMenuItem(TableViewer viewer, Menu parent, ViewType viewType) {
+		return new ConditionalMenuItemImpl(viewType, viewer, parent);
 	}
 	
 	public static String getIdForView(Class<?> viewClass) {
