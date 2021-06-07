@@ -234,7 +234,7 @@ public class Simulator implements ISimulator {
 				continue;
 			}
 
-			ProcessStatus processStatus = processManager.scan(getSimulatorId());
+			ProcessStatus processStatus = processManager.scan();
 			if (processStatus == ProcessStatus.SUCCESS) {
 				notifyChange(ExecutionState.STATE_CHANGED);
 				continue;

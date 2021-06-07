@@ -24,7 +24,6 @@ import ru.bmstu.rk9.rao.rao.VarConst
 import ru.bmstu.rk9.rao.rao.DataSource
 
 import static extension ru.bmstu.rk9.rao.naming.RaoNaming.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.*
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.JvmField
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
@@ -98,7 +97,13 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 			element.compileResourceInitialization(context, isPreIndexingPhase, this)
 
+
+			var createdResultBuilderField = false
 			for (entity : element.objects) {
+				if (!createdResultBuilderField) {
+					createdResultBuilderField = true
+					dataSourceCompiler.rememberAsBuilder(entity, context, isPreIndexingPhase, this)
+				}
 				// may add or not add members to the context EObject
 				entity.compileRaoEntity(context, isPreIndexingPhase, this)
 			}
