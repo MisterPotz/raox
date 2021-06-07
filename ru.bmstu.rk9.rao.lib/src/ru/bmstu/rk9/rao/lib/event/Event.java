@@ -8,16 +8,15 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public abstract class Event implements SimulatorDependent {
-	private SimulatorId simulatorId;
+	private final SimulatorId simulatorId;
 
+	public Event(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;	
+	}
+	
 	@Override
 	public SimulatorId getSimulatorId() {
 	return simulatorId;
-	}
-
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
 	}
 
 	private ISimulator getSimulator() {

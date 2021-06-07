@@ -13,16 +13,11 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public class Release implements Block, SimulatorDependent {
-	private SimulatorId simulatorId;
+	private final SimulatorId simulatorId;
 
 	@Override
 	public SimulatorId getSimulatorId() {
 	return simulatorId;
-	}
-
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-	this.simulatorId = simulatorId;
 	}
 
 	private ISimulator getSimulator() {
@@ -33,8 +28,9 @@ public class Release implements Block, SimulatorDependent {
 		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
 	}
 
-	public Release(Resource resource) {
+	public Release(Resource resource, SimulatorId simulatorId) {
 		this.resource = resource;
+		this.simulatorId = simulatorId;
 	}
 
 	private Resource resource;
@@ -51,8 +47,7 @@ public class Release implements Block, SimulatorDependent {
 	}
 
 	@Override
-	public BlockStatus check(SimulatorId simulatorId) {
-		setSimulatorId(simulatorId);
+	public BlockStatus check() {
 		if (transactStorage.hasTransact())
 			return BlockStatus.CHECK_AGAIN;
 		Transact transact = inputDock.pullTransact();

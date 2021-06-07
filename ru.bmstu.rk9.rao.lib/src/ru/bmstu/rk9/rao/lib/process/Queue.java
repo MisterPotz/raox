@@ -12,16 +12,11 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public class Queue implements Block, SimulatorDependent {
-	private SimulatorId simulatorId;
+	private final SimulatorId simulatorId;
 
 	@Override
 	public SimulatorId getSimulatorId() {
 		return simulatorId;
-	}
-
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
 	}
 
 	private ISimulator getSimulator() {
@@ -65,8 +60,9 @@ public class Queue implements Block, SimulatorDependent {
 		FIFO, LIFO
 	};
 
-	public Queue(int capacity, Queueing queueing) {
+	public Queue(int capacity, Queueing queueing, SimulatorId simulatorId) {
 		this.capacity = capacity;
+		this.simulatorId = simulatorId;
 		switch (queueing) {
 		case FIFO:
 			queue = new FIFOQueue();
@@ -86,8 +82,7 @@ public class Queue implements Block, SimulatorDependent {
 	}
 
 	@Override
-	public BlockStatus check(SimulatorId simulatorId) {
-		setSimulatorId(simulatorId);
+	public BlockStatus check() {
 		Transact inputTransact = inputDock.pullTransact();
 		if (inputTransact != null) {
 			if (queue.size() < capacity) {

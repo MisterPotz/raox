@@ -30,6 +30,7 @@ import org.eclipse.xtext.common.types.JvmField
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import java.util.List
 import java.util.ArrayList
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorModel
 
 class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderHelpersStorage {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
@@ -86,6 +87,8 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 	def dispatch void infer(RaoModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
 		init();
 		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [ context |
+			context.superTypes += typeRef(SimulatorModel)
+			
 			RaoEntityCompiler.cleanCachedResourceTypes();
 
 			context.members +=

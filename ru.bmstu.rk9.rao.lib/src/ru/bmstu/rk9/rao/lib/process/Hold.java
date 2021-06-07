@@ -21,14 +21,13 @@ public class Hold implements Block, SimulatorDependent{
 	private Supplier<Double> duration;
 	private SimulatorId simulatorId;
 
-	@Override
-	public SimulatorId getSimulatorId() {
-		return simulatorId;
+	public Hold(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
 	}
 	
 	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
+	public SimulatorId getSimulatorId() {
+		return simulatorId;
 	}
 
 	private ISimulator getSimulator() {
@@ -52,8 +51,7 @@ public class Hold implements Block, SimulatorDependent{
 	}
 
 	@Override
-	public BlockStatus check(SimulatorId simulatorId) {
-		setSimulatorId(simulatorId);
+	public BlockStatus check() {
 		if (transactStorage.hasTransact()) {
 			return BlockStatus.CHECK_AGAIN;
 		}
@@ -93,9 +91,9 @@ public class Hold implements Block, SimulatorDependent{
 		private Transact transact;
 
 		public HoldEvent(Transact transact, double time) {
+			super(simulatorId);
 			this.time = time;
 			this.transact = transact;
-			setSimulatorId(simulatorId);
 		}
 
 		@Override

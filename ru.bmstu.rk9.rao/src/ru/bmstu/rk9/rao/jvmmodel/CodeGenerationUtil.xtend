@@ -14,6 +14,7 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.common.types.JvmMember
 import java.util.HashMap
+import org.eclipse.xtend2.lib.StringConcatenation
 
 class CodeGenerationUtil {
 	private interface Extensioner<T> {
@@ -88,6 +89,13 @@ class CodeGenerationUtil {
 		'''
 	}
 	
+	def static StringConcatenationClient createSuperInitializationLine(List<NameableMember> parameters) {
+		val enumerationString = createEnumerationString(parameters) [ param | param.name ]
+		return '''
+			super(«enumerationString»);
+		'''
+	}
+	
 	def static StringConcatenationClient createInitializingListWithValues(
 		HashMap<NameableMember, String> parameters
 	) {
@@ -116,28 +124,4 @@ class CodeGenerationUtil {
 			this.name = parameter.name;
 		}
 	}
-
-//	def JvmConstructor createModelConstructor( JvmTypesBuilder jvmTypesBuilder, 
-//		JvmTypeReferenceBuilder jvmTypeReferenceBuilder, 
-//		Boolean isSimulatorIdOn, 
-//		List<String> resourceTypes,
-//		EObject raoEntity
-//	) {
-//		return apply(jvmTypesBuilder, jvmTypeReferenceBuilder) [ extension b, extension tB |
-//			return raoEntity.toConstructor [ eObj |
-//				eObj.visibility = JvmVisibility.PUBLIC
-//				if (isSimulatorIdOn) {
-//					eObj.parameters += SimulatorIdCodeUtil.createSimulatorIdParameter(b, tB, raoEntity)
-//					eObj.body = '''
-//						«FOR param : eObj.parameters»
-//							this.«param.name» = «param.name»;
-//						«ENDFOR»
-//						«FOR resourceName : resourceTypes»
-//							«BuilderCompiler.createLineOfBuilderFieldInitialization(resourceName)»
-//						«ENDFOR»
-//					'''
-//				}
-//			]
-//		]
-//	}
 }

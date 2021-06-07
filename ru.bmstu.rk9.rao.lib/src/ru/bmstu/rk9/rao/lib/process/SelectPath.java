@@ -17,16 +17,11 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public class SelectPath implements Block, SimulatorDependent {
 
-	private SimulatorId simulatorId;
+	private final SimulatorId simulatorId;
 
 	@Override
 	public SimulatorId getSimulatorId() {
 		return simulatorId;
-	}
-
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
 	}
 
 	private ISimulator getSimulator() {
@@ -62,11 +57,13 @@ public class SelectPath implements Block, SimulatorDependent {
 		PROBABILITY, CONDITION
 	}
 
-	public SelectPath(Supplier<Boolean> condition) {
+	public SelectPath(Supplier<Boolean> condition, SimulatorId simulatorId) {
 		this.condition = condition;
+		this.simulatorId = simulatorId;
 	}
 
-	public SelectPath(double probability) {
+	public SelectPath(double probability, SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
 		Supplier<Boolean> condition = new Supplier<Boolean>() {
 
 			private final MersenneTwister generator = new MersenneTwister();
@@ -92,8 +89,7 @@ public class SelectPath implements Block, SimulatorDependent {
 	}
 
 	@Override
-	public BlockStatus check(SimulatorId simulatorId) {
-		setSimulatorId(simulatorId);
+	public BlockStatus check() {
 		Transact transact = inputDock.pullTransact();
 		if (transact == null)
 			return BlockStatus.NOTHING_TO_DO;

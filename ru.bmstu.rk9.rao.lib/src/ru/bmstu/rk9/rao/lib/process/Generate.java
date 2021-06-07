@@ -12,17 +12,17 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public class Generate implements Block, SimulatorDependent {
-	private SimulatorId simulatorId;
+	private final SimulatorId simulatorId;
+
+	public Generate(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+	}
 
 	@Override
 	public SimulatorId getSimulatorId() {
 		return simulatorId;
 	}
 
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
-	}
 
 	private ISimulator getSimulator() {
 		return SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
@@ -32,7 +32,8 @@ public class Generate implements Block, SimulatorDependent {
 		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
 	}
 
-	public Generate(Supplier<Double> interval) {
+	public Generate(Supplier<Double> interval, SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
 		this.interval = interval;
 		getSimulator().pushEvent(new GenerateEvent(interval.get()));
 	}
@@ -48,8 +49,8 @@ public class Generate implements Block, SimulatorDependent {
 
 	private class GenerateEvent extends Event {
 		public GenerateEvent(double time) {
+			super(simulatorId);
 			this.time = time;
-			setSimulatorId(simulatorId);
 		}
 
 		@Override
@@ -64,8 +65,7 @@ public class Generate implements Block, SimulatorDependent {
 	}
 
 	@Override
-	public BlockStatus check(SimulatorId simulatorId) {
-		setSimulatorId(simulatorId);
+	public BlockStatus check() {
 		if (!ready)
 			return BlockStatus.NOTHING_TO_DO;
 

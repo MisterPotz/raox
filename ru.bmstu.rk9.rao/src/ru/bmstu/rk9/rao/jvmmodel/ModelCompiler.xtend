@@ -63,7 +63,7 @@ class ModelCompiler extends RaoEntityCompiler {
 				constructor.parameters += parameters
 				constructor.visibility = JvmVisibility.PUBLIC
 				constructor.body = '''
-					«CodeGenerationUtil.createInitializingList(parameters.map[new NameableMember(it)])»
+					«CodeGenerationUtil.createSuperInitializationLine(parameters.map[ new NameableMember(it)])»
 					this.«GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD» = new «typeRef(initializingScopeType)»();
 				'''
 			]

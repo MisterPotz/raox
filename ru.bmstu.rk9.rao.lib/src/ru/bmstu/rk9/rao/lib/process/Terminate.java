@@ -11,15 +11,14 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public class Terminate implements Block, SimulatorDependent {
 	private SimulatorId simulatorId;
+	
+	public Terminate(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+	}
 
 	@Override
 	public SimulatorId getSimulatorId() {
 		return simulatorId;
-	}
-
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
 	}
 
 	private ISimulator getSimulator() {
@@ -37,8 +36,7 @@ public class Terminate implements Block, SimulatorDependent {
 	}
 
 	@Override
-	public BlockStatus check(SimulatorId simulatorId) {
-		setSimulatorId(simulatorId);
+	public BlockStatus check() {
 		Transact currentTransact = inputDock.pullTransact();
 		if (currentTransact == null)
 			return BlockStatus.NOTHING_TO_DO;
