@@ -31,35 +31,17 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Sash;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
-import org.eclipse.ui.part.ViewPart;
 
 import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
 import ru.bmstu.rk9.rao.lib.animation.Background;
-import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
-import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationModeDispatcher;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener.OnEventReceiver;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
 
 public class AnimationView extends RaoView {
 	private RealTimeSubscriberManager realTimeSubscriberManager;
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	
-	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
-			}
-			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
-	}
-
 	private final void deinitializeSubscribers() {
 		if (realTimeSubscriberManager != null) {
 			realTimeSubscriberManager.deinitialize();
@@ -67,21 +49,21 @@ public class AnimationView extends RaoView {
 		realTimeSubscriberManager = null;
 	}
 	
-	public static int getFrameListSize() {
+	public int getFrameListSize() {
 		return lastListWidth;
 	}
 
-	private static Composite parent;
+	private Composite parent;
 
-	private static ScrolledComposite scrolledComposite;
+	private ScrolledComposite scrolledComposite;
 
-	private static List frameList;
-	private static GridData listSize;
+	private List frameList;
+	private GridData listSize;
 
-	private static Canvas frameView;
-	private static GridData frameSize;
+	private Canvas frameView;
+	private GridData frameSize;
 
-	public static void setFrameSize(int width, int height) {
+	public void setFrameSize(int width, int height) {
 		frameSize.widthHint = width;
 		frameSize.heightHint = height;
 		frameSize.minimumWidth = width;
@@ -91,7 +73,7 @@ public class AnimationView extends RaoView {
 		scrolledComposite.layout(true, true);
 	}
 
-	private static void setCurrentFrame(AnimationFrame frame) {
+	private void setCurrentFrame(AnimationFrame frame) {
 		currentFrame = frame;
 
 		Background backgroundData = frame.getBackground();
@@ -101,14 +83,14 @@ public class AnimationView extends RaoView {
 		frameView.redraw();
 	}
 
-	private static AnimationContextSWT animationContext;
+	private AnimationContextSWT animationContext;
 
-	private static java.util.List<AnimationFrame> frames;
-	private static AnimationFrame currentFrame;
+	private java.util.List<AnimationFrame> frames;
+	private AnimationFrame currentFrame;
 
-	private static int selectedFrameIndex = 0;
+	private int selectedFrameIndex = 0;
 
-	private static void initializeFrames() {
+	private void initializeFrames() {
 		frameList.removeAll();
 
 		if (!frames.isEmpty()) {
@@ -130,13 +112,13 @@ public class AnimationView extends RaoView {
 		}
 	}
 
-	public static void initialize(java.util.List<AnimationFrame> frames) {
+	public void initialize(java.util.List<AnimationFrame> frames) {
 		isInitialized = true;
 		selectedFrameIndex = 0;
 
 		animationContext = new AnimationContextSWT(PlatformUI.getWorkbench().getDisplay());
 
-		AnimationView.frames = new ArrayList<AnimationFrame>(frames);
+		frames = new ArrayList<>(frames);
 
 		if (isInitialized())
 			initializeFrames();
@@ -145,7 +127,7 @@ public class AnimationView extends RaoView {
 		setAnimationEnabled(currentMode != ExecutionMode.NO_ANIMATION);
 	}
 
-	public static void deinitialize() {
+	public void deinitialize() {
 		if (!isInitialized)
 			return;
 		if (frames != null) {
@@ -160,13 +142,13 @@ public class AnimationView extends RaoView {
 			frameView.redraw();
 	}
 
-	private static volatile boolean animationEnabled = true;
+	private volatile boolean animationEnabled = true;
 
-	public static void setAnimationEnabled(boolean state) {
+	public void setAnimationEnabled(boolean state) {
 		animationEnabled = state;
 	}
 
-	public static final Runnable realTimeUpdateRunnable = new Runnable() {
+	public final Runnable realTimeUpdateRunnable = new Runnable() {
 		@Override
 		public void run() {
 			if (isInitialized() && animationEnabled) {
@@ -176,7 +158,7 @@ public class AnimationView extends RaoView {
 		}
 	};
 
-	private static PaintListener painter = new PaintListener() {
+	private PaintListener painter = new PaintListener() {
 		@Override
 		public void paintControl(PaintEvent e) {
 			if (canDraw()) {
@@ -186,7 +168,7 @@ public class AnimationView extends RaoView {
 		}
 	};
 
-	private static SelectionListener frameListListener = new SelectionListener() {
+	private SelectionListener frameListListener = new SelectionListener() {
 		@Override
 		public void widgetSelected(SelectionEvent e) {
 			int index = ((List) e.widget).getSelectionIndex();
@@ -199,10 +181,10 @@ public class AnimationView extends RaoView {
 		}
 	};
 
-	private static int lastListWidth = InstanceScope.INSTANCE.getNode("ru.bmstu.rk9.rao.ui")
+	private int lastListWidth = InstanceScope.INSTANCE.getNode("ru.bmstu.rk9.rao.ui")
 			.getInt("AnimationViewFrameListSize", 120);
 
-	private static Listener sashListener = new Listener() {
+	private Listener sashListener = new Listener() {
 		@Override
 		public void handleEvent(Event event) {
 			Rectangle listRectangle = frameList.getBounds();
@@ -226,7 +208,7 @@ public class AnimationView extends RaoView {
 
 		animationEnabled = !state.getValue().equals("NA");
 
-		AnimationView.parent = parent;
+		this.parent = parent;
 
 		GridLayoutFactory.fillDefaults().numColumns(3).spacing(0, 0).extendedMargins(1, 1, 2, 1).applyTo(parent);
 
@@ -317,21 +299,19 @@ public class AnimationView extends RaoView {
 
 		if (frames != null)
 			initializeFrames();
-		
-		initializeSubscribers();
 	}
 	
 	@Override
 	public void setFocus() {
 	}
 
-	private static boolean isInitialized = false;
+	private boolean isInitialized = false;
 
-	static boolean isInitialized() {
+	boolean isInitialized() {
 		return frameList != null && !frameList.isDisposed() && frameView != null && !frameView.isDisposed();
 	}
 
-	private static boolean canDraw() {
+	private boolean canDraw() {
 		return isInitialized() && animationContext != null && currentFrame != null;
 	}
 
@@ -339,5 +319,15 @@ public class AnimationView extends RaoView {
 	public void dispose() {
 		deinitializeSubscribers();
 		super.dispose();
+	}
+
+	@Override
+	protected void initializeSimulatorRelated() {
+		simNonNull(args -> {
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
 	}
 }

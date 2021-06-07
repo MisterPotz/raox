@@ -39,7 +39,8 @@ public class ViewManager {
 		TRACE(UiContract.ID_TRACE_VIEW),
 		PLOT(UiContract.ID_PLOT_VIEW), 
 		SERIALIZED(UiContract.ID_SERIALIZEDOBJS_VIEW),
-		STATUS(UiContract.ID_STATUS_VIEW);
+		STATUS(UiContract.ID_STATUS_VIEW),
+		ANIMATION(UiContract.ID_ANIMATION_VIEW);
 
 		private final String id;
 

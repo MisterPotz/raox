@@ -1,5 +1,6 @@
 package ru.bmstu.rk9.rao.ui;
 
+import ru.bmstu.rk9.rao.ui.animation.AnimationView;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.plot.PlotView;
 import ru.bmstu.rk9.rao.ui.raoview.RaoView;
@@ -19,4 +20,6 @@ public class UiContract {
 	public static String ID_SERIALIZEDOBJS_VIEW = RaoView.getIdForView(SerializedObjectsView.class);
 	public static String ID_PLOT_VIEW = RaoView.getIdForView(PlotView.class);
 	public static String ID_STATUS_VIEW = RaoView.getIdForView(StatusView.class);
+	public static String ID_ANIMATION_VIEW = RaoView.getIdForView(AnimationView.class);
+
 }

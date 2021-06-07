@@ -368,4 +368,7 @@ public class ResultsView extends RaoView {
 	
 	@Override
 	public void setFocus() {}
+
+	@Override
+	protected void initializeSimulatorRelated() {}
 }

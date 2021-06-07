@@ -28,8 +28,6 @@ import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 
 public class ConsoleView extends RaoView {
-//	public static final String ID = "ru.bmstu.rk9.rao.ui.ConsoleView"; //$NON-NLS-1$
-
 	private static StyledText styledText;
 
 	private static String text = "";

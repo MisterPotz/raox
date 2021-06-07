@@ -1,9 +1,5 @@
 package ru.bmstu.rk9.rao.ui.raoview;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.eclipse.jdt.ui.actions.IntroduceIndirectionAction;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IWorkbenchPage;
@@ -12,7 +8,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
 import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
-import ru.bmstu.rk9.rao.lib.simulator.Simulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
@@ -24,7 +19,14 @@ public abstract class RaoView extends ViewPart {
 	public static String ID_PREFIX = "ru.bmstu.rk9.rao.ui.";
 	
 	protected SimulatorId simulatorId;
-	private static int id = 0;
+
+	protected SimulatorWrapper getSimulatorWrapper() {
+		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+	}
+
+	protected SimulatorId getSimulatorId() {
+		return simulatorId;
+	}
 		
 	protected void setSimulatorId(SimulatorId simulatorId) {
 		assertNoSimulatorId(null);
