@@ -38,12 +38,13 @@ import ru.bmstu.rk9.rao.lib.animation.Background;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
+import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationModeDispatcher;
 import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener.OnEventReceiver;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
 
-public class AnimationView extends ViewPart {
+public class AnimationView extends RaoView {
 	private RealTimeSubscriberManager realTimeSubscriberManager;
 	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	

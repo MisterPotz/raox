@@ -47,6 +47,7 @@ import org.osgi.framework.Bundle;
 import ru.bmstu.rk9.rao.lib.result.AbstractResult;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 import ru.bmstu.rk9.rao.ui.export.ExportResultsHandler;
 import ru.bmstu.rk9.rao.ui.internal.RaoActivator;
@@ -58,38 +59,10 @@ public class ResultsView extends RaoView {
 	private List<AbstractResult<?>> results;
 
 	private boolean viewAsText = false;
-
-	private static final HashMap<SimulatorId, ResultsView> resultsViewMap = new HashMap<>();
-
-	public SimulatorId getSimulatorId() {
-		Set<Entry<SimulatorId, ResultsView>> entrySet = resultsViewMap.entrySet();
-
-		for (Entry<SimulatorId, ResultsView> entry : entrySet) { 
-			if (entry.getValue().equals(this))
-				return entry.getKey();
-		}
-		return null;
-	}
-
-	private static void addView(SimulatorId simulatorId, ResultsView view) {
-		resultsViewMap.put(simulatorId, view);
-	}
-
-	public static ResultsView getViewFor(SimulatorId simulatorId) {
-		ResultsView view = resultsViewMap.get(simulatorId);
-
-		if (view == null) {
-			view = new ResultsView();
-			ResultsView.addView(simulatorId, view);
-		}
-		return view;
-	}
-
 	
 	public void update() {
 		// TODO: change to SimulatorManager.getSimulator(this.getSimulatorId()).getResults()
-		this.results = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getResults();
- 
+		this.results = SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getResults(); 
 		if (!isInitialized())
 			return;
 
