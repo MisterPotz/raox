@@ -15,9 +15,13 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.xtext.builder.clustering.CurrentDescriptions;
 
+import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.UiContract;
@@ -28,15 +32,48 @@ import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView;
 import ru.bmstu.rk9.rao.ui.trace.TraceView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import com.google.common.eventbus.Subscribe;
 
 public class MonitorView extends ViewPart {
 	public final static String ID = new String("ru.bmstu.rk9.rao.ui.MonitorView");
 	
 	private static TableViewer viewer;
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
-	
 	private FilterHelper filterHelper = new FilterHelper();
+
+	private final Subscriber newPlannedSimulatorSubscriber = new Subscriber(){
+		@Override
+		public void fireChangeWithPayload(Object object) {
+			SimulatorId currenSimulatorId = (SimulatorId) object;
+
+			/**
+			 * Find out a way to have one subscriber on Execution_Started and Execution_Finished states
+			 * and how can i relate state to text of SimulatorStatus column in monitorview
+			 */
+			SimulatorManagerImpl.getInstance().getSimulatorWrapper(currenSimulatorId).getExecutionStateNotifier().addSubscriber(new Subscriber(){
+
+				@Override
+				public void fireChange() {
+					onChange(currenSimulatorId);
+				}
+			}, ExecutionState.EXECUTION_STARTED);
+		};
+
+
+		@Override
+		public void fireChange() {}
+	};
+
+	void onChange(SimulatorId simulatorId) {
+		TableItem currentRow = Arrays.stream(viewer.getTable().getItems())
+		.filter(row -> row.getText(0).equals(simulatorId.toString())).collect(Collectors.toList()).get(0);
+
+		currentRow.setText(1, "In progress");
+	}
 	
 	@Override
 	public void createPartControl(Composite parent) {
