@@ -109,7 +109,7 @@ public class SimulatorWrapper implements SimulatorDependent {
 
 	public enum ExecutionState {
 		EXECUTION_STARTED, EXECUTION_COMPLETED, EXECUTION_ABORTED, STATE_CHANGED, TIME_CHANGED, SEARCH_STEP
-	};
+	}
 
 	public Notifier<ExecutionState> getExecutionStateNotifier() {
 		return currentSimulator.getExecutionStateNotifier();

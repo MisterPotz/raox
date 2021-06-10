@@ -36,14 +36,12 @@ import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 public class StatusView extends RaoView {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.StatusView"; //$NON-NLS-1$
 	private RealTimeSubscriberManager realTimeSubscriberManager;
-	private static StatusView INSTANCE;
 
 	private ScrolledComposite scrolledComposite;
 	private RowLayout scrolledCompositeLayout;
 
 	private Composite composite;
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
-	
+
 	public static class Element extends Composite {
 		private Label label;
 		private Text text;
@@ -66,7 +64,7 @@ public class StatusView extends RaoView {
 		}
 	}
 
-	public static void setValue(String name, int priority, String value) {
+	public void setValue(String name, int priority, String value) {
 		if (value == null) {
 			values.remove(name);
 			order.remove(name);
@@ -76,7 +74,7 @@ public class StatusView extends RaoView {
 		}
 
 		if (isInitialized())
-			INSTANCE.updateElement(name);
+			this.updateElement(name);
 	}
 
 	private void updateElement(String name) {
@@ -134,13 +132,15 @@ public class StatusView extends RaoView {
 		scrolledComposite.layout(true, true);
 	}
 
-	private static Map<String, String> values = new HashMap<String, String>();
-	private static Map<String, Integer> order = new HashMap<String, Integer>();
+	private Map<String, String> values = new HashMap<String, String>();
+	private Map<String, Integer> order = new HashMap<String, Integer>();
 	private Map<String, Element> controls = new HashMap<String, Element>();
 
 	private IThemeManager themeManager;
 	private IPropertyChangeListener fontListener;
 	private Font editorFont;
+
+	private long startTime;
 
 	@Override
 	public void createPartControl(Composite parent) {
@@ -177,8 +177,6 @@ public class StatusView extends RaoView {
 		scrolledComposite.setExpandHorizontal(true);
 		scrolledComposite.setExpandVertical(true);
 
-		INSTANCE = this;
-
 		// late initialization
 		parent.getDisplay().asyncExec(() -> {
 			scrolledComposite.setBackground(parent.getBackground());
@@ -191,26 +189,12 @@ public class StatusView extends RaoView {
 			reorderElements();
 			updateScrolledCompositeSize();
 		});
-
-		initializeSubscribers();
 	}
 
 	@Override
 	public void dispose() {
 		deinitializeSubscribers();
 		super.dispose();
-	}
-
-	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
-			}
-			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
 	}
 
 	private final void deinitializeSubscribers() {
@@ -238,27 +222,35 @@ public class StatusView extends RaoView {
 		scrolledComposite.layout(true, true);
 	}
 
-	private static boolean isInitialized() {
-		return INSTANCE != null && !INSTANCE.composite.isDisposed();
+	private boolean isInitialized() {
+		return !this.composite.isDisposed();
 	}
 
-	private static DecimalFormat realTimeFormatter = new DecimalFormat("0.0");
+	private DecimalFormat realTimeFormatter = new DecimalFormat("0.0");
 
-	public static final Runnable realTimeUpdateRunnable = new Runnable() {
+	public final Runnable realTimeUpdateRunnable = new Runnable() {
 		@Override
 		public void run() {
-			StatusView.setValue("Time elapsed".intern(), 5,
+			setValue("Time elapsed".intern(), 5,
 					realTimeFormatter.format((System.currentTimeMillis() - startTime) / 1000d) + "s");
 		}
 	};
 
-	public static final void setStartTime(long time) {
+	public final void setStartTime(long time) {
 		startTime = time;
 	}
 
-	private static long startTime;
-
 	@Override
 	public void setFocus() {
+	}
+
+	@Override
+	protected void initializeSimulatorRelated() {
+		simNonNull(args -> {
+			if (realTimeSubscriberManager == null) {
+				realTimeSubscriberManager = new RealTimeSubscriberManager();
+			}
+			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+		});
 	}
 }

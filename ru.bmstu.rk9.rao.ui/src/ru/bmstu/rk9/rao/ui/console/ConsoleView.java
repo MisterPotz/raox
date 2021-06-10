@@ -28,9 +28,9 @@ import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 
 public class ConsoleView extends RaoView {
-	private static StyledText styledText;
+	private StyledText styledText;
 
-	private static String text = "";
+	private String text = "";
 
 	private LoggerSubscriberManager loggerSubscriberManager;
 	
@@ -92,29 +92,29 @@ public class ConsoleView extends RaoView {
 		styledText.setFont(fontRegistry.get(PreferenceConstants.EDITOR_TEXT_FONT));
 	}
 
-	public static void clearConsoleText() {
+	public void clearConsoleText() {
 		text = "";
 		redrawText();
 	}
 
-	public static void addLine(String line) {
+	public void addLine(String line) {
 		text = text + line + "\n";
 		redrawText();
 	}
 
-	public static void appendText(String add) {
+	public void appendText(String add) {
 		text = text + add;
 		redrawText();
 	}
 
-	public static void printStackTrace(Throwable e) {
+	public void printStackTrace(Throwable e) {
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(stringWriter);
 		e.printStackTrace(printWriter);
 		appendText(stringWriter.toString());
 	}
 
-	public static void redrawText() {
+	public void redrawText() {
 		if (styledText != null && !styledText.isDisposed())
 			styledText.getDisplay().asyncExec(new Runnable() {
 				@Override

@@ -13,6 +13,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 import org.eclipse.xtext.xbase.typesystem.IBatchTypeResolver;
 import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
+import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.utils.SimulatorReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
@@ -42,6 +43,12 @@ public class ExecutionJobProvider {
 		this.typeResolver = typeResolver;
 	}
 
+	public enum SystemSimulatorEvent {
+		ADDED_NEW
+	}
+
+	public static Notifier<SystemSimulatorEvent> systemSimulatorNotifier = new Notifier<>(SystemSimulatorEvent.class);
+
 	public final Job createExecutionJob() {
 		final Job executionJob = new Job(project.getName() + " execution") {
 			@Override
@@ -70,7 +77,6 @@ public class ExecutionJobProvider {
 					}
 				}
 				return Status.OK_STATUS;
-
 			}
 
 			@Override
@@ -92,6 +98,8 @@ public class ExecutionJobProvider {
 		ISimulator simulator = new Simulator();
 		SimulatorWrapper simulatorWrapper = new SimulatorWrapper(simulator);
 		SimulatorManagerImpl.getInstance().addSimulator(simulator);
+
+		systemSimulatorNotifier.notifySubscribers(SystemSimulatorEvent.ADDED_NEW, simulator.getSimulatorId());
 
 		ConsoleView consoleView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.CONSOLE);
 		consoleView.clearConsoleText();

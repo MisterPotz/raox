@@ -26,6 +26,8 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.UiContract;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
+import ru.bmstu.rk9.rao.ui.execution.ExecutionJobProvider;
+import ru.bmstu.rk9.rao.ui.execution.ExecutionJobProvider.SystemSimulatorEvent;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
 import com.google.common.eventbus.Subscribe;
 
 public class MonitorView extends ViewPart {
-	public final static String ID = new String("ru.bmstu.rk9.rao.ui.MonitorView");
+	public static final String ID = "ru.bmstu.rk9.rao.ui.MonitorView";
 	
 	private static TableViewer viewer;
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
@@ -50,35 +52,44 @@ public class MonitorView extends ViewPart {
 		public void fireChangeWithPayload(Object object) {
 			SimulatorId currenSimulatorId = (SimulatorId) object;
 
-			/**
-			 * Find out a way to have one subscriber on Execution_Started and Execution_Finished states
-			 * and how can i relate state to text of SimulatorStatus column in monitorview
-			 */
 			SimulatorManagerImpl.getInstance().getSimulatorWrapper(currenSimulatorId).getExecutionStateNotifier().addSubscriber(new Subscriber(){
 
 				@Override
 				public void fireChange() {
-					onChange(currenSimulatorId);
+					onChange(currenSimulatorId, "Running");
 				}
 			}, ExecutionState.EXECUTION_STARTED);
-		};
 
+			SimulatorManagerImpl.getInstance().getSimulatorWrapper(currenSimulatorId).getExecutionStateNotifier().addSubscriber(new Subscriber(){
+
+				@Override
+				public void fireChange() {
+					onChange(currenSimulatorId, "Finished");
+				}
+			}, ExecutionState.EXECUTION_COMPLETED);
+		}
 
 		@Override
 		public void fireChange() {}
 	};
 
-	void onChange(SimulatorId simulatorId) {
+	void onChange(SimulatorId simulatorId, String executionState) {
 		TableItem currentRow = Arrays.stream(viewer.getTable().getItems())
 		.filter(row -> row.getText(0).equals(simulatorId.toString())).collect(Collectors.toList()).get(0);
 
-		currentRow.setText(1, "In progress");
+		currentRow.setText(1, executionState);
 	}
 	
 	@Override
 	public void createPartControl(Composite parent) {
+		initializeSubscribers();
+
 		createViewer(parent);
 		configureToolBar();
+	}
+
+	private void initializeSubscribers() {
+		ExecutionJobProvider.systemSimulatorNotifier.addSubscriber(newPlannedSimulatorSubscriber, SystemSimulatorEvent.ADDED_NEW);
 	}
 	
 	private final void configureToolBar() {
@@ -151,7 +162,7 @@ public class MonitorView extends ViewPart {
 				SimulatorId simulatorId = (SimulatorId) element;			
 				
 				// TODO: make feature to get simulator status
-				String simulatorState = new String("Not started.");
+				String simulatorState = new String("Not started");
 				
 				return simulatorState;
 			}
