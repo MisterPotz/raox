@@ -75,6 +75,10 @@ public class ProxyBuilderHelper {
 	 *         parameters and paramaters that this builder creates
 	 */
 	public JvmConstructor createConstructorForBuildedClass(boolean addSimulatorId, JvmFormalParameter... givenParams) {
+		return createConstructorForBuildedClass(addSimulatorId, null, givenParams);
+	}
+	
+	public JvmConstructor createConstructorForBuildedClass(boolean addSimulatorId, StringConcatenationClient additionalCode, JvmFormalParameter... givenParams) {
 		JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceElement, p -> {
 			if (addSimulatorId) {
 				p.getParameters().add(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
@@ -85,7 +89,7 @@ public class ProxyBuilderHelper {
 				p.getParameters().add(param);
 			}
 
-			jvmTypesBuilder.setBody(p, util.createConstructorBody(p, useHiddenFieldsName));
+			jvmTypesBuilder.setBody(p, util.createConstructorBody(p, useHiddenFieldsName, additionalCode));
 		});
 
 		constructorOfBuildedClass = createdCostructor;
@@ -95,7 +99,11 @@ public class ProxyBuilderHelper {
 	public JvmConstructor createConstructorForBuildedClass(JvmFormalParameter... givenParams) {
 		return createConstructorForBuildedClass(true, givenParams);
 	}
-
+	
+	public JvmConstructor createConstructorForBuildedClass(StringConcatenationClient additionalCode, JvmFormalParameter... givenParams) {
+		return createConstructorForBuildedClass(true, additionalCode, givenParams);
+	}
+	
 	/**
 	 * 
 	 * @param givenParams paramaters that client wants to add to the created

@@ -27,6 +27,8 @@ class LogicCompiler extends RaoEntityCompiler {
 				return logic.toClass(logicQualifiedName) [
 					superTypes += typeRef(ru.bmstu.rk9.rao.lib.dpt.Logic)
 
+
+					members += SimulatorIdCodeUtil.createSimulatorIdSuperConstructor(jvmTypesBuilder, jvmTypeReferenceBuilder, logic)
 					for (activity : logic.activities) {
 						members += activity.toField(activity.name, typeRef(ru.bmstu.rk9.rao.lib.dpt.Activity)) [
 							visibility = JvmVisibility.PRIVATE

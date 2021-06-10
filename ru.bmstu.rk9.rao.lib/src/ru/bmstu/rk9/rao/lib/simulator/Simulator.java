@@ -107,7 +107,7 @@ public class Simulator implements ISimulator {
 
 	private DPTManager createDPTManager(List<Constructor<?>> decisionPointConstructors, Object initializationScopeInstance) {
 		return new DPTManager(decisionPointConstructors.stream().map(constructor ->
-		 ReflectionUtils.safeNewInstance(AbstractDecisionPoint.class, constructor, initializationScopeInstance))
+		 ReflectionUtils.safeNewInstance(AbstractDecisionPoint.class, constructor, initializationScopeInstance, simulatorId))
 		 .collect(Collectors.toList()), getSimulatorId());
 	}
 

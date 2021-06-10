@@ -96,6 +96,19 @@ class CodeGenerationUtil {
 		'''
 	}
 	
+	def static JvmConstructor constructorWithSuper(extension JvmTypesBuilder builder, 
+		EObject sourceObject, 
+		List<JvmFormalParameter> parameters
+	) {
+		return sourceObject.toConstructor[
+			visibility = JvmVisibility.PUBLIC
+			it.parameters += parameters
+			body = '''
+			«createSuperInitializationLine(parameters.map[new NameableMember(it)])»
+			'''
+		]
+	}
+	
 	def static StringConcatenationClient createInitializingListWithValues(
 		HashMap<NameableMember, String> parameters
 	) {

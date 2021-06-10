@@ -10,6 +10,9 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.xtend2.lib.StringConcatenationClient
+import java.util.Arrays
+import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
+import java.util.stream.Collectors
 
 class SimulatorIdCodeUtil {
 	
@@ -69,4 +72,14 @@ class SimulatorIdCodeUtil {
 	def static StringConcatenationClient getSimulatorIdLine() {
 		return '''getSimulatorId()'''
 	}	
+	
+	def static StringConcatenationClient createSimulatorIdSuperLine(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder typerefBuilder, EObject sourceObject) {
+		return CodeGenerationUtil.createSuperInitializationLine(
+			Arrays.asList(new NameableMember(createSimulatorIdParameter(builder, typerefBuilder, sourceObject)))
+		)
+	}
+	
+	def static JvmConstructor createSimulatorIdSuperConstructor(extension JvmTypesBuilder builder,extension JvmTypeReferenceBuilder typerefBuilder, EObject sourceObject) {
+		return CodeGenerationUtil.constructorWithSuper(builder, sourceObject,Arrays.asList(createSimulatorIdParameter(builder, typerefBuilder, sourceObject)))
+	}
 }

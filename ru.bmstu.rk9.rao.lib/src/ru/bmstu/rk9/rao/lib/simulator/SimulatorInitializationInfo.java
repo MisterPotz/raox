@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import ru.bmstu.rk9.rao.lib.contract.RaoGenerationContract;
 import ru.bmstu.rk9.rao.lib.process.Block;
 
 public class SimulatorInitializationInfo {
@@ -30,7 +31,7 @@ public class SimulatorInitializationInfo {
 		decisionPoints.clear();
 		decisionPoints.addAll(StreamUtils.convert(decisionPointClasses, cl -> {
 			try {
-				Constructor<?> constructor = cl.getConstructor(simulatorCommonModelInfo.getInitializationScopeClass());
+				Constructor<?> constructor = cl.getConstructor(simulatorCommonModelInfo.getInitializationScopeClass(), RaoGenerationContract.SIMULATOR_ID_CLASS);
 				constructor.setAccessible(true);
 				return constructor;
 			} catch (NoSuchMethodException | SecurityException e) {
