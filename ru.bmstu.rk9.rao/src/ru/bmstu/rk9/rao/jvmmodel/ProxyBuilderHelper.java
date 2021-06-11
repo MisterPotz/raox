@@ -78,7 +78,9 @@ public class ProxyBuilderHelper {
 		return createConstructorForBuildedClass(addSimulatorId, null, givenParams);
 	}
 	
-	public JvmConstructor createConstructorForBuildedClass(boolean addSimulatorId, StringConcatenationClient additionalCode, JvmFormalParameter... givenParams) {
+	public JvmConstructor createConstructorForBuildedClass(boolean addSimulatorId,
+			StringConcatenationClient additionalCode, 
+			JvmFormalParameter... givenParams) {
 		JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceElement, p -> {
 			if (addSimulatorId) {
 				p.getParameters().add(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
@@ -95,7 +97,6 @@ public class ProxyBuilderHelper {
 		constructorOfBuildedClass = createdCostructor;
 		return createdCostructor;
 	}
-
 	public JvmConstructor createConstructorForBuildedClass(JvmFormalParameter... givenParams) {
 		return createConstructorForBuildedClass(true, givenParams);
 	}

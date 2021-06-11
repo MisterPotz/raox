@@ -34,7 +34,6 @@ class EventCompiler extends RaoEntityCompiler {
 				// partially delegate creation of features to ProxyBuilderHelper here
 				val parametersList = new ArrayList<JvmFormalParameter>();
 				parametersList.add(event.toParameter("time", typeRef(double)));
-				parametersList.add(SimulatorIdCodeUtil.createSimulatorIdParameter(b, tB, event))
 						
 				// these fields will go into local private fields of the generated event
 				val fieldParametersList = new ArrayList<JvmFormalParameter>();
