@@ -3,6 +3,10 @@ package ru.bmstu.rk9.rao.ui.raoview;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.ui.UiContract;
 
@@ -12,7 +16,7 @@ public class ViewManager {
 	@SuppressWarnings("unchecked")
 	public static <T extends RaoView> T getViewFor(SimulatorId simulatorId, ViewType viewType) {
 		if (!simulatorViews.containsKey(simulatorId)) {
-			SimulatorViews newSimulatorViews = new SimulatorViews();
+			SimulatorViews newSimulatorViews = new SimulatorViews(simulatorId);
 
 			simulatorViews.put(simulatorId, newSimulatorViews);
 		}
@@ -21,13 +25,26 @@ public class ViewManager {
 
 	public static class SimulatorViews {
 		private final Map<ViewType, RaoView> views = new HashMap<>();
+		private final SimulatorId simulatorId;
+
+
+		public SimulatorViews(SimulatorId simulatorId) {
+			this.simulatorId = simulatorId;
+		}
 		
 		@SuppressWarnings("unchecked")
 		public <T extends RaoView> T getViewFor(ViewType viewType) {
 			if (!views.containsKey(viewType)) {
-				RaoView newRaoView = /* TODO create the necessary RaoView here */ new RaoView();
+				try {
+					RaoView newRaoView = (RaoView) PlatformUI.getWorkbench()
+												.getActiveWorkbenchWindow()
+												.getActivePage()
+												.showView(viewType.getId(), simulatorId.toString(), IWorkbenchPage.VIEW_ACTIVATE);
 	
-				views.put(viewType, newRaoView);
+					views.put(viewType, newRaoView);
+				} catch (PartInitException e) {
+					e.printStackTrace();
+				}
 			}
 			return (T) views.get(viewType);
 		} 

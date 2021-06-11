@@ -991,7 +991,8 @@
            icon="icons/rao_old.gif"
            id="ru.bmstu.rk9.rao.ui.ConsoleView"
            name="Console"
-           restorable="true">
+           restorable="true"
+           allowMultiple = "true">
      </view>
      <view
            category="ru.bmstu.rk9.rao.ui.views"
@@ -1007,7 +1008,8 @@
            icon="icons/tag.gif"
            id="ru.bmstu.rk9.rao.ui.TraceView"
            name="Trace"
-           restorable="true">
+           restorable="true"
+           allowMultiple = "true">
      </view>
      <view
            category="ru.bmstu.rk9.rao.ui.views"
@@ -1015,7 +1017,8 @@
            icon="icons/status.png"
            id="ru.bmstu.rk9.rao.ui.StatusView"
            name="Status"
-           restorable="true">
+           restorable="true"
+           allowMultiple = "true">
      </view>
      // TODO: Test view
       <view
@@ -1031,7 +1034,8 @@
            icon="icons/run.gif"
            id="ru.bmstu.rk9.rao.ui.AnimationView"
            name="Rao Animation"
-           restorable="true">
+           restorable="true"
+           allowMultiple = "true">
      </view>
      <view
            category="ru.bmstu.rk9.rao.ui.views"
@@ -1039,7 +1043,8 @@
            icon="icons/clipboard-list.png"
            id="ru.bmstu.rk9.rao.ui.ResultsView"
            name="Results"
-           restorable="true">
+           restorable="true"
+           allowMultiple = "true">
      </view>
      <view
            category="ru.bmstu.rk9.rao.ui.views"
@@ -1047,7 +1052,8 @@
            icon="icons/zones-stack.png"
            id="ru.bmstu.rk9.rao.ui.SerializedObjectsView"
            name="Collected Objects"
-           restorable="true">
+           restorable="true"
+           allowMultiple = "true">
      </view>
      <view
            category="ru.bmstu.rk9.rao.ui.views"

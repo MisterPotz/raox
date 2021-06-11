@@ -11,12 +11,12 @@ import ru.bmstu.rk9.rao.lib.varconst.VarConst;
 
 public class VarConstManager {
 
-	private final List<VarConst> vcs;
+	private final List<VarConst> varconsts;
 	private List< List<Double> > combinations;
 	
 	
-	public VarConstManager(List<VarConst> vcs) {
-		this.vcs = vcs;
+	public VarConstManager(List<VarConst> varconsts) {
+		this.varconsts = varconsts;
 		this.combinations = new ArrayList<>();
 	}
 	
@@ -49,8 +49,8 @@ public class VarConstManager {
 	public HashMap<String, Double> listToHashMap(List<Double> values) {
 		HashMap<String, Double> hashMap = new HashMap<>();
 		
-	    IntStream.range(0, Math.min(values.size(), vcs.size()))
-	            .mapToObj(i -> Map.entry(vcs.get(i).getName(), values.get(i)))
+	    IntStream.range(0, Math.min(values.size(), varconsts.size()))
+	            .mapToObj(i -> Map.entry(varconsts.get(i).getName(), values.get(i)))
 	            .forEach(entry -> hashMap.put(entry.getKey(), entry.getValue()));
         return hashMap;
 	}
@@ -58,7 +58,7 @@ public class VarConstManager {
 	private List< List<Double> > generateValuesMatrix() {
 		List< List<Double> > values = new ArrayList<>();
 		
-		for (VarConst vc : vcs)
+		for (VarConst vc : varconsts)
 			values.add(vc.getRangeList());
 		
 		return (values);
@@ -74,7 +74,7 @@ public class VarConstManager {
 			}
 		}};
 		
-		for (VarConst vc : vcs) {
+		for (VarConst vc : varconsts) {
 			if (vc.checkValue(set) == false)
 				return (false);
 		}
@@ -85,7 +85,7 @@ public class VarConstManager {
 	private List<String> getVCNames() {
 		List<String> vcNames = new ArrayList<>();
 		
-		for (VarConst vc : vcs)
+		for (VarConst vc : varconsts)
 			vcNames.add(vc.getName());
 		
 		return (vcNames);
