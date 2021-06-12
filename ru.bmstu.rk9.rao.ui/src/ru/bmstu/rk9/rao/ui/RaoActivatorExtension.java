@@ -99,6 +99,7 @@ public class RaoActivatorExtension extends RaoActivator {
 		prefs.putInt("SimulationSpeed", SpeedSelectionToolbar.getSpeed());
 		prefs.putDouble("SimulationScale", SetSimulationScaleHandler.getSimulationScale());
 
+		// RESOLVE: refactor for non static structure 
 		int animationFrameListSize = AnimationView.getFrameListSize();
 		if (animationFrameListSize != SWT.DEFAULT)
 			prefs.putInt("AnimationViewFrameListSize", animationFrameListSize);

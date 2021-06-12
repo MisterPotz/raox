@@ -25,8 +25,6 @@ class MonitorFilterDialog extends Dialog {
 	private Button filterButton;
 	private Label statusLabel;
 	
-	private ModelStatus filterStatus;
-	
 	private final void saveInputStatus() {
 		String status = statusCombo.getText();
 		

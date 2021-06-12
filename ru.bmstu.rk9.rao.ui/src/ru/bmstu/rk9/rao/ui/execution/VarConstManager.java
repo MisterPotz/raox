@@ -65,29 +65,28 @@ public class VarConstManager {
 	}
 	
 	private boolean isValidCombination(List<Double> combination) {
-		HashMap<String, Double> set = new HashMap<String, Double>() {{
+		HashMap<String, Double> set = new HashMap<String, Double>() {{			
+			List<String> varconstNames = getVarConstNames();
 			
-			List<String> vcNames = getVCNames();
-			
-			for (int i = 0; i < vcNames.size(); i++) {
-				put(vcNames.get(i), combination.get(i));
+			for (int i = 0; i < varconstNames.size(); i++) {
+				put(varconstNames.get(i), combination.get(i));
 			}
 		}};
 		
-		for (VarConst vc : varconsts) {
-			if (vc.checkValue(set) == false)
+		for (VarConst varconst : varconsts) {
+			if (varconst.checkValue(set) == false)
 				return (false);
 		}
 		
 		return (true);
 	}
 	
-	private List<String> getVCNames() {
-		List<String> vcNames = new ArrayList<>();
+	private List<String> getVarConstNames() {
+		List<String> varconstNames = new ArrayList<>();
 		
 		for (VarConst vc : varconsts)
-			vcNames.add(vc.getName());
+			varconstNames.add(vc.getName());
 		
-		return (vcNames);
+		return (varconstNames);
 	}
 }
