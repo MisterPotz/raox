@@ -27,6 +27,8 @@ class SearchCompiler extends RaoEntityCompiler {
 				return search.toClass(logicQualifiedName) [
 					superTypes += typeRef(ru.bmstu.rk9.rao.lib.dpt.Search)
 
+					members += SimulatorIdCodeUtil.createSimulatorIdSuperConstructor(jvmTypesBuilder, jvmTypeReferenceBuilder, search)
+					
 					for (edge : search.edges) {
 						members += edge.toField(edge.name, typeRef(ru.bmstu.rk9.rao.lib.dpt.Edge)) [
 							visibility = JvmVisibility.PRIVATE

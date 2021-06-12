@@ -22,11 +22,13 @@ class ProxyBuilderHelperUtil {
 		'''
 	}
 	
-	def StringConcatenationClient createConstructorBody(JvmConstructor jvmConstructor, boolean useHiddenNames) {
+	def StringConcatenationClient createConstructorBody(JvmConstructor jvmConstructor, boolean useHiddenNames, StringConcatenationClient additionalLines) {
 		return '''
 			«FOR param : jvmConstructor.parameters»this.«IF useHiddenNames»_«ELSE»«""»«ENDIF»«param.name» = «param.name»;
 							«ENDFOR»
-			
+			«IF additionalLines !== null »
+			«additionalLines»
+			«ENDIF»
 		'''
 	}
 	

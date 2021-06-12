@@ -12,10 +12,10 @@ public class Process {
 
 	private final List<Block> blocks = new ArrayList<Block>();
 
-	public ProcessStatus scan(SimulatorId simulatorId) {
+	public ProcessStatus scan() {
 		boolean needCheckAgain = false;
 		for (Block block : blocks) {
-			BlockStatus blockStatus = block.check(simulatorId);
+			BlockStatus blockStatus = block.check();
 			if (blockStatus == BlockStatus.SUCCESS)
 				return ProcessStatus.SUCCESS;
 			if (blockStatus == BlockStatus.CHECK_AGAIN)

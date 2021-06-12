@@ -13,16 +13,11 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public class Seize implements Block, SimulatorDependent {
-	private SimulatorId simulatorId;
+	private final SimulatorId simulatorId;
 
 	@Override
 	public SimulatorId getSimulatorId() {
 	return simulatorId;
-	}
-
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
 	}
 
 	private ISimulator getSimulator() {
@@ -32,8 +27,9 @@ public class Seize implements Block, SimulatorDependent {
 	private SimulatorWrapper getSimulatorWrapper() {
 		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
 	}
-	public Seize(Resource resource) {
+	public Seize(Resource resource, SimulatorId simulatorId) {
 		this.resource = resource;
+		this.simulatorId = simulatorId;
 	}
 
 	private Resource resource;
@@ -50,8 +46,7 @@ public class Seize implements Block, SimulatorDependent {
 	}
 
 	@Override
-	public BlockStatus check(SimulatorId simulatorId) {
-		setSimulatorId(simulatorId);
+	public BlockStatus check() {
 		if (!resource.isAccessible())
 			return BlockStatus.NOTHING_TO_DO;
 		if (transactStorage.hasTransact())

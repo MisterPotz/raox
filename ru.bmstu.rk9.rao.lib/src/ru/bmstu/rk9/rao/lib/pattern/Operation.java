@@ -2,8 +2,13 @@ package ru.bmstu.rk9.rao.lib.pattern;
 
 import ru.bmstu.rk9.rao.lib.database.SerializationConstants;
 import ru.bmstu.rk9.rao.lib.event.Event;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public abstract class Operation extends Pattern {
+	
+	public Operation(SimulatorId simulatorId) {
+		super(simulatorId);
+	}
 	
 	@Override
 	public final void run() {
@@ -27,8 +32,8 @@ public abstract class Operation extends Pattern {
 
 	private class OperationEvent extends Event {
 		OperationEvent(double time) {
+			super(Operation.this.getSimulatorId());
 			this.time = time;
-			setSimulatorId(getSimulatorId());
 		}
 
 		@Override

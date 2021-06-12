@@ -7,10 +7,12 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.common.types.JvmVisibility
 import ru.bmstu.rk9.rao.validation.DefaultMethodsHelper.DataSourceMethodInfo
 import org.eclipse.xtext.common.types.JvmTypeReference
-import ru.bmstu.rk9.rao.rao.Result
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
+import ru.bmstu.rk9.rao.rao.RaoEntity
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId
+import ru.bmstu.rk9.rao.lib.result.Result
 
 class ResultCompiler extends RaoEntityCompiler {
 
@@ -72,7 +74,7 @@ class ResultCompiler extends RaoEntityCompiler {
 	}
 
 	// Result takes lambda that may contain references to model dependencies, thus this field must be contained inside initializing inner scope
-	def rememberAsField(Result result, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+	def rememberAsField(ru.bmstu.rk9.rao.rao.Result result, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
 		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, result, false)
 		storage.addNewProxyBuilder(pBH)
 		pBH.addAdditionalParentInitializingScopeMembers(
@@ -85,5 +87,18 @@ class ResultCompiler extends RaoEntityCompiler {
 
 			]
 		)
+	}
+
+	def rememberAsBuilder(RaoEntity entity, JvmDeclaredType type, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations, entity, false)
+		storage.addNewProxyBuilder(pBH)
+		pBH.addAdditionalParentInitializingScopeMembers(
+			apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder  |
+			return entity.toField(Result.simpleName, typeRef(Result)) [
+				visibility = JvmVisibility.PUBLIC
+				final = true
+				initializer = '''new Result(«SimulatorIdCodeUtil.simulatorIdLine»)'''
+			]
+		])
 	}
 }

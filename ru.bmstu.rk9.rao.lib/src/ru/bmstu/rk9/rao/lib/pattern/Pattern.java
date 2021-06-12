@@ -12,16 +12,15 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public abstract class Pattern implements SimulatorDependent {
-	private SimulatorId simulatorId;
+	private final SimulatorId simulatorId;
+	
+	public Pattern(SimulatorId simulatorId) {
+		this.simulatorId = simulatorId;
+	}
 
 	@Override
 	public SimulatorId getSimulatorId() {
 	return simulatorId;
-	}
-
-	@Override
-	public void setSimulatorId(SimulatorId simulatorId) {
-		this.simulatorId = simulatorId;
 	}
 
 	protected ISimulator getSimulator() {

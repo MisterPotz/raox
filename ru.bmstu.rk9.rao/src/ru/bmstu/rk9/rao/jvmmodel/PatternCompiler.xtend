@@ -43,9 +43,10 @@ class PatternCompiler extends RaoEntityCompiler {
 
 					// partially delegate creation of features to ProxyBuilderHelper here
 					val parametersList = new ArrayList<JvmFormalParameter>();
-					parametersList += pattern.parameters.map[pattern.toParameter(name, parameterType)]
-
-					members += proxyBuilderHelper.createConstructorForBuildedClass(false, parametersList)
+										
+					members += proxyBuilderHelper.createConstructorForBuildedClass(
+						SimulatorIdCodeUtil.createSimulatorIdSuperLine(b,tB, pattern), parametersList
+					);
 					members += proxyBuilderHelper.createFieldsForBuildedClass(parametersList)
 					proxyBuilderHelper.buildedClass = it
 

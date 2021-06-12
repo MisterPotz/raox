@@ -24,12 +24,12 @@ import ru.bmstu.rk9.rao.rao.VarConst
 import ru.bmstu.rk9.rao.rao.DataSource
 
 import static extension ru.bmstu.rk9.rao.naming.RaoNaming.*
-import static extension ru.bmstu.rk9.rao.jvmmodel.RaoEntityCompiler.*
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.JvmField
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import java.util.List
 import java.util.ArrayList
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorModel
 
 class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderHelpersStorage {
 	@Inject extension JvmTypesBuilder jvmTypesBuilder
@@ -86,6 +86,8 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 	def dispatch void infer(RaoModel element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
 		init();
 		acceptor.accept(element.toClass(QualifiedName.create(element.eResource.URI.projectName, element.nameGeneric))) [ context |
+			context.superTypes += typeRef(SimulatorModel)
+			
 			RaoEntityCompiler.cleanCachedResourceTypes();
 
 			context.members +=
@@ -95,7 +97,13 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 
 			element.compileResourceInitialization(context, isPreIndexingPhase, this)
 
+
+			var createdResultBuilderField = false
 			for (entity : element.objects) {
+				if (!createdResultBuilderField) {
+					createdResultBuilderField = true
+					dataSourceCompiler.rememberAsBuilder(entity, context, isPreIndexingPhase, this)
+				}
 				// may add or not add members to the context EObject
 				entity.compileRaoEntity(context, isPreIndexingPhase, this)
 			}
