@@ -26,10 +26,10 @@ public class ReleaseNode extends BlockNodeWithResource {
 		registerDock(DOCK_OUT);
 	}
 
+	// TODO investigate-0001
 	@Override
 	public BlockConverterInfo createBlock(ModelContentsInfo modelContentsInfo) {
-		Optional<Resource> optional = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getModelState().getAllResources().stream()
-				.filter(resource -> resource.getName().equals(resourceName)).findAny();
+		Optional<Resource> optional = null; // RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getModelState().getAllResources().stream().filter(resource -> resource.getName().equals(resourceName)).findAny();
 		BlockConverterInfo releaseInfo = new BlockConverterInfo();
 		if (!optional.isPresent()) {
 			releaseInfo.isSuccessful = false;
@@ -38,8 +38,10 @@ public class ReleaseNode extends BlockNodeWithResource {
 			return releaseInfo;
 		}
 		Resource seizedResource = optional.get();
-		ru.bmstu.rk9.rao.lib.process.Release release = new ru.bmstu.rk9.rao.lib.process.Release(seizedResource);
+//		ru.bmstu.rk9.rao.lib.process.Release release = new ru.bmstu.rk9.rao.lib.process.Release(seizedResource);
+		ru.bmstu.rk9.rao.lib.process.Release release = null;
 		releaseInfo.setBlock(release);
+			
 		releaseInfo.inputDocks.put(DOCK_IN, release.getInputDock());
 		releaseInfo.outputDocks.put(DOCK_OUT, release.getOutputDock());
 		return releaseInfo;

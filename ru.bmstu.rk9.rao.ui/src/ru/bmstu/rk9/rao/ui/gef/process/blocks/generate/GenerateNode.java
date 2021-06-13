@@ -49,7 +49,10 @@ public class GenerateNode extends BlockNode {
 			System.out.println(generateInfo.errorMessage);
 			return generateInfo;
 		}
-		ru.bmstu.rk9.rao.lib.process.Generate generate = new ru.bmstu.rk9.rao.lib.process.Generate(() -> interval);
+		
+		// TODO investigate-0001 process refactor
+		ru.bmstu.rk9.rao.lib.process.Generate generate = null;
+//				new ru.bmstu.rk9.rao.lib.process.Generate(() -> interval);
 		generateInfo.setBlock(generate);
 		generateInfo.outputDocks.put(DOCK_OUT, generate.getOutputDock());
 		return generateInfo;

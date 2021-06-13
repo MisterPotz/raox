@@ -19,9 +19,10 @@ public class TerminateNode extends BlockNode {
 		registerDock(DOCK_IN);
 	}
 
+	// TODO investigate-0001
 	@Override
 	public BlockConverterInfo createBlock(ModelContentsInfo modelContentsInfo) {
-		ru.bmstu.rk9.rao.lib.process.Terminate terminate = new ru.bmstu.rk9.rao.lib.process.Terminate();
+		ru.bmstu.rk9.rao.lib.process.Terminate terminate = null; // new ru.bmstu.rk9.rao.lib.process.Terminate();
 		BlockConverterInfo terminateInfo = new BlockConverterInfo();
 		terminateInfo.setBlock(terminate);
 		terminateInfo.inputDocks.put(DOCK_IN, terminate.getInputDock());
