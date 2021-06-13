@@ -61,7 +61,6 @@ import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView.ConditionalMenuIt
 import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 
 public class GraphPanel extends JPanel implements GraphApi {
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	private static final long serialVersionUID = 1668866556340389760L;
 	private SimulatorSubscriberManager simulationSubscriberManager;
 	private RealTimeSubscriberManager realTimeSubscriberManager;
@@ -106,22 +105,23 @@ public class GraphPanel extends JPanel implements GraphApi {
 		}
 	};
 	
+	// TODO refactor-0001
 	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (simulationSubscriberManager == null) {
-				simulationSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
-			}
-			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
-			}
-			simulationSubscriberManager.initialize(
-					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
-							new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
-			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
+//		listener.asSimulatorOnAndOnPostChange((event) -> {
+//			if (simulationSubscriberManager == null) {
+//				simulationSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
+//			}
+//			if (realTimeSubscriberManager == null) {
+//				realTimeSubscriberManager = new RealTimeSubscriberManager();
+//			}
+//			simulationSubscriberManager.initialize(
+//					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
+//							new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+//			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+//		});
+//		listener.asSimulatorPreOffAndPreChange((event) -> {
+//			deinitializeSubscribers();
+//		});
 	}
 
 	final void deinitializeSubscribers() {
@@ -185,8 +185,8 @@ public class GraphPanel extends JPanel implements GraphApi {
 
 		setProportions();
 
-		final boolean useShortNames = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getModelStructure()
-				.getInt(ModelStructureConstants.NUMBER_OF_MODELS) == 1;
+		// TODO fix-0001
+		final boolean useShortNames = true; // RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getModelStructure().getInt(ModelStructureConstants.NUMBER_OF_MODELS) == 1;
 		treeBuilder = new TreeBuilder(dptNum, useShortNames);
 		isFinished = treeBuilder.updateTree();
 

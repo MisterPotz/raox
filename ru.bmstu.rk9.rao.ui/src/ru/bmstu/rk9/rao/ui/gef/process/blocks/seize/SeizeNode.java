@@ -26,10 +26,10 @@ public class SeizeNode extends BlockNodeWithResource {
 		registerDock(DOCK_OUT);
 	}
 
+	// TODO investigate-0001
 	@Override
 	public BlockConverterInfo createBlock(ModelContentsInfo modelContentsInfo) {
-		Optional<Resource> optional = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getModelState().getAllResources().stream()
-				.filter(resource -> resource.getName().equals(resourceName)).findAny();
+		Optional<Resource> optional =  null;// RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getModelState().getAllResources().stream().filter(resource -> resource.getName().equals(resourceName)).findAny();
 		BlockConverterInfo seizeInfo = new BlockConverterInfo();
 		if (!optional.isPresent()) {
 			seizeInfo.isSuccessful = false;
@@ -38,7 +38,7 @@ public class SeizeNode extends BlockNodeWithResource {
 			return seizeInfo;
 		}
 		Resource releasedResource = optional.get();
-		ru.bmstu.rk9.rao.lib.process.Seize seize = new ru.bmstu.rk9.rao.lib.process.Seize(releasedResource);
+		ru.bmstu.rk9.rao.lib.process.Seize seize = null; // new ru.bmstu.rk9.rao.lib.process.Seize(releasedResource);
 		seizeInfo.setBlock(seize);
 		seizeInfo.inputDocks.put(DOCK_IN, seize.getInputDock());
 		seizeInfo.outputDocks.put(DOCK_OUT, seize.getOutputDock());
