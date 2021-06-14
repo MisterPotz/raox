@@ -13,7 +13,6 @@ import ru.bmstu.rk9.rao.ui.notification.RealTimeUpdater;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
 
 public class SimulationModeDispatcher implements UiSimulatorDependent {
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	
 	public static void setMode(ExecutionMode currentMode) {
 //		if (!RuntimeComponents.isInitialized())

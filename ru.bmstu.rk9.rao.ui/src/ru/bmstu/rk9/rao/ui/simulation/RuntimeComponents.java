@@ -1,12 +1,10 @@
 package ru.bmstu.rk9.rao.ui.simulation;
 
-import ru.bmstu.rk9.rao.ui.TargetSimulatorManager;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeUpdater;
 
 public class RuntimeComponents {
 	public static RealTimeUpdater realTimeUpdater = null;
 	public static SimulationSynchronizer simulationSynchronizer = null;
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 
 	private static boolean isInitialized = false;
 
