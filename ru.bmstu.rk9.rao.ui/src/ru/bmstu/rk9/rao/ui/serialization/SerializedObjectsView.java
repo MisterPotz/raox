@@ -49,7 +49,7 @@ public class SerializedObjectsView extends RaoView {
 	TreeViewer serializedObjectsTreeViewer;
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
 
-	public abstract class ConditionalMenuItem extends MenuItem {
+	public static abstract class ConditionalMenuItem extends MenuItem {
 
 		protected ConditionalMenuItem(Menu parent, String name) {
 			super(parent, SWT.CASCADE);
