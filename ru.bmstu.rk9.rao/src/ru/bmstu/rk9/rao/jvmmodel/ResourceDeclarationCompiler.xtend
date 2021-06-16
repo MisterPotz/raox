@@ -59,8 +59,8 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 					if (!__initialized)
 						return «resourceInitialValueName(resource.name)»;
 					else
-					return («returnType.simpleName») getSimulator().getModelState().getResource(
-							«returnType.simpleName».class,
+					return (resource.constructor.inferredType) getSimulator().getModelState().getResource(
+							resource.constructor.inferredType.class,
 							"«resourceQualifiedName»");
 				'''
 			]
