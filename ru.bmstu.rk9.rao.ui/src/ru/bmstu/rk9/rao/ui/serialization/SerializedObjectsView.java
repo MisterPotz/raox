@@ -49,7 +49,7 @@ public class SerializedObjectsView extends RaoView {
 	TreeViewer serializedObjectsTreeViewer;
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
 
-	public static abstract class ConditionalMenuItem extends MenuItem {
+	public abstract class ConditionalMenuItem extends MenuItem {
 
 		protected ConditionalMenuItem(Menu parent, String name) {
 			super(parent, SWT.CASCADE);
@@ -195,7 +195,7 @@ public class SerializedObjectsView extends RaoView {
 				subscriberSubscriberManager = new SimulatorSubscriberManager(args.getSimulatorId());
 			}
 			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
+				realTimeSubscriberManager = new RealTimeSubscriberManager(args.getSimulatorId());
 			}
 			subscriberSubscriberManager.initialize(
 					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),

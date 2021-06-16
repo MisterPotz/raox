@@ -61,7 +61,6 @@ public class ResultsView extends RaoView {
 	private boolean viewAsText = false;
 	
 	public void update() {
-		// TODO: change to SimulatorManager.getSimulator(this.getSimulatorId()).getResults()
 		this.results = SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getResults(); 
 		if (!isInitialized())
 			return;
