@@ -67,44 +67,76 @@ public class ProxyBuilderHelper {
 		this.additionalMembersToParentInitializingScope = new ArrayList<>();
 	}
 
-	/**
-	 * 
-	 * @param givenParams paramaters that client wants to add to the created
-	 *                    constructor
-	 * @return constructor that accepts and initializes fields for both given
-	 *         parameters and paramaters that this builder creates
-	 */
-	public JvmConstructor createConstructorForBuildedClass(boolean addSimulatorId, JvmFormalParameter... givenParams) {
-		return createConstructorForBuildedClass(addSimulatorId, null, givenParams);
-	}
-	
-	public JvmConstructor createConstructorForBuildedClass(boolean addSimulatorId,
+	public JvmConstructor createConstructorForBuildedClass(
+			boolean addSimulatorId,
 			StringConcatenationClient additionalCode, 
 			JvmFormalParameter... givenParams) {
-		JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceElement, p -> {
+		
+		constructorOfBuildedClass = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder, sourceElement)
+		.setAddSimulatorId(addSimulatorId)
+		.setAdditionalCode(additionalCode)
+		.setParametersByFormal(Arrays.asList(givenParams))
+		.build();
+
+		return constructorOfBuildedClass;
+	}
+
+	public void setConstructorOfBuildedClass(JvmConstructor jvmConstructor) {
+		this.constructorOfBuildedClass = jvmConstructor;
+	}
+	
+	public static class ConstructorBuilder {
+		private final JvmTypesBuilder jvmTypesBuilder;
+		private final JvmTypeReferenceBuilder jvmTypeReferenceBuilder;
+		private final EObject sourceEObject;
+		private final ProxyBuilderHelperUtil util;
+
+		private boolean addSimulatorId;
+		private StringConcatenationClient additionalCode;
+		private List<ConstructorParameter> constructorParameters;
+		
+		public ConstructorBuilder(JvmTypesBuilder jvmTypesBuilder,
+				JvmTypeReferenceBuilder jvmTypeReferenceBuilder, EObject sourceEObject) {
+			this.jvmTypesBuilder = jvmTypesBuilder;
+			this.jvmTypeReferenceBuilder = jvmTypeReferenceBuilder;
+			this.sourceEObject = sourceEObject;
+			this.util = new ProxyBuilderHelperUtil(jvmTypesBuilder, false);
+		}
+		public ConstructorBuilder setAddSimulatorId(boolean addSimulatorId) {
+			this.addSimulatorId = addSimulatorId;
+			return this;
+		}
+		public ConstructorBuilder setAdditionalCode(StringConcatenationClient additionalCode) {
+			this.additionalCode = additionalCode;
+			return this;
+		}
+		public ConstructorBuilder setParameters(List<ConstructorParameter> constructorParameters) {
+			this.constructorParameters = List.copyOf(constructorParameters);
+			return this;
+		}
+		
+		public ConstructorBuilder setParametersByFormal(List<JvmFormalParameter> constructorParameters) {
+			this.constructorParameters = 
+			constructorParameters.stream().map(p -> new ConstructorParameter(p, true, true, false)).collect(Collectors.toList());
+			return this;
+		}
+
+		public JvmConstructor build() {
 			if (addSimulatorId) {
-				p.getParameters().add(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
-						jvmTypeReferenceBuilder, sourceElement));
+				constructorParameters.add(
+					new ConstructorParameter( SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
+						jvmTypeReferenceBuilder, sourceEObject), false, false, false));
 			}
+			
+			JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceEObject, p -> {				
+				p.getParameters().addAll(constructorParameters.stream().map(s -> s.getParameter()).collect(Collectors.toList()));
+				jvmTypesBuilder.setBody(p, util.createConstructorBody(constructorParameters, additionalCode));
+			});
 
-			for (JvmFormalParameter param : givenParams) {
-				p.getParameters().add(param);
-			}
+			return createdCostructor;
+		}
+	}
 
-			jvmTypesBuilder.setBody(p, util.createConstructorBody(p, useHiddenFieldsName, additionalCode));
-		});
-
-		constructorOfBuildedClass = createdCostructor;
-		return createdCostructor;
-	}
-	public JvmConstructor createConstructorForBuildedClass(JvmFormalParameter... givenParams) {
-		return createConstructorForBuildedClass(true, givenParams);
-	}
-	
-	public JvmConstructor createConstructorForBuildedClass(StringConcatenationClient additionalCode, JvmFormalParameter... givenParams) {
-		return createConstructorForBuildedClass(true, additionalCode, givenParams);
-	}
-	
 	/**
 	 * 
 	 * @param givenParams paramaters that client wants to add to the created

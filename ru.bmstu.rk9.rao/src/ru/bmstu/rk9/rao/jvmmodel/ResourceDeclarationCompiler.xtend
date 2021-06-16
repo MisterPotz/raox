@@ -47,7 +47,6 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 	}
 
 	def asGetter(ResourceDeclaration resource, JvmDeclaredType it, boolean isPreIndexingPhase) {
-
 		val resourceQualifiedName = QualifiedName.create(qualifiedName, resource.name)
 
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
@@ -59,8 +58,8 @@ class ResourceDeclarationCompiler extends RaoEntityCompiler {
 					if (!__initialized)
 						return «resourceInitialValueName(resource.name)»;
 					else
-					return (resource.constructor.inferredType) getSimulator().getModelState().getResource(
-							resource.constructor.inferredType.class,
+					return («returnType») getSimulator().getModelState().getResource(
+							«returnType».class,
 							"«resourceQualifiedName»");
 				'''
 			]

@@ -4,6 +4,9 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.JvmConstructor
+import org.eclipse.xtext.common.types.JvmFormalParameter
+import java.util.List
+import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
 
 class ProxyBuilderHelperUtil {
 	private extension JvmTypesBuilder jvM;
@@ -22,17 +25,21 @@ class ProxyBuilderHelperUtil {
 		'''
 	}
 	
-	def StringConcatenationClient createConstructorBody(JvmConstructor jvmConstructor, 
-		boolean useHiddenNames,
+	def StringConcatenationClient createConstructorBody(
+		List<ConstructorParameter> parameters,
 		 StringConcatenationClient additionalLines
 	) {
+		val superParams = parameters.filter [param | param.addToSuperInitialization]
+		val line = CodeGenerationUtil.createSuperInitializationLine(superParams.map[new NameableMember(it.parameter)].toList)
 		return '''
-			«additionalLines»
-			«FOR param : jvmConstructor.parameters»this.«IF useHiddenNames»_«ELSE»«""»«ENDIF»«param.name» = «param.name»;
-							«ENDFOR»
-			«IF additionalLines !== null »
+			«line»
+			«FOR param : parameters»
+			«IF param.initializeInConstructor»
+			this.«IF param.isUseHiddenName»_«ELSE»«""»«ENDIF»«param.parameter.name» = «param.parameter.name»;
 			«ENDIF»
-		'''
+			«ENDFOR»
+			«IF additionalLines !== null »«additionalLines»«ENDIF»
+			'''
 	}
 	
 	def static String createLineOfBuilderFieldInitialization(String thisVariableName, String builderClassName) {

@@ -11,6 +11,8 @@ import org.eclipse.xtext.common.types.JvmFormalParameter
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
 import java.util.Arrays
+import org.eclipse.xtext.common.types.JvmConstructor
+import ru.bmstu.rk9.rao.jvmmodel.ProxyBuilderHelper.ConstructorBuilder
 
 class EventCompiler extends RaoEntityCompiler {
 
@@ -34,7 +36,7 @@ class EventCompiler extends RaoEntityCompiler {
 				// partially delegate creation of features to ProxyBuilderHelper here
 				val parametersList = new ArrayList<JvmFormalParameter>();
 				parametersList.add(event.toParameter("time", typeRef(double)));
-						
+		
 				// these fields will go into local private fields of the generated event
 				val fieldParametersList = new ArrayList<JvmFormalParameter>();
 				fieldParametersList.addAll(event.parameters.map[it.toParameter(it.name, it.parameterType)])
@@ -43,11 +45,23 @@ class EventCompiler extends RaoEntityCompiler {
 				unitedList.addAll(parametersList)
 				unitedList.addAll(fieldParametersList)
 				
-				eventClass.members += pBH.createConstructorForBuildedClass(
-					SimulatorIdCodeUtil.createSimulatorIdSuperLine(b,tB, event), unitedList
-				);
+				val customParams = new ArrayList<ConstructorParameter>();
+				customParams.addAll(unitedList.map[p | new ConstructorParameter(p, false, true, false)])
+				customParams.add(
+					new ConstructorParameter(
+						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, event), false, false, true
+					)
+				)
+								
+				val JvmConstructor cnstr = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder, event)
+				.setAddSimulatorId(false)
+				.setParameters(customParams)
+				.build();
+				pBH.constructorOfBuildedClass = cnstr
+				
+				eventClass.members += cnstr
 				eventClass.members += pBH.createFieldsForBuildedClass(fieldParametersList);
-				eventClass.members += pBH.createNecessaryMembersForBuildedClass()
+				
 				
 				// because we need to have a builder class that has method 'plan' which will look like a static one
 				// must create association for this wanted class

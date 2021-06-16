@@ -16,6 +16,8 @@ import org.eclipse.xtext.util.Tuples
 import java.util.ArrayList
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
+import org.eclipse.xtext.common.types.JvmConstructor
+import ru.bmstu.rk9.rao.jvmmodel.ProxyBuilderHelper.ConstructorBuilder
 
 class PatternCompiler extends RaoEntityCompiler {
 
@@ -43,10 +45,22 @@ class PatternCompiler extends RaoEntityCompiler {
 
 					// partially delegate creation of features to ProxyBuilderHelper here
 					val parametersList = new ArrayList<JvmFormalParameter>();
-										
-					members += proxyBuilderHelper.createConstructorForBuildedClass(
-						SimulatorIdCodeUtil.createSimulatorIdSuperLine(b,tB, pattern), parametersList
-					);
+				val customParams = new ArrayList<ConstructorParameter>();
+					
+				customParams.addAll(parametersList.map[p | new ConstructorParameter(p, false, true, false)])
+				customParams.add(
+					new ConstructorParameter(
+						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, pattern), false, false, true
+					)
+				)
+								
+				val JvmConstructor cnstr = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder, pattern)
+				.setAddSimulatorId(false)
+				.setParameters(customParams)
+				.build();
+				
+				proxyBuilderHelper.constructorOfBuildedClass = cnstr
+					members += cnstr
 					members += proxyBuilderHelper.createFieldsForBuildedClass(parametersList)
 					proxyBuilderHelper.buildedClass = it
 
@@ -117,10 +131,10 @@ class PatternCompiler extends RaoEntityCompiler {
 									}
 
 									body = '''
-										java.util.Set<«tupleInfo.genericTupleInfo.genericName»<«CodeGenerationUtil.createEnumerationString(tuple.names, [createTupleGenericTypeName])»>> combinations = new java.util.HashSet<>();
+										java.util.Set<«tupleInfo.genericTupleInfo.genericName»<«CodeGenerationUtilJava.createEnumerationString(tuple.names, [createTupleGenericTypeName])»>> combinations = new java.util.HashSet<>();
 										«FOR name : tuple.names»for(«createTupleGenericTypeName(name)» __«name» : «parameters.get(tuple.names.indexOf(name)).name») {
 															«IF tuple.names.indexOf(name) == tuple.names.size - 1»combinations.add(new «tupleInfo.genericTupleInfo.genericName»(
-																«CodeGenerationUtil.createEnumerationString(tuple.names, [n | "__" + n])»));«ENDIF»
+																«CodeGenerationUtilJava.createEnumerationString(tuple.names, [n | "__" + n])»));«ENDIF»
 															«ENDFOR»«FOR name : tuple.names»}
 											«ENDFOR»
 											return combinations;
@@ -179,7 +193,7 @@ class PatternCompiler extends RaoEntityCompiler {
 								«ENDFOR»
 								«FOR tuple : pattern.relevantTuples»«
 							val tupleInfo = tupleInfoMap.get(tuple)
-							»«tupleInfo.genericTupleInfo.genericName»<«CodeGenerationUtil.createEnumerationString(tuple.types, [simpleName])
+							»«tupleInfo.genericTupleInfo.genericName»<«CodeGenerationUtilJava.createEnumerationString(tuple.types, [simpleName])
 							»> __«tupleInfo.name» = «tupleInfo.resolveMethodName»();
 													if (__«tupleInfo.name» == null) {
 														finish();

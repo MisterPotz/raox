@@ -90,11 +90,6 @@ class RaoJvmModelInferrer extends AbstractModelInferrer implements ProxyBuilderH
 			
 			RaoEntityCompiler.cleanCachedResourceTypes();
 
-			context.members +=
-				SimulatorIdCodeUtil.createSimulatorIdField(jvmTypesBuilder, _typeReferenceBuilder, element)
-			context.members +=
-				SimulatorIdCodeUtil.createSimulatorIdGetter(jvmTypesBuilder, _typeReferenceBuilder, element)
-
 			element.compileResourceInitialization(context, isPreIndexingPhase, this)
 
 
