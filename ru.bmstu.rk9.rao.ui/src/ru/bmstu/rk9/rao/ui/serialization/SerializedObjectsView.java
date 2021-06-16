@@ -53,25 +53,26 @@ public class SerializedObjectsView extends RaoView {
 
 		protected ConditionalMenuItem(Menu parent, String name) {
 			super(parent, SWT.CASCADE);
-			setText(name);
-
-			parent.addListener(SWT.Show, new Listener() {
-				@Override
-				public void handleEvent(Event event) {
-					CollectedDataNode node = (CollectedDataNode) serializedObjectsTreeViewer.getTree().getSelection()[0]
-							.getData();
-					setEnabled(isEnabled(node));
-				}
-			});
-
-			addSelectionListener(new SelectionAdapter() {
-				@Override
-				public void widgetSelected(SelectionEvent event) {
-					CollectedDataNode node = (CollectedDataNode) serializedObjectsTreeViewer.getTree().getSelection()[0]
-							.getData();
-					show(node);
-				}
-			});
+			// TODO refactor-0001
+//			setText(name);
+//
+//			parent.addListener(SWT.Show, new Listener() {
+//				@Override
+//				public void handleEvent(Event event) {
+//					CollectedDataNode node = (CollectedDataNode) serializedObjectsTreeViewer.getTree().getSelection()[0]
+//							.getData();
+//					setEnabled(isEnabled(node));
+//				}
+//			});
+//
+//			addSelectionListener(new SelectionAdapter() {
+//				@Override
+//				public void widgetSelected(SelectionEvent event) {
+//					CollectedDataNode node = (CollectedDataNode) serializedObjectsTreeViewer.getTree().getSelection()[0]
+//							.getData();
+//					show(node);
+//				}
+//			});
 		}
 
 		@Override
@@ -195,7 +196,7 @@ public class SerializedObjectsView extends RaoView {
 				subscriberSubscriberManager = new SimulatorSubscriberManager(args.getSimulatorId());
 			}
 			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
+				realTimeSubscriberManager = new RealTimeSubscriberManager(args.getSimulatorId());
 			}
 			subscriberSubscriberManager.initialize(
 					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),

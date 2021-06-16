@@ -88,7 +88,7 @@ public class ResultsView extends RaoView {
 	private IActionBars actionBars;
 	private IToolBarManager toolbarMgr;
 
-	private static abstract class SwitchAction extends Action {
+	private static abstract class SwitchAction extends org.eclipse.jface.action.Action {
 		public abstract void updateLook();
 	}
 
@@ -127,7 +127,7 @@ public class ResultsView extends RaoView {
 	};
 
 	private static final String EXPAND_ALL_ID = "ResultsView.actions.expandAll";
-	private Action actionExpandAll = new Action() {
+	private org.eclipse.jface.action.Action actionExpandAll = new org.eclipse.jface.action.Action() {
 		{
 			setId(EXPAND_ALL_ID);
 
@@ -147,7 +147,7 @@ public class ResultsView extends RaoView {
 	};
 
 	private static final String COLLAPSE_ALL_ID = "ResultsView.actions.collapseAll";
-	private Action actionCollapseAll = new Action() {
+	private org.eclipse.jface.action.Action actionCollapseAll = new org.eclipse.jface.action.Action() {
 		{
 			setId(COLLAPSE_ALL_ID);
 
@@ -167,7 +167,7 @@ public class ResultsView extends RaoView {
 	};
 
 	private static final String COLLAPSE_MODELS_ID = "ResultsView.actions.collapseModels";
-	private Action actionCollapseModels = new Action() {
+	private org.eclipse.jface.action.Action actionCollapseModels = new org.eclipse.jface.action.Action() {
 		{
 			setId(COLLAPSE_MODELS_ID);
 
@@ -187,7 +187,7 @@ public class ResultsView extends RaoView {
 	};
 
 	private static final String EXPORT_RESULTS_ID = "ResultsView.actions.exportResults";
-	private Action actionExportResults = new Action() {
+	private org.eclipse.jface.action.Action actionExportResults = new org.eclipse.jface.action.Action() {
 		{
 			setId(EXPORT_RESULTS_ID);
 
@@ -248,8 +248,10 @@ public class ResultsView extends RaoView {
 
 			@Override
 			public void widgetDisposed(DisposeEvent event) {
-				if (!opened.isEmpty() && opened.containsKey(simulatorId))
-					opened.remove(simulatorId);
+				// TODO refactor-0001
+//				Boolean opened = false;
+//				if (!opened.isEmpty() && opened.containsKey(simulatorId))
+//					opened.remove(simulatorId);
 			}
 		});
 

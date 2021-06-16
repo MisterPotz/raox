@@ -54,11 +54,10 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscr
 import ru.bmstu.rk9.rao.rao.RaoModel;
 import ru.bmstu.rk9.rao.ui.execution.BuildUtil;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfig.SerializationNode;
-import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
 import com.google.inject.Inject;
 
-public class SerializationConfigView extends ViewPart implements UiSimulatorDependent {
+public class SerializationConfigView extends ViewPart {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.SerializationConfigView";
 
 	// ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
@@ -447,12 +446,13 @@ public class SerializationConfigView extends ViewPart implements UiSimulatorDepe
 	// ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
 	private final void initializeSubscribers() {
-		if (subscriberRegistrationManager == null) {
-			subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
-		}
-		subscriberRegistrationManager.initialize(
-				Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
-						new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
+		// TODO refactor-0001
+//		if (subscriberRegistrationManager == null) {
+//			subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+//		}
+//		subscriberRegistrationManager.initialize(
+//				Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
+//						new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
 
 	}
 

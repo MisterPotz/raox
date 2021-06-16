@@ -21,7 +21,8 @@ public class SetSimulationScaleHandler extends AbstractHandler {
 	}
 
 	private static void updateStatusView() {
-		StatusView.setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale));
+		// TODO fix-0002
+//		StatusView.setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale));
 	}
 
 	@Override

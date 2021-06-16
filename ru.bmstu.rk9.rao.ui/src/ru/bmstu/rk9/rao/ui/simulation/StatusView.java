@@ -248,7 +248,7 @@ public class StatusView extends RaoView {
 	protected void initializeSimulatorRelated() {
 		simNonNull(args -> {
 			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
+				realTimeSubscriberManager = new RealTimeSubscriberManager(args.getSimulatorId());
 			}
 			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
 		});

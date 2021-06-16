@@ -53,14 +53,11 @@ import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.plot.PlotDataParser.DataParserResult;
 import ru.bmstu.rk9.rao.ui.plot.PlotDataParser.PlotItem;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView.ConditionalMenuItem;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
-import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
-public class PlotView extends ViewPart implements UiSimulatorDependent {
+public class PlotView extends ViewPart {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.PlotView";
 	private final static Map<CollectedDataNode, Integer> openedPlotMap = new HashMap<CollectedDataNode, Integer>();
 	private static int secondaryID = 0;
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	private SimulatorSubscriberManager simulatorSubscriberManager;
 	private RealTimeSubscriberManager realTimeSubscriberManager;
 	private PlotFrame plotFrame;
@@ -144,21 +141,22 @@ public class PlotView extends ViewPart implements UiSimulatorDependent {
 	}
 
 	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (simulatorSubscriberManager == null) {
-				simulatorSubscriberManager = new SimulatorSubscriberManager(getTargetSimulatorId());
-			}
-			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
-			}
-			simulatorSubscriberManager.initialize(
-					Arrays.asList(new SimulatorSubscriberInfo(commonSubcriber, ExecutionState.EXECUTION_STARTED),
-							new SimulatorSubscriberInfo(endSubscriber, ExecutionState.EXECUTION_COMPLETED)));
-			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
+		// TODO refactor-0001
+//		listener.asSimulatorOnAndOnPostChange((event) -> {
+//			if (simulatorSubscriberManager == null) {
+//				simulatorSubscriberManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+//			}
+//			if (realTimeSubscriberManager == null) {
+//				realTimeSubscriberManager = new RealTimeSubscriberManager();
+//			}
+//			simulatorSubscriberManager.initialize(
+//					Arrays.asList(new SimulatorSubscriberInfo(commonSubcriber, ExecutionState.EXECUTION_STARTED),
+//							new SimulatorSubscriberInfo(endSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+//			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
+//		});
+//		listener.asSimulatorPreOffAndPreChange((event) -> {
+//			deinitializeSubscribers();
+//		});
 	}
 
 	private final void deinitializeSubscribers() {
@@ -257,10 +255,12 @@ public class PlotView extends ViewPart implements UiSimulatorDependent {
 				case RESULT:
 					return true;
 				case PATTERN:
-					PatternIndex patternIndex = (PatternIndex) index;
-					int patternNumber = patternIndex.getNumber();
-					String patternType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getPatternType(patternNumber);
-					return patternType.equals(ModelStructureConstants.OPERATION);
+					// TODO refactor-0001
+//					PatternIndex patternIndex = (PatternIndex) index;
+//					int patternNumber = patternIndex.getNumber();
+//					String patternType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getPatternType(patternNumber);
+//					return patternType.equals(ModelStructureConstants.OPERATION);
+					return false;
 				default:
 					return false;
 				}
@@ -337,10 +337,12 @@ public class PlotView extends ViewPart implements UiSimulatorDependent {
 			case RESULT:
 				return true;
 			case PATTERN:
-				PatternIndex patternIndex = (PatternIndex) index;
-				int patternNumber = patternIndex.getNumber();
-				String patternType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getPatternType(patternNumber);
-				return patternType.equals(ModelStructureConstants.OPERATION);
+				// TODO refactor-0001
+//				PatternIndex patternIndex = (PatternIndex) index;
+//				int patternNumber = patternIndex.getNumber();
+//				String patternType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getPatternType(patternNumber);
+//				return patternType.equals(ModelStructureConstants.OPERATION);
+				return false;
 			default:
 				return false;
 			}
@@ -417,26 +419,27 @@ public class PlotView extends ViewPart implements UiSimulatorDependent {
 			}
 
 			if (isLastEntry) {
-				final XYSeriesCollection newDataset = (XYSeriesCollection) plotFrame.getChart().getXYPlot()
-						.getDataset();
-				final XYSeries newSeries = newDataset.getSeries(0);
-
-				if (newSeries.getItemCount() == 2) {
-					@SuppressWarnings("unchecked")
-					List<XYDataItem> seriesitems = newSeries.getItems();
-
-					if (seriesitems.get(0).equals(seriesitems.get(1))) {
-						newSeries.add(RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getTime(), seriesitems.get(1).getY());
-						plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
-						plotFrame.updateSliders();
-					}
-				} else if (newSeries.getItemCount() == 1) {
-					@SuppressWarnings("unchecked")
-					List<XYDataItem> seriesitems = newSeries.getItems();
-					newSeries.add(RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getTime(), seriesitems.get(0).getY());
-					plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
-					plotFrame.updateSliders();
-				}
+				// TODO refactor-0001
+//				final XYSeriesCollection newDataset = (XYSeriesCollection) plotFrame.getChart().getXYPlot()
+//						.getDataset();
+//				final XYSeries newSeries = newDataset.getSeries(0);
+//
+//				if (newSeries.getItemCount() == 2) {
+//					@SuppressWarnings("unchecked")
+//					List<XYDataItem> seriesitems = newSeries.getItems();
+//
+//					if (seriesitems.get(0).equals(seriesitems.get(1))) {
+//						newSeries.add(RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getTime(), seriesitems.get(1).getY());
+//						plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
+//						plotFrame.updateSliders();
+//					}
+//				} else if (newSeries.getItemCount() == 1) {
+//					@SuppressWarnings("unchecked")
+//					List<XYDataItem> seriesitems = newSeries.getItems();
+//					newSeries.add(RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getTime(), seriesitems.get(0).getY());
+//					plotFrame.setChartMaximum(newSeries.getMaxX(), newSeries.getMaxY());
+//					plotFrame.updateSliders();
+//				}
 			}
 		}
 	};

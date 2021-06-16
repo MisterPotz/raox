@@ -12,7 +12,6 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 
 public class SimulationSynchronizer {
@@ -30,26 +29,27 @@ public class SimulationSynchronizer {
 	}
 	
 	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (simulationSubscriberManager == null) {
-				simulationSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
-			}
-			if (simulationManager == null) {
-				simulationManager = new SimulationManager();
-			}
-			if (uiTimeUpdater == null) {
-				uiTimeUpdater = new UITimeUpdater();
-			}
-			simulationSubscriberManager.initialize(
-					Arrays.asList(new SimulatorSubscriberInfo(simulationManager.scaleManager, ExecutionState.TIME_CHANGED),
-							new SimulatorSubscriberInfo(simulationManager.speedManager, ExecutionState.STATE_CHANGED),
-							new SimulatorSubscriberInfo(simulationManager.speedManager, ExecutionState.SEARCH_STEP),
-							new SimulatorSubscriberInfo(executionAbortedListener, ExecutionState.EXECUTION_ABORTED),
-							new SimulatorSubscriberInfo(executionStartedListener, ExecutionState.EXECUTION_STARTED)));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitializeSubscribers();
-		});
+		// TODO refactor-0001
+//		listener.asSimulatorOnAndOnPostChange((event) -> {
+//			if (simulationSubscriberManager == null) {
+//				simulationSubscriberManager = new SimulatorSubscriberManager(RaoSimulatorHelper.getTargetSimulatorId());
+//			}
+//			if (simulationManager == null) {
+//				simulationManager = new SimulationManager();
+//			}
+//			if (uiTimeUpdater == null) {
+//				uiTimeUpdater = new UITimeUpdater();
+//			}
+//			simulationSubscriberManager.initialize(
+//					Arrays.asList(new SimulatorSubscriberInfo(simulationManager.scaleManager, ExecutionState.TIME_CHANGED),
+//							new SimulatorSubscriberInfo(simulationManager.speedManager, ExecutionState.STATE_CHANGED),
+//							new SimulatorSubscriberInfo(simulationManager.speedManager, ExecutionState.SEARCH_STEP),
+//							new SimulatorSubscriberInfo(executionAbortedListener, ExecutionState.EXECUTION_ABORTED),
+//							new SimulatorSubscriberInfo(executionStartedListener, ExecutionState.EXECUTION_STARTED)));
+//		});
+//		listener.asSimulatorPreOffAndPreChange((event) -> {
+//			deinitializeSubscribers();
+//		});
 	}
 
 	public final void deinitializeSubscribers() {
@@ -82,14 +82,14 @@ public class SimulationSynchronizer {
 				PlatformUI.getWorkbench().getDisplay().asyncExec(updater);
 			}
 		};
-		private SimulatorWrapper currentSimulatorWrapper = RaoSimulatorHelper.getTargetSimulatorWrapper();
 		private Runnable updater = () -> {
-			StatusView.setValue("Simulation time".intern(), 20, timeFormatter.format(currentSimulatorWrapper.getTime()));
-			StatusView.setValue("Actual scale".intern(), 10, scaleFormatter.format(60060d / actualTimeScale));
+			// TODO refactor-0001
+//			StatusView.setValue("Simulation time".intern(), 20, timeFormatter.format(currentSimulatorWrapper.getTime()));
+//			StatusView.setValue("Actual scale".intern(), 10, scaleFormatter.format(60060d / actualTimeScale));
 		};
 		
 		UITimeUpdater() {
-			initializeSubscribers(RaoSimulatorHelper.getTargetSimulatorId());
+//			initializeSubscribers(RaoSimulatorHelper.getTargetSimulatorId());
 		}
 
 		private final void initializeSubscribers(SimulatorId simulatorId) {
@@ -97,7 +97,7 @@ public class SimulationSynchronizer {
 				simulationSubscriberManager = new SimulatorSubscriberManager(simulatorId);
 			}
 			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
+				realTimeSubscriberManager = new RealTimeSubscriberManager(simulatorId);
 			}
 			simulatorSubscriberManager.initialize(
 					Arrays.asList(new SimulatorSubscriberInfo(commonSubscriber, ExecutionState.EXECUTION_STARTED),
@@ -124,8 +124,9 @@ public class SimulationSynchronizer {
 	public void setSimulationScale(double value) {
 		simulationManager.timeScale = 60060d / value;
 		simulationManager.startRealTime = System.currentTimeMillis();
-		SimulatorWrapper currentSimulator = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
-		simulationManager.startSimulationTime = currentSimulator.isRunning() ? currentSimulator.getTime() : 0;
+		// TODO refactor-0001
+//		SimulatorWrapper currentSimulator = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
+//		simulationManager.startSimulationTime = currentSimulator.isRunning() ? currentSimulator.getTime() : 0;
 	}
 
 	private void delay(long milliseconds) {
@@ -154,6 +155,7 @@ public class SimulationSynchronizer {
 		}
 	}
 
+	// TODO refactor-0001
 	public class SimulationManager {
 		private volatile double timeScale = 0.3;
 		public final SpeedManager speedManager = new SpeedManager();
@@ -161,7 +163,7 @@ public class SimulationSynchronizer {
 		private long startRealTime;
 		private double startSimulationTime;
 		private volatile long speedDelayMillis = 0;
-		private SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
+//		private SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
 
 		private void processPause() {
 			while (executionMode == ExecutionMode.PAUSE && !simulationAborted)
@@ -172,41 +174,41 @@ public class SimulationSynchronizer {
 
 		private void updateTimes() {
 			startRealTime = System.currentTimeMillis();
-			startSimulationTime = currentSimulatorWrapper.getTime();
+//			startSimulationTime = currentSimulatorWrapper.getTime();
 		}
 		
 		public class ScaleManager implements Subscriber {
 			@Override
 			public void fireChange() {
-				double currentSimulationTime = currentSimulatorWrapper.getTime();
-				long currentRealTime = System.currentTimeMillis();
-
-				if (currentSimulationTime != 0) {
-					switch (executionMode) {
-					case PAUSE:
-						processPause();
-						break;
-
-					case NORMAL_SPEED:
-						long waitTime = (long) ((currentSimulationTime - startSimulationTime) * timeScale)
-								- (currentRealTime - startRealTime);
-
-						if (waitTime > 0) {
-							while (executionMode == ExecutionMode.NORMAL_SPEED && waitTime > 0 && !simulationAborted) {
-								delay(waitTime > 50 ? 50 : waitTime);
-								waitTime = (long) ((currentSimulationTime - startSimulationTime) * timeScale)
-										- (System.currentTimeMillis() - startRealTime);
-							}
-							uiTimeUpdater.actualTimeScale = timeScale;
-						} else
-							uiTimeUpdater.actualTimeScale = (currentRealTime - startRealTime) / currentSimulationTime;
-						break;
-
-					default:
-						uiTimeUpdater.actualTimeScale = 0;
-						updateTimes();
-					}
-				}
+//				double currentSimulationTime = currentSimulatorWrapper.getTime();
+//				long currentRealTime = System.currentTimeMillis();
+//
+//				if (currentSimulationTime != 0) {
+//					switch (executionMode) {
+//					case PAUSE:
+//						processPause();
+//						break;
+//
+//					case NORMAL_SPEED:
+//						long waitTime = (long) ((currentSimulationTime - startSimulationTime) * timeScale)
+//								- (currentRealTime - startRealTime);
+//
+//						if (waitTime > 0) {
+//							while (executionMode == ExecutionMode.NORMAL_SPEED && waitTime > 0 && !simulationAborted) {
+//								delay(waitTime > 50 ? 50 : waitTime);
+//								waitTime = (long) ((currentSimulationTime - startSimulationTime) * timeScale)
+//										- (System.currentTimeMillis() - startRealTime);
+//							}
+//							uiTimeUpdater.actualTimeScale = timeScale;
+//						} else
+//							uiTimeUpdater.actualTimeScale = (currentRealTime - startRealTime) / currentSimulationTime;
+//						break;
+//
+//					default:
+//						uiTimeUpdater.actualTimeScale = 0;
+//						updateTimes();
+//					}
+//				}
 			}
 		}
 
