@@ -22,6 +22,7 @@ public class SetSimulationScaleHandler extends AbstractHandler {
 
 	private static void updateStatusView() {
 		// TODO fix-0002
+		// preinitialize things - need to plan this event cause no status views exist
 //		StatusView.setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale));
 	}
 

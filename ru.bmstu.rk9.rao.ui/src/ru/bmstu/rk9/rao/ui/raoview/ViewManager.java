@@ -1,5 +1,6 @@
 package ru.bmstu.rk9.rao.ui.raoview;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +22,16 @@ public class ViewManager {
 			simulatorViews.put(simulatorId, newSimulatorViews);
 		}
 		return (T) simulatorViews.get(simulatorId).getViewFor(viewType);
+	}
+	
+	public static <T extends RaoView> ArrayList<T> getAvailableViews(ViewType viewType) {
+		ArrayList<T> views = new ArrayList<>();
+		
+		for (Map.Entry<SimulatorId, SimulatorViews> entry : simulatorViews.entrySet()) {
+			views.add(entry.getValue().getViewFor(viewType));
+		}
+		
+		return views;
 	}
 
 	public static class SimulatorViews {
