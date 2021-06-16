@@ -19,14 +19,6 @@ public class RaoRuntimeModule extends ru.bmstu.rk9.rao.AbstractRaoRuntimeModule 
 				.to(RaoXImportSectionNamespaceScopeProvider.class);
 	}
 
-	public Class<? extends XbaseCompiler> bindXbaseCompiler() {
-		return RaoCompiler.class;
-	}
-
-	public Class<? extends XbaseTypeComputer> bindXbaseTypeComputer() {
-		return RaoTypeComputer.class;
-	}
-
 	public Class<? extends ImplicitlyImportedFeatures> bindImplicitlyImportedFeatures() {
 		return RaoImplicitlyImportedFeatures.class;
 	}

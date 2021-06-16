@@ -30,23 +30,25 @@ public class ExportResultsHandler extends AbstractHandler {
 	public final static void exportResults() {
 		if (!ready())
 			return;
-
-		List<AbstractResult<?>> results = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getResults();
-
-		PrintWriter writer = ExportPrintWriter.initializeWriter(".res");
-		if (writer == null)
-			return;
-
-		writer.println(ResultsParser.parseAsString(results));
-		writer.close();
-
-		try {
-			ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
-		} catch (CoreException e) {
-		}
+		// TODO fix-0002
+//		List<AbstractResult<?>> results = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getResults();
+//
+//		PrintWriter writer = ExportPrintWriter.initializeWriter(".res");
+//		if (writer == null)
+//			return;
+//
+//		writer.println(ResultsParser.parseAsString(results));
+//		writer.close();
+//
+//		try {
+//			ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, null);
+//		} catch (CoreException e) {
+//		}
 	}
 
 	private final static boolean ready() {
-		return RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().isInitialized() && !RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries().isEmpty();
+		return false;
+		// TODO fix-0002
+//		return RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().isInitialized() && !RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries().isEmpty();
 	}
 }

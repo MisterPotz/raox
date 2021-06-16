@@ -22,7 +22,6 @@ public class SimulationSynchronizer {
 	public SimulationManager simulationManager;
 	public final ExecutionAbortedListener executionAbortedListener = new ExecutionAbortedListener();
 	public final ExecutionStartedListener executionStartedListener = new ExecutionStartedListener();
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
 	
 	public SimulationSynchronizer() {
 		this.simulationSubscriberManager = null;

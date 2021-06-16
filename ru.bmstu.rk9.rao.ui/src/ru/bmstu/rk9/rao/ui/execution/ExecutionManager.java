@@ -85,7 +85,8 @@ public class ExecutionManager {
 					if (preprocess.getResult() != Status.OK_STATUS) {
 						ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
 								SimulationLaunchState.STOPPED.toString());
-						ConsoleView.addLine("Build failed");
+						// TODO fix-0002
+//						ConsoleView.addLine("Build failed");
 						return new Status(IStatus.CANCEL, pluginId, "Execution cancelled");
 					}
 
@@ -105,7 +106,8 @@ public class ExecutionManager {
 						if (rebuild.getResult() != Status.OK_STATUS) {
 							ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
 									SimulationLaunchState.STOPPED.toString());
-							ConsoleView.addLine("Build failed");
+							// TODO fix-0002
+//							ConsoleView.addLine("Build failed");
 							return new Status(IStatus.CANCEL, pluginId, "Execution cancelled");
 						}
 					}
@@ -124,7 +126,8 @@ public class ExecutionManager {
 					if (validate.getResult() != Status.OK_STATUS) {
 						ModelExecutionSourceProvider.setSimulationState(activeWorkbenchWindow,
 								SimulationLaunchState.STOPPED.toString());
-						ConsoleView.addLine("Build failed");
+						// TODO fix-0002
+//						ConsoleView.addLine("Build failed");
 						return new Status(IStatus.CANCEL, pluginId, "Execution cancelled");
 					}
 
@@ -149,7 +152,8 @@ public class ExecutionManager {
 					}
 
 					if (runJob.getResult() != Status.OK_STATUS) {
-						ConsoleView.addLine("Execution failed");
+						// TODO fix-0002
+//						ConsoleView.addLine("Build failed");
 						return new Status(IStatus.CANCEL, pluginId, "Execution failed");
 					}
 

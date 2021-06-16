@@ -17,21 +17,23 @@ import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 
 public class ExportPrintWriter {
 	final static PrintWriter initializeWriter(String suffix) {
-		final String projectName = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getModelStructure()
-				.getString(ModelStructureConstants.NAME);
-		final IPath projectPath = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName).getLocation();
-		final IPath filePath = projectPath.append(projectName + suffix);
-
-		PrintWriter writer = null;
-		try {
-			writer = new PrintWriter(filePath.toString(), "UTF-8");
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-			MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Error",
-					"Failed to initialize file writer");
-			return null;
-		}
-
-		return writer;
+		// TODO fix-0002
+//		final String projectName = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getModelStructure()
+//				.getString(ModelStructureConstants.NAME);
+//		final IPath projectPath = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName).getLocation();
+//		final IPath filePath = projectPath.append(projectName + suffix);
+//
+//		PrintWriter writer = null;
+//		try {
+//			writer = new PrintWriter(filePath.toString(), "UTF-8");
+//		} catch (FileNotFoundException | UnsupportedEncodingException e) {
+//			e.printStackTrace();
+//			MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Error",
+//					"Failed to initialize file writer");
+//			return null;
+//		}
+//
+//		return writer;
+				return null;
 	}
 }

@@ -27,14 +27,15 @@ public class TreeBuilder {
 	private final boolean useShortNames;
 
 	public final boolean updateTree() {
-		List<Entry> entries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
-				.getDatabase().getAllEntries();
-		while (entryNumber < entries.size()) {
-			final Database.Entry entry = entries.get(entryNumber);
-			if (parseEntry(entry))
-				return true;
-			entryNumber++;
-		}
+		// TODO fix-0002
+//		List<Entry> entries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+//				.getDatabase().getAllEntries();
+//		while (entryNumber < entries.size()) {
+//			final Database.Entry entry = entries.get(entryNumber);
+//			if (parseEntry(entry))
+//				return true;
+//			entryNumber++;
+//		}
 		return false;
 	}
 
@@ -121,44 +122,46 @@ public class TreeBuilder {
 			switch (spawnStatus) {
 			case NEW:
 			case BETTER: {
-				final int nodeNumber = data.getInt();
-				final int parentNumber = data.getInt();
-				final double g = data.getDouble();
-				final double h = data.getDouble();
-				final int ruleNumber = data.getInt();
-				final int patternNumber = data.getInt();
-				final double ruleCost = data.getDouble();
-
-				final Node parentNode = nodeByNumber.get(parentNumber);
-
-				final Node node;
-				if (spawnStatus == Search.SpawnStatus.NEW) {
-					node = new Node(parentNode, nodeNumber);
-					nodeByNumber.add(node);
-					lastAddedNodeIndex = node.index;
-				} else {
-					node = nodeByNumber.get(nodeNumber);
-					parentChanges.add(new ParentChange(node, node.parent, parentNode));
-
-					if (widthByLevel.containsKey(node.depth))
-						widthByLevel.put(node.depth, widthByLevel.get(node.depth) - 1);
-
-					node.parent.children.remove(node);
-					node.parent = parentNode;
-				}
-
-				parentNode.children.add(node);
-				node.g = g;
-				node.h = h;
-				node.ruleNumber = ruleNumber;
-				node.ruleName = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
-						.getStaticModelData().getEdgeName(dptNumber, ruleNumber);
-				node.ruleCost = ruleCost;
-				node.relevantResources = getRelevantResources(data, patternNumber);
-				node.depth = node.parent.depth + 1;
-
-				updateGraphInfo(node);
-
+				// TODO fix-0002
+//				final int nodeNumber = data.getInt();
+//				final int parentNumber = data.getInt();
+//				final double g = data.getDouble();
+//				final double h = data.getDouble();
+//				final int ruleNumber = data.getInt();
+//				final int patternNumber = data.getInt();
+//				final double ruleCost = data.getDouble();
+//
+//				final Node parentNode = nodeByNumber.get(parentNumber);
+//
+//				final Node node;
+//				if (spawnStatus == Search.SpawnStatus.NEW) {
+//					node = new Node(parentNode, nodeNumber);
+//					nodeByNumber.add(node);
+//					lastAddedNodeIndex = node.index;
+//				} else {
+//					node = nodeByNumber.get(nodeNumber);
+//					parentChanges.add(new ParentChange(node, node.parent, parentNode));
+//
+//					if (widthByLevel.containsKey(node.depth))
+//						widthByLevel.put(node.depth, widthByLevel.get(node.depth) - 1);
+//
+//					node.parent.children.remove(node);
+//					node.parent = parentNode;
+//				}
+//
+//				parentNode.children.add(node);
+//				node.g = g;
+//				node.h = h;
+//				node.ruleNumber = ruleNumber;
+//				node.ruleName = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+//						.getStaticModelData().getEdgeName(dptNumber, ruleNumber);
+//				node.ruleCost = ruleCost;
+//				node.relevantResources = getRelevantResources(data, patternNumber);
+//				node.depth = node.parent.depth + 1;
+//
+//				updateGraphInfo(node);
+//
+//				break;
 				break;
 			}
 
@@ -182,24 +185,26 @@ public class TreeBuilder {
 	}
 
 	private final String getRelevantResources(final ByteBuffer data, final int patternNumber) {
-		final int numberOfRelevantResources = RaoActivatorExtension.getTargetSimulatorManager()
-				.getTargetSimulatorWrapper().getStaticModelData().getNumberOfRelevantResources(patternNumber);
-
-		final StringJoiner relResStringJoiner = new StringJoiner(StringFormat.ENUMERATION);
-
-		for (int num = 0; num < numberOfRelevantResources; num++) {
-			final int resNum = data.getInt();
-			final String typeName = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
-					.getStaticModelData().getRelevantResourceTypeName(patternNumber, num);
-			final int typeNum = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
-					.getStaticModelData().getResourceTypeNumber(typeName);
-			final String name = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
-					.getStaticModelData().getResourceName(typeNum, resNum);
-			final String resourceName = name != null ? name : typeName + Tracer.encloseIndex(resNum);
-
-			relResStringJoiner.add(NamingHelper.convertName(resourceName, useShortNames));
-		}
-		return relResStringJoiner.getString();
+		return "";
+		// TODO fix-0002
+//		final int numberOfRelevantResources = RaoActivatorExtension.getTargetSimulatorManager()
+//				.getTargetSimulatorWrapper().getStaticModelData().getNumberOfRelevantResources(patternNumber);
+//
+//		final StringJoiner relResStringJoiner = new StringJoiner(StringFormat.ENUMERATION);
+//
+//		for (int num = 0; num < numberOfRelevantResources; num++) {
+//			final int resNum = data.getInt();
+//			final String typeName = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+//					.getStaticModelData().getRelevantResourceTypeName(patternNumber, num);
+//			final int typeNum = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+//					.getStaticModelData().getResourceTypeNumber(typeName);
+//			final String name = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+//					.getStaticModelData().getResourceName(typeNum, resNum);
+//			final String resourceName = name != null ? name : typeName + Tracer.encloseIndex(resNum);
+//
+//			relResStringJoiner.add(NamingHelper.convertName(resourceName, useShortNames));
+//		}
+//		return relResStringJoiner.getString();
 	}
 
 	private final void updateGraphInfo(final Node node) {

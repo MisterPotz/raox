@@ -20,15 +20,11 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationModeDispatcher;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
-import ru.bmstu.rk9.rao.ui.simulation.UiSimulatorDependent;
 
 
-public class RealTimeUpdater implements UiSimulatorDependent {
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+public class RealTimeUpdater  {
 	private SimulatorSubscriberManager subscriberRegistrationManager;
 	
 	public RealTimeUpdater() {
@@ -36,17 +32,15 @@ public class RealTimeUpdater implements UiSimulatorDependent {
 	}
 
 	private final void initializeSubscribers() {
-		listener.asSimulatorOnAndOnPostChange((event) -> {
-			if (subscriberRegistrationManager == null) {
-				subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
-			}
-			subscriberRegistrationManager.initialize(
-					Arrays.asList(new SimulatorSubscriberInfo(simulationStartSubscriber, ExecutionState.EXECUTION_STARTED),
-							new SimulatorSubscriberInfo(simulationStopSubscriber, ExecutionState.EXECUTION_COMPLETED)));
-		});
-		listener.asSimulatorPreOffAndPreChange((event) -> {
-			deinitialize();
-		});
+		// TODO refactor-0001
+//		if (subscriberRegistrationManager == null) {
+//			subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+//		}
+//		subscriberRegistrationManager.initialize(
+//				Arrays.asList(new SimulatorSubscriberInfo(simulationStartSubscriber, ExecutionState.EXECUTION_STARTED),
+//						new SimulatorSubscriberInfo(simulationStopSubscriber, ExecutionState.EXECUTION_COMPLETED)));
+//		
+//		deinitialize();
 	}
 	
 	public final void deinitialize() {
@@ -66,8 +60,9 @@ public class RealTimeUpdater implements UiSimulatorDependent {
 
 	private final void start() {
 		display = PlatformUI.getWorkbench().getDisplay();
-		getTargetSimulator().getDatabase().getNotifier().addSubscriber(databaseSubscriber,
-				Database.NotificationCategory.ENTRY_ADDED);
+		// TODO refactor-0001
+//		getTargetSimulator().getDatabase().getNotifier().addSubscriber(databaseSubscriber,
+//				Database.NotificationCategory.ENTRY_ADDED);
 
 		timer = new Timer();
 		timerTask = new TimerTask() {

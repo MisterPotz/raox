@@ -1,19 +1,15 @@
 package ru.bmstu.rk9.rao.ui.simulation;
 
-import java.util.Arrays;
-
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.State;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
 
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
-import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeUpdater;
 import ru.bmstu.rk9.rao.ui.simulation.SimulationSynchronizer.ExecutionMode;
 
-public class SimulationModeDispatcher implements UiSimulatorDependent {
-	private static SimulatorLifecycleListener listener = new SimulatorLifecycleListener();
+public class SimulationModeDispatcher  {
 	
 	public static void setMode(ExecutionMode currentMode) {
 //		if (!RuntimeComponents.isInitialized())
