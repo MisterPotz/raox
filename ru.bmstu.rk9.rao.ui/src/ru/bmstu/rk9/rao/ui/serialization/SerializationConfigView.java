@@ -447,12 +447,13 @@ public class SerializationConfigView extends ViewPart {
 	// ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― //
 
 	private final void initializeSubscribers() {
-		if (subscriberRegistrationManager == null) {
-			subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
-		}
-		subscriberRegistrationManager.initialize(
-				Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
-						new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
+		// TODO refactor-0001
+//		if (subscriberRegistrationManager == null) {
+//			subscriberRegistrationManager = new SimulatorSubscriberManager(getTargetSimulatorId());
+//		}
+//		subscriberRegistrationManager.initialize(
+//				Arrays.asList(new SimulatorSubscriberInfo(enableSubscriber, ExecutionState.EXECUTION_COMPLETED),
+//						new SimulatorSubscriberInfo(disableSubscriber, ExecutionState.EXECUTION_STARTED)));
 
 	}
 

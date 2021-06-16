@@ -133,155 +133,161 @@ public class PlotDataParser {
 	}
 
 	private ParseInfo parsePattern(final PatternIndex patternIndex, final int startItemNumber) {
-		final List<PlotItem> dataset = new ArrayList<PlotItem>();
-		final List<Integer> entriesNumbers = patternIndex.getEntryNumbers();
-		final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries();
-
-		if (patternCount == 0) {
-			dataset.add(new PlotItem(0, patternCount));
-		}
-
-		while (currentItemNumber < entriesNumbers.size()) {
-			int currentEntryNumber = entriesNumbers.get(currentItemNumber);
-			final Entry currentEntry = allEntries.get(currentEntryNumber);
-			final ByteBuffer header = Tracer.prepareBufferForReading(currentEntry.getHeader());
-
-			Tracer.skipPart(header, TypeSize.BYTE);
-			final double time = header.getDouble();
-
-			final Database.PatternType entryType = Database.PatternType.values()[header.get()];
-
-			switch (entryType) {
-			case OPERATION_BEGIN:
-				patternCount++;
-				break;
-			case OPERATION_END:
-				patternCount--;
-				break;
-			default:
-				throw new PlotDataParserException("Unexpected entry type: " + entryType);
-			}
-			dataset.add(new PlotItem(time, patternCount));
-			currentItemNumber++;
-		}
-
-		return new ParseInfo(new DataParserResult(dataset, new AxisHelper(false, null)), currentItemNumber);
+		// TODO refactor-0001
+//		final List<PlotItem> dataset = new ArrayList<PlotItem>();
+//		final List<Integer> entriesNumbers = patternIndex.getEntryNumbers();
+//		final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries();
+//
+//		if (patternCount == 0) {
+//			dataset.add(new PlotItem(0, patternCount));
+//		}
+//
+//		while (currentItemNumber < entriesNumbers.size()) {
+//			int currentEntryNumber = entriesNumbers.get(currentItemNumber);
+//			final Entry currentEntry = allEntries.get(currentEntryNumber);
+//			final ByteBuffer header = Tracer.prepareBufferForReading(currentEntry.getHeader());
+//
+//			Tracer.skipPart(header, TypeSize.BYTE);
+//			final double time = header.getDouble();
+//
+//			final Database.PatternType entryType = Database.PatternType.values()[header.get()];
+//
+//			switch (entryType) {
+//			case OPERATION_BEGIN:
+//				patternCount++;
+//				break;
+//			case OPERATION_END:
+//				patternCount--;
+//				break;
+//			default:
+//				throw new PlotDataParserException("Unexpected entry type: " + entryType);
+//			}
+//			dataset.add(new PlotItem(time, patternCount));
+//			currentItemNumber++;
+//		}
+//
+//		return new ParseInfo(new DataParserResult(dataset, new AxisHelper(false, null)), currentItemNumber);
+		return null;
 	}
 
 	private ParseInfo parseResult(final ResultIndex resultIndex, final int startItemNumber) {
-		final List<PlotItem> dataset = new ArrayList<PlotItem>();
-		final List<Integer> entriesNumbers = resultIndex.getEntryNumbers();
-		final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries();
-
-		AxisHelper axisHelper = new AxisHelper(false, null);
-
-		while (currentItemNumber < entriesNumbers.size()) {
-			int currentEntryNumber = entriesNumbers.get(currentItemNumber);
-			final Entry currentEntry = allEntries.get(currentEntryNumber);
-			final ByteBuffer data = Tracer.prepareBufferForReading(currentEntry.getData());
-			final ByteBuffer header = Tracer.prepareBufferForReading(currentEntry.getHeader());
-
-			Tracer.skipPart(header, TypeSize.BYTE);
-			Tracer.skipPart(header, TypeSize.INT);
-			final double time = header.getDouble();
-			final ResultType resultType = ResultType.values()[header.get()];
-
-			PlotItem item = null;
-			switch (resultType) {
-			case OTHER:
-				final int length = data.getInt();
-
-				byte rawString[] = new byte[length];
-				for (int i = 0; i < length; i++)
-					rawString[i] = data.get(TypeSize.INT + i);
-				String descriptor = new String(rawString, StandardCharsets.UTF_8);
-
-				SymbolAxisEntry entry = stringToSymbolAxisEntry(descriptor);
-				axisHelper = entry.axisHelper.axisChanged ? entry.axisHelper : axisHelper;
-
-				item = new PlotItem(time, entry.value);
-				break;
-			case NUMBER:
-				final double dataValue = data.getDouble();
-				item = new PlotItem(time, dataValue);
-				break;
-			default:
-				break;
-			}
-
-			dataset.add(item);
-			currentItemNumber++;
-		}
-
-		return new ParseInfo(new DataParserResult(dataset, axisHelper), currentItemNumber);
+		// TODO refactor-0001
+//		final List<PlotItem> dataset = new ArrayList<PlotItem>();
+//		final List<Integer> entriesNumbers = resultIndex.getEntryNumbers();
+//		final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries();
+//
+//		AxisHelper axisHelper = new AxisHelper(false, null);
+//
+//		while (currentItemNumber < entriesNumbers.size()) {
+//			int currentEntryNumber = entriesNumbers.get(currentItemNumber);
+//			final Entry currentEntry = allEntries.get(currentEntryNumber);
+//			final ByteBuffer data = Tracer.prepareBufferForReading(currentEntry.getData());
+//			final ByteBuffer header = Tracer.prepareBufferForReading(currentEntry.getHeader());
+//
+//			Tracer.skipPart(header, TypeSize.BYTE);
+//			Tracer.skipPart(header, TypeSize.INT);
+//			final double time = header.getDouble();
+//			final ResultType resultType = ResultType.values()[header.get()];
+//
+//			PlotItem item = null;
+//			switch (resultType) {
+//			case OTHER:
+//				final int length = data.getInt();
+//
+//				byte rawString[] = new byte[length];
+//				for (int i = 0; i < length; i++)
+//					rawString[i] = data.get(TypeSize.INT + i);
+//				String descriptor = new String(rawString, StandardCharsets.UTF_8);
+//
+//				SymbolAxisEntry entry = stringToSymbolAxisEntry(descriptor);
+//				axisHelper = entry.axisHelper.axisChanged ? entry.axisHelper : axisHelper;
+//
+//				item = new PlotItem(time, entry.value);
+//				break;
+//			case NUMBER:
+//				final double dataValue = data.getDouble();
+//				item = new PlotItem(time, dataValue);
+//				break;
+//			default:
+//				break;
+//			}
+//
+//			dataset.add(item);
+//			currentItemNumber++;
+//		}
+//
+//		return new ParseInfo(new DataParserResult(dataset, axisHelper), currentItemNumber);
+		return null;
 	}
 
 	private ParseInfo parseResourceParameter(final ResourceIndex resourceIndex, final int typeNumber,
 			final int parameterNumber, final int startItemNumber) {
-		final List<PlotItem> dataset = new ArrayList<PlotItem>();
-		final List<Integer> entriesNumbers = resourceIndex.getEntryNumbers();
-		final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries();
-
-		final int parameterOffset = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getResourceTypeParameterOffset(typeNumber,
-				parameterNumber);
-		final int finalOffset = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getResourceTypeFinalOffset(typeNumber);
-
-		AxisHelper axisHelper = new AxisHelper(false, null);
-
-		while (currentItemNumber < entriesNumbers.size()) {
-			int currentEntryNumber = entriesNumbers.get(currentItemNumber);
-			final Entry currentEntry = allEntries.get(currentEntryNumber);
-
-			final ByteBuffer header = Tracer.prepareBufferForReading(currentEntry.getHeader());
-			final ByteBuffer data = Tracer.prepareBufferForReading(currentEntry.getData());
-
-			Tracer.skipPart(header, TypeSize.BYTE);
-			final double time = header.getDouble();
-			Tracer.skipPart(header, TypeSize.BYTE);
-			PlotItem item = null;
-
-			DataType dataType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getResourceTypeParameterType(typeNumber,
-					parameterNumber);
-			switch (dataType) {
-			case INT:
-				item = new PlotItem(time, data.getInt(parameterOffset));
-				break;
-			case DOUBLE:
-				item = new PlotItem(time, data.getDouble(parameterOffset));
-				break;
-			case BOOLEAN:
-				String boolValueStr = data.get(parameterOffset) != 0 ? "true" : "false";
-
-				SymbolAxisEntry boolValueEntry = stringToSymbolAxisEntry(boolValueStr);
-				axisHelper = boolValueEntry.axisHelper.axisChanged ? boolValueEntry.axisHelper : axisHelper;
-
-				item = new PlotItem(time, boolValueEntry.value);
-				break;
-			case OTHER:
-				final int index = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getVariableWidthParameterIndex(typeNumber,
-						parameterNumber);
-				final int stringPosition = data.getInt(finalOffset + index * TypeSize.INT);
-				final int length = data.getInt(stringPosition);
-
-				byte rawString[] = new byte[length];
-				for (int i = 0; i < length; i++)
-					rawString[i] = data.get(stringPosition + TypeSize.INT + i);
-				String descriptor = new String(rawString, StandardCharsets.UTF_8);
-
-				SymbolAxisEntry entry = stringToSymbolAxisEntry(descriptor);
-				axisHelper = entry.axisHelper.axisChanged ? entry.axisHelper : axisHelper;
-
-				item = new PlotItem(time, entry.value);
-
-				break;
-			default:
-				throw new PlotDataParserException("Unexpected value type: " + dataType);
-			}
-
-			dataset.add(item);
-			currentItemNumber++;
-		}
-
-		return new ParseInfo(new DataParserResult(dataset, axisHelper), currentItemNumber);
+		// TODO refactor-0001
+//		final List<PlotItem> dataset = new ArrayList<PlotItem>();
+//		final List<Integer> entriesNumbers = resourceIndex.getEntryNumbers();
+//		final List<Entry> allEntries = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getDatabase().getAllEntries();
+//
+//		final int parameterOffset = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getResourceTypeParameterOffset(typeNumber,
+//				parameterNumber);
+//		final int finalOffset = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getResourceTypeFinalOffset(typeNumber);
+//
+//		AxisHelper axisHelper = new AxisHelper(false, null);
+//
+//		while (currentItemNumber < entriesNumbers.size()) {
+//			int currentEntryNumber = entriesNumbers.get(currentItemNumber);
+//			final Entry currentEntry = allEntries.get(currentEntryNumber);
+//
+//			final ByteBuffer header = Tracer.prepareBufferForReading(currentEntry.getHeader());
+//			final ByteBuffer data = Tracer.prepareBufferForReading(currentEntry.getData());
+//
+//			Tracer.skipPart(header, TypeSize.BYTE);
+//			final double time = header.getDouble();
+//			Tracer.skipPart(header, TypeSize.BYTE);
+//			PlotItem item = null;
+//
+//			DataType dataType = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getResourceTypeParameterType(typeNumber,
+//					parameterNumber);
+//			switch (dataType) {
+//			case INT:
+//				item = new PlotItem(time, data.getInt(parameterOffset));
+//				break;
+//			case DOUBLE:
+//				item = new PlotItem(time, data.getDouble(parameterOffset));
+//				break;
+//			case BOOLEAN:
+//				String boolValueStr = data.get(parameterOffset) != 0 ? "true" : "false";
+//
+//				SymbolAxisEntry boolValueEntry = stringToSymbolAxisEntry(boolValueStr);
+//				axisHelper = boolValueEntry.axisHelper.axisChanged ? boolValueEntry.axisHelper : axisHelper;
+//
+//				item = new PlotItem(time, boolValueEntry.value);
+//				break;
+//			case OTHER:
+//				final int index = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().getStaticModelData().getVariableWidthParameterIndex(typeNumber,
+//						parameterNumber);
+//				final int stringPosition = data.getInt(finalOffset + index * TypeSize.INT);
+//				final int length = data.getInt(stringPosition);
+//
+//				byte rawString[] = new byte[length];
+//				for (int i = 0; i < length; i++)
+//					rawString[i] = data.get(stringPosition + TypeSize.INT + i);
+//				String descriptor = new String(rawString, StandardCharsets.UTF_8);
+//
+//				SymbolAxisEntry entry = stringToSymbolAxisEntry(descriptor);
+//				axisHelper = entry.axisHelper.axisChanged ? entry.axisHelper : axisHelper;
+//
+//				item = new PlotItem(time, entry.value);
+//
+//				break;
+//			default:
+//				throw new PlotDataParserException("Unexpected value type: " + dataType);
+//			}
+//
+//			dataset.add(item);
+//			currentItemNumber++;
+//		}
+//
+//		return new ParseInfo(new DataParserResult(dataset, axisHelper), currentItemNumber);
+		return null;
 	}
 }
