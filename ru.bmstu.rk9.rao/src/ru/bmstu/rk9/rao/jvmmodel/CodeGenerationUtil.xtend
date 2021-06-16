@@ -90,7 +90,7 @@ class CodeGenerationUtil {
 	}
 	
 	def static StringConcatenationClient createSuperInitializationLine(List<NameableMember> parameters) {
-		val enumerationString = createEnumerationString(parameters) [ param | param.name ]
+		val enumerationString = CodeGenerationUtilJava.createEnumerationString(parameters) [ param | param.name ]
 		return '''
 			super(«enumerationString»);
 		'''
@@ -116,13 +116,6 @@ class CodeGenerationUtil {
 			«FOR param : parameters.entrySet»
 			this.«param.key.name» = «param.value»;
 			«ENDFOR»
-		'''
-	}
-	
-	
-	def protected static <T> String createEnumerationString(List<T> objects, Function<T, String> fun) {
-		return '''
-			«FOR o : objects»«fun.apply(o)»«IF objects.indexOf(o) != objects.size - 1», «ENDIF»«ENDFOR»
 		'''
 	}
 

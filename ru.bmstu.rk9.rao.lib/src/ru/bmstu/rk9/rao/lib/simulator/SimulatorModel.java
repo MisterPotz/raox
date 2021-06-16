@@ -5,7 +5,7 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 
 public abstract class SimulatorModel implements SimulatorDependent {
-	private SimulatorId simulatorId;
+	protected SimulatorId simulatorId;
 
 	public SimulatorModel(SimulatorId simulatorId) {
 		this.simulatorId = simulatorId;

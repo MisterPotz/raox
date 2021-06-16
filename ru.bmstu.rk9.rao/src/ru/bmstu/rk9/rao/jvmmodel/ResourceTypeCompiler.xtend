@@ -15,6 +15,8 @@ import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import java.util.ArrayList
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
+import ru.bmstu.rk9.rao.jvmmodel.ProxyBuilderHelper.ConstructorBuilder
+import org.eclipse.xtext.common.types.JvmConstructor
 
 class ResourceTypeCompiler extends RaoEntityCompiler {
 
@@ -43,9 +45,24 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				parametersList.addAll(resourceType.parameters.map [
 					resourceType.toParameter(it.declaration.name, it.declaration.parameterType)
 				])
-
+				
+				val customParams = new ArrayList<ConstructorParameter>();
+				customParams.addAll(parametersList.map[p | new ConstructorParameter(p, true, true, false)])
+				customParams.add(
+					new ConstructorParameter(
+						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType), true, true, false
+					)
+				)
+				
 				members += pBH.createFieldsForBuildedClass(parametersList)
-				members += pBH.createConstructorForBuildedClass(parametersList);
+				
+				val JvmConstructor cnstr = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType)
+				.setAddSimulatorId(false)
+				.setParameters(customParams)
+				.build();
+				
+				pBH.constructorOfBuildedClass = cnstr
+				members += cnstr
 				members += pBH.createNecessaryMembersForBuildedClass()
 				members += pBH.createSimulatorIdConstructorForBuildedClass()
 				pBH.buildedClass = it
