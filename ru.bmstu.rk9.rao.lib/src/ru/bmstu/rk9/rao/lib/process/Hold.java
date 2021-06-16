@@ -91,7 +91,7 @@ public class Hold implements Block, SimulatorDependent{
 		private Transact transact;
 
 		public HoldEvent(Transact transact, double time) {
-			super(simulatorId);
+			super(Hold.this.simulatorId);
 			this.time = time;
 			this.transact = transact;
 		}

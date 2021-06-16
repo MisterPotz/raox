@@ -49,7 +49,7 @@ public class Generate implements Block, SimulatorDependent {
 
 	private class GenerateEvent extends Event {
 		public GenerateEvent(double time) {
-			super(simulatorId);
+			super(Generate.this.simulatorId);
 			this.time = time;
 		}
 
