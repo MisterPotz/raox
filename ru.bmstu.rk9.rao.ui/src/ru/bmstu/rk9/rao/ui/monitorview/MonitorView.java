@@ -114,7 +114,7 @@ public class MonitorView extends ViewPart {
 	}
 	
 	private final void showFilterDialog() {
-		filterHelper.openDialog();
+//		filterHelper.openDialog();
 	}
 	
 	private void createViewer(Composite parent) {

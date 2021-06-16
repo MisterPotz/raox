@@ -50,7 +50,6 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.graph.GraphControl.FrameInfo;
 import ru.bmstu.rk9.rao.ui.graph.GraphInfoWindow.InfoElement;
 import ru.bmstu.rk9.rao.ui.graph.TreeBuilder.GraphInfo;
@@ -58,7 +57,6 @@ import ru.bmstu.rk9.rao.ui.graph.TreeBuilder.Node;
 import ru.bmstu.rk9.rao.ui.graph.TreeBuilder.ParentChange;
 import ru.bmstu.rk9.rao.ui.notification.RealTimeSubscriberManager;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView.ConditionalMenuItem;
-import ru.bmstu.rk9.rao.ui.simulation.SimulatorLifecycleListener;
 
 public class GraphPanel extends JPanel implements GraphApi {
 	private static final long serialVersionUID = 1668866556340389760L;

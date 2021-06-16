@@ -16,7 +16,7 @@ public class StopExecutionHandler extends AbstractHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		// todo https://www.notion.so/StopExecutionHandler-694e977a0f7d40608f8e5421431e40bd
-		RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().stopExecution();
+//		RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().stopExecution();
 		return null;
 	}
 }

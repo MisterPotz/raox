@@ -476,7 +476,7 @@ public class TraceView extends RaoView {
 				simulatorSubscriberManager = new SimulatorSubscriberManager(getSimulatorId());
 			}
 			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
+				realTimeSubscriberManager = new RealTimeSubscriberManager(args.getSimulatorId());
 			}
 			simulatorSubscriberManager
 					.initialize(Arrays.asList(new SimulatorSubscriberInfo(commonUpdater, ExecutionState.EXECUTION_STARTED),

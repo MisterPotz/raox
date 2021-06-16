@@ -50,7 +50,7 @@ public class AnimationView extends RaoView {
 	}
 	
 	public int getFrameListSize() {
-		return lastListWidth;
+		return getLastListWidth();
 	}
 
 	private Composite parent;
@@ -142,9 +142,9 @@ public class AnimationView extends RaoView {
 			frameView.redraw();
 	}
 
-	private volatile boolean animationEnabled = true;
+	private volatile static boolean animationEnabled = true;
 
-	public void setAnimationEnabled(boolean state) {
+	public static void setAnimationEnabled(boolean state) {
 		animationEnabled = state;
 	}
 
@@ -181,9 +181,13 @@ public class AnimationView extends RaoView {
 		}
 	};
 
-	private int lastListWidth = InstanceScope.INSTANCE.getNode("ru.bmstu.rk9.rao.ui")
-			.getInt("AnimationViewFrameListSize", 120);
+	private int lastListWidth = getLastListWidth();
 
+	public static int getLastListWidth() {
+		return InstanceScope.INSTANCE.getNode("ru.bmstu.rk9.rao.ui")
+				.getInt("AnimationViewFrameListSize", 120);
+	}
+	
 	private Listener sashListener = new Listener() {
 		@Override
 		public void handleEvent(Event event) {
@@ -325,7 +329,7 @@ public class AnimationView extends RaoView {
 	protected void initializeSimulatorRelated() {
 		simNonNull(args -> {
 			if (realTimeSubscriberManager == null) {
-				realTimeSubscriberManager = new RealTimeSubscriberManager();
+				realTimeSubscriberManager = new RealTimeSubscriberManager(args.getSimulatorId());
 			}
 			realTimeSubscriberManager.initialize(Arrays.asList(realTimeUpdateRunnable));
 		});

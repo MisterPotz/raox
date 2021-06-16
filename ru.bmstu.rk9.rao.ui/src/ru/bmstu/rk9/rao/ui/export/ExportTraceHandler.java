@@ -13,7 +13,6 @@ import org.eclipse.core.runtime.CoreException;
 import ru.bmstu.rk9.rao.lib.database.Database.Entry;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
-import ru.bmstu.rk9.rao.ui.RaoSimulatorHelper;
 import ru.bmstu.rk9.rao.ui.trace.LegacyTracer;
 import ru.bmstu.rk9.rao.ui.trace.Tracer;
 import ru.bmstu.rk9.rao.ui.trace.Tracer.TraceOutput;
@@ -73,19 +72,20 @@ public class ExportTraceHandler extends AbstractHandler {
 	private final static void exportTraceRegular() {
 		if (!ready())
 			return;
-		SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
-		Tracer tracer = new Tracer(currentSimulatorWrapper.getStaticModelData());
-
-		PrintWriter writer = ExportPrintWriter.initializeWriter(".trc");
-		if (writer == null)
-			return;
-
-		for (Entry entry : currentSimulatorWrapper.getDatabase().getAllEntries()) {
-			TraceOutput output = tracer.parseSerializedData(entry);
-			if (output != null)
-				writer.println(output.content());
-		}
-		writer.close();
+		// TODO fix-0002
+//		SimulatorWrapper currentSimulatorWrapper = RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper();
+//		Tracer tracer = new Tracer(currentSimulatorWrapper.getStaticModelData());
+//
+//		PrintWriter writer = ExportPrintWriter.initializeWriter(".trc");
+//		if (writer == null)
+//			return;
+//
+//		for (Entry entry : currentSimulatorWrapper.getDatabase().getAllEntries()) {
+//			TraceOutput output = tracer.parseSerializedData(entry);
+//			if (output != null)
+//				writer.println(output.content());
+//		}
+//		writer.close();
 	}
 
 	private static LegacyTracer legacyTracer = null;
@@ -94,28 +94,30 @@ public class ExportTraceHandler extends AbstractHandler {
 		if (!ready())
 			return;
 
-		if (legacyTracer == null) {
-			legacyTracer = new LegacyTracer(RaoSimulatorHelper.getTargetSimulatorId());
-			legacyTracer.parseAllEntries();
-		}
-
-		List<TraceOutput> output = legacyTracer.getTraceList();
-
-		PrintWriter writer = ExportPrintWriter.initializeWriter(".trc.legacy");
-		if (writer == null)
-			return;
-
-		for (TraceOutput item : output) {
-			writer.println(item.content());
-		}
-		writer.close();
+		// TODO fix-0002
+//		if (legacyTracer == null) {
+//			legacyTracer = new LegacyTracer(RaoSimulatorHelper.getTargetSimulatorId());
+//			legacyTracer.parseAllEntries();
+//		}
+//
+//		List<TraceOutput> output = legacyTracer.getTraceList();
+//
+//		PrintWriter writer = ExportPrintWriter.initializeWriter(".trc.legacy");
+//		if (writer == null)
+//			return;
+//
+//		for (TraceOutput item : output) {
+//			writer.println(item.content());
+//		}
+//		writer.close();
 	}
 
 	private final static boolean ready() {
-
-		return RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().isInitialized()
-				&& !RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
-						.getDatabase().getAllEntries().isEmpty();
+		return false;
+		// TODO fix-0002
+//		return RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper().isInitialized()
+//				&& !RaoActivatorExtension.getTargetSimulatorManager().getTargetSimulatorWrapper()
+//						.getDatabase().getAllEntries().isEmpty();
 	}
 
 	public final static void reset() {
