@@ -47,11 +47,15 @@ class PatternCompiler extends RaoEntityCompiler {
 					val parametersList = new ArrayList<JvmFormalParameter>();
 				val customParams = new ArrayList<ConstructorParameter>();
 					
-				customParams.addAll(parametersList.map[p | new ConstructorParameter(p, false, true, false)])
+				customParams.addAll(parametersList.map[p | 
+					new ConstructorParameter.Builder().parameter(p).initializeInConstructor().build()
+				])
 				customParams.add(
-					new ConstructorParameter(
-						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, pattern), false, false, true
-					)
+					new ConstructorParameter.Builder().
+					parameter(
+						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, pattern)
+					).addToSuperInitialization()
+					.build()
 				)
 								
 				val JvmConstructor cnstr = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder, pattern)

@@ -10,7 +10,7 @@ public abstract class VarConst {
 	private double	step;
 	
 	public abstract String getName();
-	public abstract boolean checkValue(HashMap<String, Double> args);
+	public abstract Boolean checkValue(HashMap<String, Double> args);
 	public abstract List<String> getAllDependencies();
 
 	protected VarConst(double start, double stop, double step) {

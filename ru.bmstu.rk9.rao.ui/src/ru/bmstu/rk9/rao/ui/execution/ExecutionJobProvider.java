@@ -68,7 +68,7 @@ public class ExecutionJobProvider {
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations();
 								
-				for (List<Double> iterable_element : varconsts.getCombinations().subList(0, 2)) {
+				for (List<Double> iterable_element : varconsts.getCombinations().subList(0, Math.min(2, varconsts.getCombinations().size()))) {
 					IStatus runningResult = runSeparateSimulator(
 							varconsts.listToHashMap(iterable_element),
 							parser);
