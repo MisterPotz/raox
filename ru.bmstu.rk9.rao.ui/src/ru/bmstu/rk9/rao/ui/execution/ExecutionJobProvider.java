@@ -24,6 +24,7 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.export.ExportTraceHandler;
+import ru.bmstu.rk9.rao.ui.raoview.RaoViewScope;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
@@ -100,7 +101,7 @@ public class ExecutionJobProvider {
 		SimulatorManagerImpl.getInstance().addSimulator(simulator);
 
 		systemSimulatorNotifier.notifySubscribers(SystemSimulatorEvent.ADDED_NEW, simulator.getSimulatorId());
-
+		
 		ConsoleView consoleView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.CONSOLE);
 		consoleView.clearConsoleText();
 		
@@ -141,6 +142,7 @@ public class ExecutionJobProvider {
 
 		final long startTime = System.currentTimeMillis();
 		StatusView statusView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.STATUS);
+		RaoViewScope.applyCommandsTo(statusView, ViewType.STATUS);
 		statusView.setStartTime(startTime);
 		consoleView.addLine("Started model " + project.getName());
 

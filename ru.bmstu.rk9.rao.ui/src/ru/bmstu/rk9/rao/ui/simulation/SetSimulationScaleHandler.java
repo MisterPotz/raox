@@ -6,6 +6,10 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
+import ru.bmstu.rk9.rao.ui.animation.AnimationView;
+import ru.bmstu.rk9.rao.ui.raoview.RaoViewScope;
+import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
+
 public class SetSimulationScaleHandler extends AbstractHandler {
 	private static volatile double simulationScale = 5400;
 
@@ -19,10 +23,9 @@ public class SetSimulationScaleHandler extends AbstractHandler {
 		simulationScale = scale;
 		updateStatusView();
 	}
-
 	private static void updateStatusView() {
 		// TODO fix-0002
-//		StatusView.setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale));
+		RaoViewScope.plan(view -> ((StatusView) view).setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale)), ViewType.STATUS);
 	}
 
 	@Override

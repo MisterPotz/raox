@@ -1,5 +1,8 @@
 package ru.bmstu.rk9.rao.ui.raoview;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IWorkbenchPage;
@@ -12,6 +15,7 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.monitorview.ConditionalMenuItem;
+import ru.bmstu.rk9.rao.ui.raoview.RaoViewScope.Action;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 
 public abstract class RaoView extends ViewPart {
