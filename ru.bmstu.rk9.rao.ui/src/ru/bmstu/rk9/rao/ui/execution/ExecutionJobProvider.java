@@ -104,6 +104,7 @@ public class ExecutionJobProvider {
 		
 		ConsoleView consoleView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.CONSOLE);
 		consoleView.clearConsoleText();
+		consoleView.addLine("Kek");
 		
 		// TODO move to dependency from a simulator
 		ExportTraceHandler.reset();

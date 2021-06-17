@@ -25,14 +25,9 @@ public class SetSimulationScaleHandler extends AbstractHandler {
 	}
 	private static void updateStatusView() {
 		// TODO fix-0002
-<<<<<<< HEAD
 		RaoViewScope.plan(view -> ((StatusView) view).setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale)), ViewType.STATUS);
-=======
-		// preinitialize things - need to plan this event cause no status views exist
-//		StatusView.setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale));
->>>>>>> f4181e108e16809ae8d3b89238eb01e9137bbc9f
 	}
-
+	
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		switch (event.getParameter("ru.bmstu.rk9.rao.ui.runtime.setSimulationScaleParameter")) {

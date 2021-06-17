@@ -46,16 +46,26 @@ public class ViewManager {
 		@SuppressWarnings("unchecked")
 		public <T extends RaoView> T getViewFor(ViewType viewType) {
 			if (!views.containsKey(viewType)) {
-				try {
-					RaoView newRaoView = (RaoView) PlatformUI.getWorkbench()
-												.getActiveWorkbenchWindow()
-												.getActivePage()
-												.showView(viewType.getId(), simulatorId.toString(), IWorkbenchPage.VIEW_ACTIVATE);
-	
-					views.put(viewType, newRaoView);
-				} catch (PartInitException e) {
-					e.printStackTrace();
-				}
+				// TODO: fix-0004 getActiveWorkbenchWindow() returns null
+				PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						IWorkbenchPage activePage = PlatformUI.getWorkbench()
+								.getActiveWorkbenchWindow()
+								.getActivePage();
+						if (activePage != null) {
+							try {
+								RaoView newRaoView = (RaoView) activePage
+														.showView(viewType.getId(), simulatorId.toString(), IWorkbenchPage.VIEW_CREATE);
+							views.put(viewType, newRaoView);
+							} catch (PartInitException e) {
+								e.printStackTrace();
+							}
+						}
+					}
+				});
 			}
 			return (T) views.get(viewType);
 		} 

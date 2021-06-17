@@ -351,7 +351,7 @@ public class ModelInternalsParser {
 
 		// going through classes that are declared at initialization scope nested class
 		// in model
-		for (Class<?> nestedModelClass : initializationScope.getDeclaredClasses()) {
+		for (Class<?> nestedModelClass : declaredClasses) {
 			// TODO make sure that the info that this class is not static is marked
 			if (VarConst.class.isAssignableFrom(nestedModelClass)) {
 				varconstClasses.add(nestedModelClass);
