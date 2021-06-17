@@ -90,7 +90,7 @@ class CodeGenerationUtil {
 	}
 	
 	def static StringConcatenationClient createSuperInitializationLine(List<NameableMember> parameters) {
-		val enumerationString = CodeGenerationUtilJava.createEnumerationString(parameters) [ param | param.name ]
+		val enumerationString = CodeGenerationUtilJava.createEnumerationString(parameters) [ param | param.getName ]
 		return '''
 			super(«enumerationString»);
 		'''
@@ -120,8 +120,9 @@ class CodeGenerationUtil {
 	}
 
 	public static class NameableMember {
-		public final String name;
-
+		private final String name;
+		public String substitutionValue = null;
+		
 		new(JvmMember member) {
 			this.name = member.simpleName;
 		}
@@ -129,5 +130,18 @@ class CodeGenerationUtil {
 		new(JvmFormalParameter parameter) {
 			this.name = parameter.name;
 		}
+		
+		def NameableMember setSubstitutionValue(String value) {
+			this.substitutionValue = value;
+			return this;
+		}
+		
+		def String getName() {
+			if (substitutionValue == null) {
+				return name;
+			}
+			return substitutionValue;
+		}
+		
 	}
 }

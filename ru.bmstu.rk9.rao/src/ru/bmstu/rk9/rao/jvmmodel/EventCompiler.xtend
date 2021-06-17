@@ -46,11 +46,11 @@ class EventCompiler extends RaoEntityCompiler {
 				unitedList.addAll(fieldParametersList)
 				
 				val customParams = new ArrayList<ConstructorParameter>();
-				customParams.addAll(unitedList.map[p | new ConstructorParameter(p, false, true, false)])
+				customParams.addAll(unitedList.map[p | new ConstructorParameter.Builder().parameter(p).initializeInConstructor().build()])
 				customParams.add(
-					new ConstructorParameter(
-						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, event), false, false, true
-					)
+					new ConstructorParameter.Builder().parameter(
+						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, event))
+						.addToSuperInitialization().build()
 				)
 								
 				val JvmConstructor cnstr = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder, event)

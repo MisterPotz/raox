@@ -30,13 +30,14 @@ class ProxyBuilderHelperUtil {
 		 StringConcatenationClient additionalLines
 	) {
 		val superParams = parameters.filter [param | param.addToSuperInitialization]
-		val line = CodeGenerationUtil.createSuperInitializationLine(superParams.map[new NameableMember(it.parameter)].toList)
+		val superLine = CodeGenerationUtil.createSuperInitializationLine(superParams.map[
+			new NameableMember(it.parameter).setSubstitutionValue(it.substitutionValue)
+		].toList)
+		val paramsToInitialize = parameters.filter [ param | param.initializeInConstructor ]
 		return '''
-			«line»
-			«FOR param : parameters»
-			«IF param.initializeInConstructor»
-			this.«IF param.isUseHiddenName»_«ELSE»«""»«ENDIF»«param.parameter.name» = «param.parameter.name»;
-			«ENDIF»
+			«superLine»
+			«FOR param : paramsToInitialize»
+			this.«IF param.isUseHiddenName»_«ELSE»«""»«ENDIF»«param.parameter.name» = «param.substitutionValue»;
 			«ENDFOR»
 			«IF additionalLines !== null »«additionalLines»«ENDIF»
 			'''

@@ -47,11 +47,16 @@ class ResourceTypeCompiler extends RaoEntityCompiler {
 				])
 				
 				val customParams = new ArrayList<ConstructorParameter>();
-				customParams.addAll(parametersList.map[p | new ConstructorParameter(p, true, true, false)])
+				customParams.addAll(parametersList.map[p | new ConstructorParameter.Builder().parameter(p)
+					.useHiddenName()
+					.initializeInConstructor()
+					.useHiddenName()
+					.build()
+				])
 				customParams.add(
-					new ConstructorParameter(
-						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType), true, true, false
-					)
+					new ConstructorParameter.Builder().parameter(
+						SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, resourceType)
+					).useHiddenName().initializeInConstructor().build()
 				)
 				
 				members += pBH.createFieldsForBuildedClass(parametersList)

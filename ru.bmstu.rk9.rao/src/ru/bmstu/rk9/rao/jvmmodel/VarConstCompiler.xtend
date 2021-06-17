@@ -12,6 +12,9 @@ import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import ru.bmstu.rk9.rao.lib.lambdaexpression.LambdaExpression
 import org.eclipse.xtext.common.types.impl.JvmFormalParameterImplCustom
 import ru.bmstu.rk9.rao.rao.VarConst
+import java.lang.reflect.Constructor
+import javax.management.ConstructorParameters
+import ru.bmstu.rk9.rao.jvmmodel.ProxyBuilderHelper.ConstructorBuilder
 
 class VarConstCompiler extends RaoEntityCompiler {
 
@@ -27,24 +30,32 @@ class VarConstCompiler extends RaoEntityCompiler {
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			return varconst.toClass(vcQualifiedName) [
 				static = true
-				superTypes += typeRef(VarConst)
-
-				for (name : Arrays.asList("start", "stop", "step"))
-					members += varconst.toField(name, typeRef(Double))
+				superTypes += typeRef(ru.bmstu.rk9.rao.lib.varconst.VarConst)
 
 				if (varconst.lambda !== null)
 					members += varconst.lambda.toField("lambda", typeRef(LambdaExpression))
 
-				members += varconst.toConstructor [
-					visibility = JvmVisibility.PUBLIC
-
-					body = '''
-						start = «Double.valueOf(varconst.start)»;
-						stop = «Double.valueOf(varconst.stop)»;
-						step = «Double.valueOf(varconst.step)»;
-					'''
-				]
-
+				val params = Arrays.asList(
+					new ConstructorParameter.Builder()
+					.parameter(varconst.toParameter("start", typeRef(Double)))
+					.addToSuperInitialization()
+					.dontAddAsParam()
+					.substituteValue(varconst.start).build(),
+					new ConstructorParameter.Builder()
+					.parameter(varconst.toParameter("stop", typeRef(Double)))
+					.addToSuperInitialization()
+					.dontAddAsParam()
+					.substituteValue(varconst.stop).build(),
+					new ConstructorParameter.Builder()
+					.parameter(varconst.toParameter("step", typeRef(Double)))
+					.addToSuperInitialization()
+					.dontAddAsParam()
+					.substituteValue(varconst.step).build()
+				)
+				
+				val cnstr = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder,varconst).setParameters(params).build()
+				
+				members += cnstr
 				members += varconst.toMethod("getName", typeRef(String)) [
 					visibility = JvmVisibility.PUBLIC
 					final = true

@@ -117,19 +117,23 @@ public class ProxyBuilderHelper {
 		
 		public ConstructorBuilder setParametersByFormal(List<JvmFormalParameter> constructorParameters) {
 			this.constructorParameters = 
-			constructorParameters.stream().map(p -> new ConstructorParameter(p, true, true, false)).collect(Collectors.toList());
+			constructorParameters
+			.stream()
+			.map(p -> new ConstructorParameter.Builder().parameter(p).useHiddenName().initializeInConstructor().build()).collect(Collectors.toList());
 			return this;
 		}
 
 		public JvmConstructor build() {
 			if (addSimulatorId) {
 				constructorParameters.add(
-					new ConstructorParameter( SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
-						jvmTypeReferenceBuilder, sourceEObject), false, false, false));
+					new ConstructorParameter.Builder().parameter(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder,
+						jvmTypeReferenceBuilder, sourceEObject)).build());
 			}
 			
 			JvmConstructor createdCostructor = jvmTypesBuilder.toConstructor(sourceEObject, p -> {				
-				p.getParameters().addAll(constructorParameters.stream().map(s -> s.getParameter()).collect(Collectors.toList()));
+				p.getParameters().addAll(constructorParameters
+						.stream()
+						.filter(param -> !param.isDontAddAsParam()).map(s -> s.getParameter()).collect(Collectors.toList()));
 				jvmTypesBuilder.setBody(p, util.createConstructorBody(constructorParameters, additionalCode));
 			});
 
