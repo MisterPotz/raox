@@ -7,6 +7,11 @@ import org.eclipse.core.commands.ExecutionException;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.ui.RaoActivatorExtension;
 
+/**
+ * this thing never uses
+ * @author xfear
+ *
+ */
 public class StopExecutionHandler extends AbstractHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {

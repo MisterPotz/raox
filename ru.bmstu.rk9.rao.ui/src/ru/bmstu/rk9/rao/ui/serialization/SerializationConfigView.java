@@ -53,6 +53,7 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorSubscriberManager.SimulatorSubscriberInfo;
 import ru.bmstu.rk9.rao.rao.RaoModel;
 import ru.bmstu.rk9.rao.ui.execution.BuildUtil;
+import ru.bmstu.rk9.rao.ui.raoview.RaoView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializationConfig.SerializationNode;
 
 import com.google.inject.Inject;

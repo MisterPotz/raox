@@ -61,7 +61,6 @@ public class ResultsView extends RaoView {
 	private boolean viewAsText = false;
 	
 	public void update() {
-		// TODO: change to SimulatorManager.getSimulator(this.getSimulatorId()).getResults()
 		this.results = SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getResults(); 
 		if (!isInitialized())
 			return;
@@ -240,18 +239,6 @@ public class ResultsView extends RaoView {
 
 			@Override
 			public void controlMoved(ControlEvent e) {
-			}
-		});
-
-//		TODO: handle this on another abstract level (in RaoView, for example) 
-		composite.addDisposeListener(new DisposeListener() {
-
-			@Override
-			public void widgetDisposed(DisposeEvent event) {
-				// TODO refactor-0001
-//				Boolean opened = false;
-//				if (!opened.isEmpty() && opened.containsKey(simulatorId))
-//					opened.remove(simulatorId);
 			}
 		});
 

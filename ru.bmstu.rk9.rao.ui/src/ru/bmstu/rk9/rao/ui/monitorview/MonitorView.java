@@ -25,12 +25,14 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.ui.UiContract;
+import ru.bmstu.rk9.rao.ui.animation.AnimationView;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.execution.ExecutionJobProvider;
 import ru.bmstu.rk9.rao.ui.execution.ExecutionJobProvider.SystemSimulatorEvent;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 import ru.bmstu.rk9.rao.ui.results.ResultsView;
 import ru.bmstu.rk9.rao.ui.serialization.SerializedObjectsView;
+import ru.bmstu.rk9.rao.ui.simulation.StatusView;
 import ru.bmstu.rk9.rao.ui.trace.TraceView;
 
 import java.util.ArrayList;
@@ -189,7 +191,10 @@ public class MonitorView extends ViewPart {
 		conditionalMenuItems.add(ResultsView.createConditionalMenuItem(viewer, menu, ViewType.RESULTS));
 		conditionalMenuItems.add(TraceView.createConditionalMenuItem(viewer,  menu, ViewType.TRACE));
 		conditionalMenuItems.add(SerializedObjectsView.createConditionalMenuItem(viewer, menu, ViewType.SERIALIZED));
+		conditionalMenuItems.add(AnimationView.createConditionalMenuItem(viewer, menu, ViewType.ANIMATION));
+		conditionalMenuItems.add(StatusView.createConditionalMenuItem(viewer, menu, ViewType.STATUS));
 		conditionalMenuItems.add(ConsoleView.createConditionalMenuItem(viewer, menu, ViewType.CONSOLE));
+		
 		table.setMenu(menu);
 	}
 	
@@ -212,7 +217,7 @@ public class MonitorView extends ViewPart {
 			dialogState = DialogState.CLOSED;
 		}
 	
-		final FilterResult findStatus(/* SimulatorStatuste */Integer status) {
+		final FilterResult findStatus(/* SimulatorStatus */Integer status) {
 			List<SimulatorId> simulatorIds = SimulatorManagerImpl.getInstance().getAvailableIds();
 			List<SimulatorId> filteredSimulatorIds = new ArrayList<>();
 			boolean showAll = (status == null);

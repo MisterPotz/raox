@@ -78,7 +78,6 @@ class MonitorFilterDialog extends Dialog {
 	}
 	
 	private final void createDialogContents(Composite parent) {
-		// TODO fix-0003
 //		Composite area = new Composite(parent, SWT.FILL);
 //		area.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 //		area.setLayout(new GridLayout(2, false));
@@ -89,7 +88,9 @@ class MonitorFilterDialog extends Dialog {
 //		
 //		statusCombo = new Combo(area, SWT.NONE);
 //		statusCombo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-//		statusCombo.setItems(ModelStatus.stringValues());
+//		
+////		TODO fix-0003
+//		statusCombo.setItems(new String[] {"Not started", "In process", "Finished"});
 //		
 //		filterButton = new Button(area, SWT.PUSH);
 //		filterButton.setText("Filter");
