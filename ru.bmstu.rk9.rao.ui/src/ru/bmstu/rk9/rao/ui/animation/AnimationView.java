@@ -85,6 +85,7 @@ public class AnimationView extends RaoView {
 
 	private AnimationContextSWT animationContext;
 
+//	fix-0005 - where are frames initialized?
 	private java.util.List<AnimationFrame> frames;
 	private AnimationFrame currentFrame;
 

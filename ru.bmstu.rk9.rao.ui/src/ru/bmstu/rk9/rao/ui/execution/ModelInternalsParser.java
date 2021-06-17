@@ -351,13 +351,8 @@ public class ModelInternalsParser {
 
 		// going through classes that are declared at initialization scope nested class
 		// in model
-		for (Class<?> nestedModelClass : declaredClasses) {
-			// TODO make sure that the info that this class is not static is marked
-			if (VarConst.class.isAssignableFrom(nestedModelClass)) {
-				varconstClasses.add(nestedModelClass);
-				continue;
-			}
-			
+		for (Class<?> nestedModelClass : initializationScope.getDeclaredClasses()) {
+			// TODO make sure that the info that this class is not static is marked		
 			if (Logic.class.isAssignableFrom(nestedModelClass)) {
 				decisionPointClasses.add(nestedModelClass);
 				continue;
@@ -381,6 +376,16 @@ public class ModelInternalsParser {
 				continue;
 			}
 
+		}
+		
+		/*
+		 * refactor-0004 only for varconst classes???
+		 */
+		for (Class<?> nestedModelClass : declaredClasses) {
+			if (VarConst.class.isAssignableFrom(nestedModelClass)) {
+				varconstClasses.add(nestedModelClass);
+				continue;
+			}
 		}
 
 		/** look only for abstract results */

@@ -46,12 +46,11 @@ public class ViewManager {
 		@SuppressWarnings("unchecked")
 		public <T extends RaoView> T getViewFor(ViewType viewType) {
 			if (!views.containsKey(viewType)) {
-				// TODO: fix-0004 getActiveWorkbenchWindow() returns null
+				// TODO: fix-0005 - opens view - shouldn't
 				PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
 					
 					@Override
 					public void run() {
-						// TODO Auto-generated method stub
 						IWorkbenchPage activePage = PlatformUI.getWorkbench()
 								.getActiveWorkbenchWindow()
 								.getActivePage();
@@ -59,7 +58,7 @@ public class ViewManager {
 							try {
 								RaoView newRaoView = (RaoView) activePage
 														.showView(viewType.getId(), simulatorId.toString(), IWorkbenchPage.VIEW_CREATE);
-							views.put(viewType, newRaoView);
+								views.put(viewType, newRaoView);
 							} catch (PartInitException e) {
 								e.printStackTrace();
 							}

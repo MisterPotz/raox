@@ -29,7 +29,7 @@ public class SimulatorManagerImpl extends SimpleListenable implements ISimulator
 		}
 		return instance;
 	}
-	
+		
 	@Override
 	public SimulatorId addSimulator(ISimulator iSimulator) {
 		int oldAmountOfIds = getAvailableIds().size();
@@ -70,7 +70,7 @@ public class SimulatorManagerImpl extends SimpleListenable implements ISimulator
 	
 	@Override 
 	public SimulatorWrapper getSimulatorWrapper(SimulatorId simulatorId) {
-		return simulatorWrapperMap.get(simulatorMap);
+		return simulatorWrapperMap.get(simulatorId);
 	}
 	
 	@Override

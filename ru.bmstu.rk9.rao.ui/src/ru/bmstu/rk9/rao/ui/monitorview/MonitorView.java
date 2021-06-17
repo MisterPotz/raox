@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.xtext.builder.clustering.CurrentDescriptions;
 
@@ -38,6 +39,7 @@ import ru.bmstu.rk9.rao.ui.trace.TraceView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.eventbus.Subscribe;
@@ -117,6 +119,24 @@ public class MonitorView extends ViewPart {
 //		filterHelper.openDialog();
 	}
 	
+	public static void clear() {
+		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				viewer.getTable().removeAll();
+			}
+		});
+	}
+	
+	public static void addSimulator(SimulatorId simulatorId) {
+		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				viewer.add(simulatorId);
+			}
+		});
+	}
+	
 	private void createViewer(Composite parent) {
 		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		
@@ -128,7 +148,6 @@ public class MonitorView extends ViewPart {
 		table.setLinesVisible(true);
 		
 		viewer.setContentProvider(new ArrayContentProvider());
-		viewer.setInput(SimulatorManagerImpl.getInstance().getAvailableIds());
 		getSite().setSelectionProvider(viewer);
 		
 		GridData gridData = new GridData();

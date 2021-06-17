@@ -24,6 +24,7 @@ import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.export.ExportTraceHandler;
+import ru.bmstu.rk9.rao.ui.monitorview.MonitorView;
 import ru.bmstu.rk9.rao.ui.raoview.RaoViewScope;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
@@ -64,7 +65,10 @@ public class ExecutionJobProvider {
 				} finally {
 					parser.closeClassLoader();
 				}
+				
 				SerializationConfigView.initNames();
+				
+				MonitorView.clear();
 
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations();
@@ -98,7 +102,9 @@ public class ExecutionJobProvider {
 		
 		ISimulator simulator = new Simulator();
 		SimulatorWrapper simulatorWrapper = new SimulatorWrapper(simulator);
-		SimulatorManagerImpl.getInstance().addSimulator(simulator);
+		SimulatorManagerImpl.getInstance().addSimulatorWrapper(simulatorWrapper);
+		
+		MonitorView.addSimulator(simulator.getSimulatorId());
 
 		systemSimulatorNotifier.notifySubscribers(SystemSimulatorEvent.ADDED_NEW, simulator.getSimulatorId());
 		
@@ -128,11 +134,14 @@ public class ExecutionJobProvider {
 
 		AnimationView animationView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.ANIMATION);
 		
-		display.syncExec(
-				() -> animationView.initialize(readyParser.getAnimationFrames().stream().map(frameConstructor -> {
-					return ReflectionUtils.safeNewInstance(AnimationFrame.class, frameConstructor, initializationScopeInstance);
-				}).collect(Collectors.toList())));
+//		fix-0005 - exception - frames == null
+//		display.syncExec(
+//				() -> animationView.initialize(readyParser.getAnimationFrames().stream().map(frameConstructor -> {
+//					return ReflectionUtils.safeNewInstance(AnimationFrame.class, frameConstructor, initializationScopeInstance);
+//				}).collect(Collectors.toList())));
 
+		
+//		# fix-0004 - catches Exception in ResultManager constructor (look other fix-0004)
 		try {
 			/** launch init#run */
 			simulatorWrapper.initialize(readyParser.getSimulatorInitializationInfo());
@@ -143,7 +152,10 @@ public class ExecutionJobProvider {
 
 		final long startTime = System.currentTimeMillis();
 		StatusView statusView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.STATUS);
+
+//		exception caught
 		RaoViewScope.applyCommandsTo(statusView, ViewType.STATUS);
+		
 		statusView.setStartTime(startTime);
 		consoleView.addLine("Started model " + project.getName());
 
