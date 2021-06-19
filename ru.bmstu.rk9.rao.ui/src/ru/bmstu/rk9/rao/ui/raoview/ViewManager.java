@@ -11,6 +11,8 @@ import org.eclipse.ui.PlatformUI;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.ui.UiContract;
 
+
+// TODO refactor-0005 we never use this class except for ViewType enum
 public class ViewManager {
 	protected final static Map<SimulatorId, SimulatorViews> simulatorViews = new HashMap<>();
 
@@ -23,7 +25,7 @@ public class ViewManager {
 		}
 		
 		T view = (T) simulatorViews.get(simulatorId).getViewFor(viewType);
-		view.initialize(simulatorId, viewType.getId());
+		// view.initialize(simulatorId, viewType.getId());
 		return view;
 	}
 	

@@ -69,7 +69,6 @@ public class ExecutionJobProvider {
 				SerializationConfigView.initNames();
 				
 				MonitorView.clear();
-
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations(); 
 								
@@ -106,9 +105,12 @@ public class ExecutionJobProvider {
 		
 		MonitorView.addSimulator(simulator.getSimulatorId());
 		
-//		TODO fix-0006 returns null
-		ConsoleView consoleView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.CONSOLE);
-		consoleView.clearConsoleText();
+//		ConsoleView consoleView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.CONSOLE);
+//		consoleView.clearConsoleText();
+		
+		RaoViewScope.plan(view -> {
+			((ConsoleView) view).clearConsoleText();
+		}, ViewType.CONSOLE);
 		
 		// TODO move to dependency from a simulator
 		ExportTraceHandler.reset();
@@ -130,15 +132,14 @@ public class ExecutionJobProvider {
 						.getSimulatorCommonModelInfo()) ;
 
 
-		AnimationView animationView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.ANIMATION);
+//		AnimationView animationView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.ANIMATION);
 		
-//		fix-0005 - exception - frames == null
+//		TODO fix-0005 - exception - frames == null
 //		display.syncExec(
 //				() -> animationView.initialize(readyParser.getAnimationFrames().stream().map(frameConstructor -> {
 //					return ReflectionUtils.safeNewInstance(AnimationFrame.class, frameConstructor, initializationScopeInstance);
 //				}).collect(Collectors.toList())));
 
-		
 		try {
 			/** launch init#run */
 			simulatorWrapper.initialize(readyParser.getSimulatorInitializationInfo());
@@ -150,12 +151,19 @@ public class ExecutionJobProvider {
 		systemSimulatorNotifier.notifySubscribers(SystemSimulatorEvent.ADDED_NEW, simulator.getSimulatorId());
 
 		final long startTime = System.currentTimeMillis();
-		StatusView statusView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.STATUS);
-
-		RaoViewScope.applyCommandsTo(statusView, ViewType.STATUS);
+//		StatusView statusView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.STATUS);
+//		RaoViewScope.applyCommandsTo(statusView, ViewType.STATUS);
+//		statusView.setStartTime(startTime);
+		RaoViewScope.plan(view -> {
+			((StatusView) view).setStartTime(startTime);
+		}, ViewType.STATUS);
 		
-		statusView.setStartTime(startTime);
-		consoleView.addLine("Started model " + project.getName());
+		
+//		consoleView.addLine("Started model " + project.getName());
+		RaoViewScope.plan(view -> {
+			((ConsoleView) view).addLine("Started model " + project.getName());
+		}, ViewType.CONSOLE);
+		
 
 		SimulationStopCode simulationResult;
 
@@ -163,9 +171,19 @@ public class ExecutionJobProvider {
 			simulationResult = simulatorWrapper.run();
 		} catch (Throwable e) {
 			e.printStackTrace();
-			consoleView.addLine("Execution error\n");
-			consoleView.addLine("Call stack:");
-			consoleView.printStackTrace(e);
+			
+//			consoleView.addLine("Execution error\n");
+//			consoleView.addLine("Call stack:");
+//			consoleView.printStackTrace(e);
+			
+			RaoViewScope.plan(view -> {
+				ConsoleView consoleView = (ConsoleView) view;
+				consoleView.addLine("Execution error\n");
+				consoleView.addLine("Call stack:");
+				consoleView.printStackTrace(e);
+				
+			}, ViewType.CONSOLE);
+			
 			simulatorWrapper.notifyError();
 
 			if (e instanceof Error)
@@ -173,29 +191,39 @@ public class ExecutionJobProvider {
 
 			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Execution failed", e);
 		} finally {
-			display.syncExec(() -> animationView.deinitialize());
+//			display.syncExec(() -> animationView.deinitialize());
 		}
 
-		switch (simulationResult) {
-			case TERMINATE_CONDITION:
-				consoleView.addLine("Stopped by terminate condition");
-				break;
-			case USER_INTERRUPT:
-				consoleView.addLine("Model terminated by user");
-				break;
-			case NO_MORE_EVENTS:
-				consoleView.addLine("No more events");
-				break;
-			default:
-				consoleView.addLine("Runtime error");
-				break;
-			}
+//		switch (simulationResult) {
+//			case TERMINATE_CONDITION:
+//				consoleView.addLine("Stopped by terminate condition");
+//				break;
+//			case USER_INTERRUPT:
+//				consoleView.addLine("Model terminated by user");
+//				break;
+//			case NO_MORE_EVENTS:
+//				consoleView.addLine("No more events");
+//				break;
+//			default:
+//				consoleView.addLine("Runtime error");
+//				break;
+//			}
 
-		ResultsView resultsView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.RESULTS);
-
-		display.asyncExec(() -> resultsView.update());
-
-		consoleView.addLine("Time elapsed: " + String.valueOf(System.currentTimeMillis() - startTime) + "ms");
+		RaoViewScope.plan(view -> {
+			((ConsoleView) view).addLine(simulationResult.toString());
+		}, ViewType.CONSOLE);
+		
+//		ResultsView resultsView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.RESULTS);
+//		display.asyncExec(() -> resultsView.update());
+		RaoViewScope.plan(view -> {
+			display.asyncExec(() -> ((ResultsView) view).update());
+		}, ViewType.RESULTS);
+		
+		
+//		consoleView.addLine("Time elapsed: " + String.valueOf(System.currentTimeMillis() - startTime) + "ms");		
+		RaoViewScope.plan(view -> {
+			((ConsoleView) view).addLine("Time elapsed: " + String.valueOf(System.currentTimeMillis() - startTime) + "ms");
+		}, ViewType.CONSOLE);
 
 		return Status.OK_STATUS;
 	}

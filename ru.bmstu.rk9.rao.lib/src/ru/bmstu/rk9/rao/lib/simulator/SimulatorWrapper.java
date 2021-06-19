@@ -170,7 +170,20 @@ public class SimulatorWrapper implements SimulatorDependent {
 	}
 
 	public enum SimulationStopCode {
-		USER_INTERRUPT, NO_MORE_EVENTS, TERMINATE_CONDITION, RUNTIME_ERROR, SIMULATION_CONTINUES
+		USER_INTERRUPT("Model terminated by user"), NO_MORE_EVENTS("Stopped by terminate condition"), TERMINATE_CONDITION("Stopped by terminate condition"), RUNTIME_ERROR("Runtime error"); // SIMULATION_CONTINUES;
+	
+		private String stringCode;
+		
+		private SimulationStopCode() {}
+		
+		private SimulationStopCode(String stringCode) {
+			this.stringCode = stringCode;
+		}
+		
+		public String toString() {
+			return stringCode;
+		}
+		
 	}
 
 	public SimulationStopCode run() {

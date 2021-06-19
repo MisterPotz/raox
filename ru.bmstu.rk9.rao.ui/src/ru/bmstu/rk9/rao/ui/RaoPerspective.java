@@ -30,6 +30,7 @@ public class RaoPerspective implements IPerspectiveFactory {
 		setPlotLocation();
 	}
 
+//	TODO how it works?
 	@SuppressWarnings("restriction")
 	private final void setPlotLocation() {
 		if (factory instanceof org.eclipse.ui.internal.e4.compatibility.ModeledPageLayout) {

@@ -14,6 +14,8 @@ import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
+import ru.bmstu.rk9.rao.ui.RaoPerspective;
+import ru.bmstu.rk9.rao.ui.UiContract;
 import ru.bmstu.rk9.rao.ui.monitorview.ConditionalMenuItem;
 import ru.bmstu.rk9.rao.ui.raoview.RaoViewScope.Action;
 import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
@@ -23,6 +25,8 @@ public abstract class RaoView extends ViewPart {
 	public static String ID_PREFIX = "ru.bmstu.rk9.rao.ui.";
 	
 	protected SimulatorId simulatorId;
+	
+	public boolean viewInitialized = false;
 
 	protected SimulatorWrapper getSimulatorWrapper() {
 		return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
@@ -51,6 +55,7 @@ public abstract class RaoView extends ViewPart {
 	public void initialize(SimulatorId simulatorId, String viewFullName) {
 		setPartName(viewFullName.substring(viewFullName.lastIndexOf('.') + 1, viewFullName.lastIndexOf('V')) + " " + simulatorId.toString());
 		setSimulatorId(simulatorId);
+		viewInitialized = true;
 	}
 	
 	protected abstract void initializeSimulatorRelated();
@@ -93,11 +98,16 @@ public abstract class RaoView extends ViewPart {
 		@Override
 		public void show(SimulatorId simulatorId) {
 			try {
-				RaoView newView = (RaoView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-						.showView(getId(), simulatorId.toString(), IWorkbenchPage.VIEW_VISIBLE);
+				RaoView newView = (RaoView) PlatformUI
+							.getWorkbench()
+							.getActiveWorkbenchWindow()
+							.getActivePage()
+							.showView(getId(), simulatorId.toString(), IWorkbenchPage.VIEW_ACTIVATE);
+				newView.initialize(simulatorId, getId());
+				RaoViewScope.applyCommandsTo(newView, viewType);
 			} catch (PartInitException e) {
 				e.printStackTrace();
-			}	
+			}
 		}
 	}
 	
