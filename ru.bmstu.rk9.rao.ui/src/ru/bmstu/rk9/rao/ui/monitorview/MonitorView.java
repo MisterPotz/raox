@@ -67,7 +67,7 @@ public class MonitorView extends ViewPart {
 
 				@Override
 				public void fireChange() {
-					onChange(currenSimulatorId, "Running");
+					onChange(currenSimulatorId);
 				}
 			}, ExecutionState.EXECUTION_STARTED);
 
@@ -75,7 +75,7 @@ public class MonitorView extends ViewPart {
 
 				@Override
 				public void fireChange() {
-					onChange(currenSimulatorId, "Finished");
+					onChange(currenSimulatorId);
 				}
 			}, ExecutionState.EXECUTION_COMPLETED);
 		}
@@ -84,16 +84,15 @@ public class MonitorView extends ViewPart {
 		public void fireChange() {}
 	};
 
-	void onChange(SimulatorId simulatorId, String executionState) {
-//		TODO fix-0005 exception here
-		TableViewer currentViewer = viewer;
-		
-		TableItem[] tableItems = currentViewer.getTable().getItems();
-		
-		TableItem currentRow = Arrays.stream(tableItems)
-		.filter(row -> row.getText(0).equals(simulatorId.toString())).collect(Collectors.toList()).get(0);
-
-		currentRow.setText(1, executionState);
+	void onChange(SimulatorId simulatorId) {
+		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+			
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				viewer.update(simulatorId, null);
+			}
+		});
 	}
 	
 	@Override
@@ -192,12 +191,9 @@ public class MonitorView extends ViewPart {
 		column.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				SimulatorId simulatorId = (SimulatorId) element;			
+				SimulatorId simulatorId = (SimulatorId) element;
 				
-				// TODO: make feature to get simulator status
-				String simulatorState = new String("Not started");
-				
-				return simulatorState;
+				return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getExecutionState().toString();
 			}
 		});		
 	}

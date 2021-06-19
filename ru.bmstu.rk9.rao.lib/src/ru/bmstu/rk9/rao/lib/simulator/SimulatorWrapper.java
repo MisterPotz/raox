@@ -1,5 +1,8 @@
 package ru.bmstu.rk9.rao.lib.simulator;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import ru.bmstu.rk9.rao.lib.database.Database;
@@ -108,14 +111,43 @@ public class SimulatorWrapper implements SimulatorDependent {
 	}
 
 	public enum ExecutionState {
-		EXECUTION_STARTED, EXECUTION_COMPLETED, EXECUTION_ABORTED, STATE_CHANGED, TIME_CHANGED, SEARCH_STEP
+		NOT_STARTED("Not started"), EXECUTION_STARTED("In process"), EXECUTION_COMPLETED("Finished"), EXECUTION_ABORTED, STATE_CHANGED, TIME_CHANGED, SEARCH_STEP;
+		
+		String stateString;
+		
+		private ExecutionState() {
+			
+		}
+		
+		private ExecutionState(String stateString) {
+			this.stateString = stateString;
+		}
+		
+		public String toString() {
+			return stateString;
+		}
 	}
 
+	private ExecutionState executionState = ExecutionState.NOT_STARTED;
+	
 	public Notifier<ExecutionState> getExecutionStateNotifier() {
 		return currentSimulator.getExecutionStateNotifier();
 	}
 
+	private void setExecutionState(ExecutionState category) {
+		ExecutionState[] states = {ExecutionState.EXECUTION_STARTED, ExecutionState.EXECUTION_COMPLETED};
+		
+		if (Arrays.asList(states).contains(category)) {
+			executionState = category;
+		}
+	}
+	
+	public ExecutionState getExecutionState() {
+		return executionState;
+	}
+	
 	private void notifyChange(ExecutionState category) {
+		setExecutionState(category);
 		currentSimulator.notifyChange(category);
 	}
 
