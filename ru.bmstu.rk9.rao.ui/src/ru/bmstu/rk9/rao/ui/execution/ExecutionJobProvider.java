@@ -106,12 +106,13 @@ public class ExecutionJobProvider {
 		
 		MonitorView.addSimulator(simulator.getSimulatorId());
 		
+//		TODO fix-0006 returns null
 		ConsoleView consoleView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.CONSOLE);
 		consoleView.clearConsoleText();
 		
 		// TODO move to dependency from a simulator
 		ExportTraceHandler.reset();
-		
+			
 		// TODO this is where we must plan the creation of model instances and run the simulations
 		try {
 			/**

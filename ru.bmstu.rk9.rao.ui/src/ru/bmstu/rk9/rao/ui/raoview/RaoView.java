@@ -48,7 +48,7 @@ public abstract class RaoView extends ViewPart {
 		}
 	}
 	
-	private final void initialize(SimulatorId simulatorId, String viewFullName) {
+	public void initialize(SimulatorId simulatorId, String viewFullName) {
 		setPartName(viewFullName.substring(viewFullName.lastIndexOf('.') + 1, viewFullName.lastIndexOf('V')) + " " + simulatorId.toString());
 		setSimulatorId(simulatorId);
 	}
@@ -58,8 +58,8 @@ public abstract class RaoView extends ViewPart {
 	protected void simNonNull(Action action) {
 		if (simulatorId != null) {
 			SimulatorWrapper wrapper = getSimulatorWrapper(simulatorId);
-			 SimulatorActionArgs args = new SimulatorActionArgs(simulatorId, wrapper.getSimulator(), wrapper);
-			 action.action(args);
+			SimulatorActionArgs args = new SimulatorActionArgs(simulatorId, wrapper.getSimulator(), wrapper);
+			action.action(args);
 		} else {
 			logProblem("simulatorId is not set");
 		}
@@ -94,14 +94,11 @@ public abstract class RaoView extends ViewPart {
 		public void show(SimulatorId simulatorId) {
 			try {
 				RaoView newView = (RaoView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-						.showView(getId(), simulatorId.toString(), IWorkbenchPage.VIEW_ACTIVATE);
-				newView.initialize(simulatorId, getId());
-
+						.showView(getId(), simulatorId.toString(), IWorkbenchPage.VIEW_VISIBLE);
 			} catch (PartInitException e) {
 				e.printStackTrace();
 			}	
 		}
-		
 	}
 	
 	public static ConditionalMenuItem createConditionalMenuItem(TableViewer viewer, Menu parent, ViewType viewType) {

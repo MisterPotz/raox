@@ -52,10 +52,10 @@ public class RaoPerspective implements IPerspectiveFactory {
 		IFolderLayout bottom = factory.createFolder("bottom", IPageLayout.BOTTOM, 0.7f, factory.getEditorArea());
 		bottom.addView(IPageLayout.ID_PROBLEM_VIEW);
 		bottom.addView(IConsoleConstants.ID_CONSOLE_VIEW);
-		bottom.addView(RaoView.getIdForView(ConsoleView.class));
+//		bottom.addView(RaoView.getIdForView(ConsoleView.class));
 		bottom.addView(IPageLayout.ID_PROP_SHEET);
 
-		IFolderLayout bottomRight = factory.createFolder("bottomRight", IPageLayout.RIGHT, 0.75f, "bottom");
-		bottomRight.addView(StatusView.ID);
+//		IFolderLayout bottomRight = factory.createFolder("bottomRight", IPageLayout.RIGHT, 0.75f, "bottom");
+//		bottomRight.addView(StatusView.ID);
 	}
 }

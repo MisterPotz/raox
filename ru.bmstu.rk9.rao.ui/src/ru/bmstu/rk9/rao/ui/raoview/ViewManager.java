@@ -21,7 +21,10 @@ public class ViewManager {
 
 			simulatorViews.put(simulatorId, newSimulatorViews);
 		}
-		return (T) simulatorViews.get(simulatorId).getViewFor(viewType);
+		
+		T view = (T) simulatorViews.get(simulatorId).getViewFor(viewType);
+		view.initialize(simulatorId, viewType.getId());
+		return view;
 	}
 	
 	public static <T extends RaoView> ArrayList<T> getAvailableViews(ViewType viewType) {
@@ -47,21 +50,19 @@ public class ViewManager {
 		public <T extends RaoView> T getViewFor(ViewType viewType) {
 			if (!views.containsKey(viewType)) {
 				// TODO: fix-0005 - opens view - shouldn't
+				
 				PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
 					
 					@Override
 					public void run() {
-						IWorkbenchPage activePage = PlatformUI.getWorkbench()
-								.getActiveWorkbenchWindow()
-								.getActivePage();
-						if (activePage != null) {
-							try {
-								RaoView newRaoView = (RaoView) activePage
-														.showView(viewType.getId(), simulatorId.toString(), IWorkbenchPage.VIEW_CREATE);
-								views.put(viewType, newRaoView);
-							} catch (PartInitException e) {
-								e.printStackTrace();
-							}
+						try {
+							RaoView newRaoView = (RaoView) PlatformUI.getWorkbench()
+									.getActiveWorkbenchWindow()
+									.getActivePage()
+									.showView(viewType.getId(), simulatorId.toString(), IWorkbenchPage.VIEW_CREATE);
+							views.put(viewType, newRaoView);
+						} catch (PartInitException e) {
+							e.printStackTrace();
 						}
 					}
 				});

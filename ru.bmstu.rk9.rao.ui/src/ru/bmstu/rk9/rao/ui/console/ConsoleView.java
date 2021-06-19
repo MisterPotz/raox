@@ -149,10 +149,9 @@ public class ConsoleView extends RaoView {
 	@Override
 	protected void initializeSimulatorRelated() {
 		simNonNull(args -> {
+			loggerSubscriberManager = new LoggerSubscriberManager(args.getSimulatorId());
 			loggerSubscriberManager.initialize(
-				Arrays.asList(new LoggerSubscriberInfo(loggingSubscriber, Logger.NotificationCategory.NEW_LOG_ENTRY)));
-
-			loggerSubscriberManager = new LoggerSubscriberManager(args.getSimulatorId());		
+				Arrays.asList(new LoggerSubscriberInfo(loggingSubscriber, Logger.NotificationCategory.NEW_LOG_ENTRY)));	
 		});
 	}
 }

@@ -171,15 +171,14 @@ public class MonitorView extends ViewPart {
 	}
 	
 	private void createColumns(TableViewer viewer) {
-		String[] titles = {"Model ID", "Model Status"};
-		int[] bounds = {100, 100};
+		String[] titles = {"Simulation ID", "Simulation Status"};
+		int[] bounds = {110, 150};
 		
 //		First column creation
 		TableViewerColumn column = createTableViewerColumn(viewer, titles[0], bounds[0], 0);
 		column.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				// TODO Auto-generated method stub
 				SimulatorId simulatorId = (SimulatorId) element;
 				
 				return String.valueOf(simulatorId);
@@ -198,8 +197,7 @@ public class MonitorView extends ViewPart {
 		});		
 	}
 
-	// where do i choose column place? colIndex isnt used anywhere
-
+	// TODO #refactor-0003 where do i choose column place? colIndex isnt used anywhere
 	private TableViewerColumn createTableViewerColumn(TableViewer viewer, String title, int bound, int colIndex) {
 		TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.None);
 		TableColumn column = viewerColumn.getColumn();
