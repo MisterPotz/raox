@@ -48,14 +48,21 @@ public class MonitorView extends ViewPart {
 	public static final String ID = "ru.bmstu.rk9.rao.ui.MonitorView";
 	
 	private static TableViewer viewer;
+	private Table table;
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
 	private FilterHelper filterHelper = new FilterHelper();
 
 	private final Subscriber newPlannedSimulatorSubscriber = new Subscriber(){
+		
+		public boolean acceptsPayload() {
+			return true;
+		};
+		
 		@Override
 		public void fireChangeWithPayload(Object object) {
 			SimulatorId currenSimulatorId = (SimulatorId) object;
 
+//			TODO fix-0006 getExecutionStateNotified() returns null
 			SimulatorManagerImpl.getInstance().getSimulatorWrapper(currenSimulatorId).getExecutionStateNotifier().addSubscriber(new Subscriber(){
 
 				@Override
@@ -78,7 +85,12 @@ public class MonitorView extends ViewPart {
 	};
 
 	void onChange(SimulatorId simulatorId, String executionState) {
-		TableItem currentRow = Arrays.stream(viewer.getTable().getItems())
+//		TODO fix-0005 exception here
+		TableViewer currentViewer = viewer;
+		
+		TableItem[] tableItems = currentViewer.getTable().getItems();
+		
+		TableItem currentRow = Arrays.stream(tableItems)
 		.filter(row -> row.getText(0).equals(simulatorId.toString())).collect(Collectors.toList()).get(0);
 
 		currentRow.setText(1, executionState);
@@ -142,7 +154,7 @@ public class MonitorView extends ViewPart {
 		
 		createColumns(viewer);
 
-		Table table = viewer.getTable();
+		table = viewer.getTable();
 		createMenu(table);
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);

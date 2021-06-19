@@ -30,7 +30,6 @@ public class ResultManager implements SimulatorDependent {
 	public ResultManager(List<AbstractResult<?>> results, SimulatorId simulatorId) {
 		this.simulatorId = simulatorId;
 		this.results.addAll(results);
-		// fix-0004 exception here
 		getSimulatorWrapper().getExecutionStateNotifier().addSubscriber(this.stateChangedSubscriber,
 				SimulatorWrapper.ExecutionState.STATE_CHANGED);
 		getSimulatorWrapper().getExecutionStateNotifier().addSubscriber(this.executionCompletedSubscriber,

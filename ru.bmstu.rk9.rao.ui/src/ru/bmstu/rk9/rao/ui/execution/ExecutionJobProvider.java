@@ -71,7 +71,7 @@ public class ExecutionJobProvider {
 				MonitorView.clear();
 
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
-				varconsts.generateCombinations();
+				varconsts.generateCombinations(); 
 								
 				for (List<Double> iterable_element : varconsts.getCombinations().subList(0, Math.min(2, varconsts.getCombinations().size()))) {
 					IStatus runningResult = runSeparateSimulator(
@@ -105,12 +105,9 @@ public class ExecutionJobProvider {
 		SimulatorManagerImpl.getInstance().addSimulatorWrapper(simulatorWrapper);
 		
 		MonitorView.addSimulator(simulator.getSimulatorId());
-
-		systemSimulatorNotifier.notifySubscribers(SystemSimulatorEvent.ADDED_NEW, simulator.getSimulatorId());
 		
 		ConsoleView consoleView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.CONSOLE);
 		consoleView.clearConsoleText();
-		consoleView.addLine("Kek");
 		
 		// TODO move to dependency from a simulator
 		ExportTraceHandler.reset();
@@ -141,7 +138,6 @@ public class ExecutionJobProvider {
 //				}).collect(Collectors.toList())));
 
 		
-//		# fix-0004 - catches Exception in ResultManager constructor (look other fix-0004)
 		try {
 			/** launch init#run */
 			simulatorWrapper.initialize(readyParser.getSimulatorInitializationInfo());
@@ -149,11 +145,12 @@ public class ExecutionJobProvider {
 			e.printStackTrace();
 			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator initialization failed", e);
 		}
+		
+		systemSimulatorNotifier.notifySubscribers(SystemSimulatorEvent.ADDED_NEW, simulator.getSimulatorId());
 
 		final long startTime = System.currentTimeMillis();
 		StatusView statusView = ViewManager.getViewFor(simulator.getSimulatorId(), ViewType.STATUS);
 
-//		exception caught
 		RaoViewScope.applyCommandsTo(statusView, ViewType.STATUS);
 		
 		statusView.setStartTime(startTime);
