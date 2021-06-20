@@ -10,10 +10,7 @@ import java.util.Arrays
 import java.util.HashMap
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 import ru.bmstu.rk9.rao.lib.lambdaexpression.LambdaExpression
-import org.eclipse.xtext.common.types.impl.JvmFormalParameterImplCustom
 import ru.bmstu.rk9.rao.rao.VarConst
-import java.lang.reflect.Constructor
-import javax.management.ConstructorParameters
 import ru.bmstu.rk9.rao.jvmmodel.ProxyBuilderHelper.ConstructorBuilder
 import ru.bmstu.rk9.rao.lib.contract.RaoGenerationContract
 

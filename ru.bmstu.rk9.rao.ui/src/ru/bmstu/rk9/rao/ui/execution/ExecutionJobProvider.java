@@ -16,6 +16,7 @@ import ru.bmstu.rk9.rao.lib.animation.AnimationFrame;
 import ru.bmstu.rk9.rao.lib.notification.Notifier;
 import ru.bmstu.rk9.rao.lib.simulator.ISimulator;
 import ru.bmstu.rk9.rao.lib.simulator.utils.SimulatorReflectionUtils;
+import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
@@ -76,6 +77,7 @@ public class ExecutionJobProvider {
 						return runningResult;
 					}
 				}
+				SimulatorId.cleanIds();
 				return Status.OK_STATUS;
 			}
 

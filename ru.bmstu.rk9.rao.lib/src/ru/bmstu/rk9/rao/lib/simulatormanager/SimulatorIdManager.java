@@ -17,4 +17,8 @@ class SimulatorIdManager {
 	long getNewId() {
 		return nextId++;
 	}
+
+	public void cleanCache() {
+		nextId = 1;
+	}
 }
