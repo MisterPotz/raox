@@ -25,6 +25,7 @@ public class VarConstManager {
 	}
 	
 	public void generateCombinations() {
+		if (varconsts == null || varconsts.isEmpty()) return;
 		List< List<Double> > values = generateValuesMatrix();
 		
 		generateCombinations(values, 0, new ArrayList<>());

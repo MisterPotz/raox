@@ -51,8 +51,8 @@ public class Simulator implements ISimulator {
 	}
 
 	@Override
-	public void preinitilize(SimulatorPreinitializationInfo preinitializationInfo) {
-		
+	public void preinitilize(SimulatorPreinitializationArguments preinitializationArgs) {
+		SimulatorPreinitializationInfo preinitializationInfo = preinitializationArgs.getPreinitializationInfo();
 		modelState = new ModelState(preinitializationInfo.resourceClasses, getSimulatorId());
 		database = new Database(preinitializationInfo.modelStructure, getSimulatorId());
 		staticModelData = new StaticModelData(preinitializationInfo.modelStructure);
@@ -61,14 +61,16 @@ public class Simulator implements ISimulator {
 		assertHasId();
 
 		Constructor<?> modelConstructor = 
-		ReflectionUtils.safeGetConstructor(preinitializationInfo.getSimulatorCommonModelInfo().getModelClass(), RaoGenerationContract.SIMULATOR_ID_CLASS);
+		ReflectionUtils.safeGetConstructor(preinitializationInfo.getSimulatorCommonModelInfo().getModelClass(), 
+		RaoGenerationContract.SIMULATOR_ID_CLASS,
+		RaoGenerationContract.VARCONST_VALUES_CLASS);
 		
 		
 		if (modelConstructor == null) {
 			System.out.println("Simulator preinitialization failed");
 			return;		}
 		
-		Object modelInstance = ReflectionUtils.safeNewInstance(Object.class, modelConstructor, simulatorId);
+		Object modelInstance = ReflectionUtils.safeNewInstance(Object.class, modelConstructor, simulatorId, preinitializationArgs.getVarConstArgs());
 
 		if (modelInstance == null) {
 			System.out.println("Simulator preinitialization failed");
@@ -90,7 +92,6 @@ public class Simulator implements ISimulator {
 		}
 	}
 	
-
 	@Override
 	public void initialize(SimulatorInitializationInfo initializationInfo) {
 		assertHasModel();

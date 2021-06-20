@@ -15,6 +15,8 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.common.types.JvmMember
 import java.util.HashMap
 import org.eclipse.xtend2.lib.StringConcatenation
+import ru.bmstu.rk9.rao.lib.contract.RaoGenerationContract
+import org.eclipse.xtext.common.types.JvmField
 
 class CodeGenerationUtil {
 	private interface Extensioner<T> {
@@ -117,6 +119,14 @@ class CodeGenerationUtil {
 			this.«param.key.name» = «param.value»;
 			«ENDFOR»
 		'''
+	}
+	
+	def static JvmFormalParameter createVarconstValuesParameter(extension JvmTypesBuilder builder, extension JvmTypeReferenceBuilder refBuilder, EObject source) {
+		return source.toParameter(RaoGenerationContract.VARCONST_VALUES_NAME, typeRef(
+					RaoGenerationContract.VARCONST_VALUES_CLASS,
+					typeRef(RaoGenerationContract.VARCONST_VALUES_KEY),
+					typeRef(RaoGenerationContract.VARCONST_VALUES_VALUE)
+				))
 	}
 
 	public static class NameableMember {
