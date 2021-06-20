@@ -15,6 +15,7 @@ import ru.bmstu.rk9.rao.rao.VarConst
 import java.lang.reflect.Constructor
 import javax.management.ConstructorParameters
 import ru.bmstu.rk9.rao.jvmmodel.ProxyBuilderHelper.ConstructorBuilder
+import ru.bmstu.rk9.rao.lib.contract.RaoGenerationContract
 
 class VarConstCompiler extends RaoEntityCompiler {
 
@@ -23,10 +24,12 @@ class VarConstCompiler extends RaoEntityCompiler {
 		super(jvmTypesBuilder, jvmTypeReferenceBuilder, associations)
 	}
 
-	def asClass(VarConst varconst, JvmDeclaredType it, boolean isPreIndexingPhase) {
+	def asClass(VarConst varconst, JvmDeclaredType it, boolean isPreIndexingPhase, ProxyBuilderHelpersStorage storage) {
 
 		val vcQualifiedName = QualifiedName.create(qualifiedName, varconst.name + "VarConst")
-
+		val pBH = new ProxyBuilderHelper(jvmTypesBuilder, jvmTypeReferenceBuilder, associations,varconst, true)
+		storage.addNewProxyBuilder(pBH)
+		
 		return apply [ extension jvmTypesBuilder, extension jvmTypeReferenceBuilder |
 			return varconst.toClass(vcQualifiedName) [
 				static = true
@@ -37,21 +40,37 @@ class VarConstCompiler extends RaoEntityCompiler {
 
 				val params = Arrays.asList(
 					new ConstructorParameter.Builder()
-					.parameter(varconst.toParameter("start", typeRef(Double)))
-					.addToSuperInitialization()
-					.dontAddAsParam()
-					.substituteValue(varconst.start).build(),
+						.parameter(varconst.toParameter("start", typeRef(Double)))
+						.addToSuperInitialization()
+						.dontAddAsParam()
+						.substituteValue(varconst.start)
+						.build(),
 					new ConstructorParameter.Builder()
-					.parameter(varconst.toParameter("stop", typeRef(Double)))
-					.addToSuperInitialization()
-					.dontAddAsParam()
-					.substituteValue(varconst.stop).build(),
+						.parameter(varconst.toParameter("stop", typeRef(Double)))
+						.addToSuperInitialization()
+						.dontAddAsParam()
+						.substituteValue(varconst.stop)
+						.build(),
 					new ConstructorParameter.Builder()
-					.parameter(varconst.toParameter("step", typeRef(Double)))
-					.addToSuperInitialization()
-					.dontAddAsParam()
-					.substituteValue(varconst.step).build()
+						.parameter(varconst.toParameter("step", typeRef(Double)))
+						.addToSuperInitialization()
+						.dontAddAsParam()
+						.substituteValue(varconst.step)
+						.build()
 				)
+				
+				pBH.addAdditionalParentScopeMembers(varconst.toField(varconst.name, typeRef(RaoGenerationContract.VARCONST_VALUES_VALUE)) [
+					static = false
+					final = false
+				],
+					varconst.toMethod(getGetterName(varconst), typeRef(RaoGenerationContract.VARCONST_VALUES_VALUE)) [
+					parameters += CodeGenerationUtil.createVarconstValuesParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, varconst)
+					body = '''
+						return «RaoGenerationContract.VARCONST_VALUES_NAME».get("«varconst.name»");
+					'''
+					]
+				)
+				pBH.addCodeForParentScopeConstructor('''this.«varconst.name» = «getGetterName(varconst)»(«RaoGenerationContract.VARCONST_VALUES_NAME»);''')
 				
 				val cnstr = new ConstructorBuilder(jvmTypesBuilder, jvmTypeReferenceBuilder,varconst).setParameters(params).build()
 				
@@ -61,7 +80,7 @@ class VarConstCompiler extends RaoEntityCompiler {
 					final = true
 
 					body = '''
-						return "«vcQualifiedName»";
+						return "«varconst.name»";
 					'''
 				]
 
@@ -114,5 +133,9 @@ class VarConstCompiler extends RaoEntityCompiler {
 			]
 
 		]
+	}
+	
+	def static getGetterName(VarConst varconst) {
+		return '''get«varconst.name.toFirstUpper()»Value'''
 	}
 }

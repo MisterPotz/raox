@@ -9,13 +9,8 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import java.util.Arrays
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import java.util.List
-import org.eclipse.xtend2.lib.StringConcatenation
 import ru.bmstu.rk9.rao.jvmmodel.CodeGenerationUtil.NameableMember
-import org.eclipse.xtext.common.types.JvmTypeReference
-import org.eclipse.xtext.common.types.JvmGenericType
-import ru.bmstu.rk9.rao.rao.EntityCreation
-import ru.bmstu.rk9.rao.rao.ResourceDeclaration
-import org.eclipse.xtext.service.AllRulesCache.AllRulesCacheAdapter
+import java.util.ArrayList
 
 /**
  * compiler for RaoModels
@@ -52,18 +47,21 @@ class ModelCompiler extends RaoEntityCompiler {
 			]
 
 			val additionalMembers = proxyBuilders.flatMap[collectAdditionalMembers].toList
-
+			val additionalCode = proxyBuilders.map[codeToAppendToParentScopeConstructor].reduce[c1, c2| c1.append(c2)].collectedLines
 			additionalMembers += initializingScopeType
 			additionalMembers += initializationField
-
-			val List<JvmFormalParameter> parameters = Arrays.asList(
-				SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, model))
-
+			val superParameters= Arrays.asList(SimulatorIdCodeUtil.createSimulatorIdParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, model))
+			val List<JvmFormalParameter> varconstParameters = Arrays.asList(
+				CodeGenerationUtil.createVarconstValuesParameter(jvmTypesBuilder, jvmTypeReferenceBuilder, model))
+			val List<JvmFormalParameter> collectedParameters = new ArrayList(superParameters)
+			
+			collectedParameters.addAll(varconstParameters)
 			val constructor = model.toConstructor [ constructor |
-				constructor.parameters += parameters
+				constructor.parameters += collectedParameters
 				constructor.visibility = JvmVisibility.PUBLIC
 				constructor.body = '''
-					«CodeGenerationUtil.createSuperInitializationLine(parameters.map[ new NameableMember(it)])»
+					«CodeGenerationUtil.createSuperInitializationLine(superParameters.map[ new NameableMember(it)])»
+					«additionalCode»
 					this.«GeneratedCodeContract.INITIALIZATION_SCOPE_FIELD» = new «typeRef(initializingScopeType)»();
 				'''
 			]
