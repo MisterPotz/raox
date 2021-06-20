@@ -58,6 +58,11 @@ public class SimulatorManagerImpl extends SimpleListenable implements ISimulator
 		return candidate;
 	}
 	
+	public void cleanSimulators() {
+		simulatorMap.clear();
+		simulatorWrapperMap.clear();
+	}
+	
 	private void notifySimulatorAvailable() {
 		// notify after the actual change - so subscribers can get the simulator
 		notifyListeners(new SystemUpdateEvent(SystemState.OFF, SystemState.ON, true));

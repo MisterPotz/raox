@@ -57,6 +57,10 @@ public class ExecutionJobProvider {
 			protected IStatus run(IProgressMonitor monitor) {
 				final ModelInternalsParser parser = new ModelInternalsParser(project, resourceSetProvider,
 						typeResolver);
+				// UNCOMMENT these two lines for fun
+				SimulatorId.cleanIds();
+				SimulatorManagerImpl.getInstance().cleanSimulators();
+
 				try {
 					parser.parse();
 				} catch (Exception e) {
@@ -79,7 +83,7 @@ public class ExecutionJobProvider {
 					}
 				} else {
 					for (List<Double> iterable_element : 
-							varconsts.getCombinations().subList(0, Math.min(2, varconsts.getCombinations().size()))) {
+							varconsts.getCombinations().subList(0, varconsts.getCombinations().size())) {
 						IStatus result = decideToLaunchSimulator(varconsts.listToHashMap(iterable_element), parser);
 						if (IStatus.ERROR == result.getCode()) {
 							return result;
@@ -88,7 +92,6 @@ public class ExecutionJobProvider {
 					}
 				}
 				
-				SimulatorId.cleanIds();
 				return Status.OK_STATUS;
 			}
 
