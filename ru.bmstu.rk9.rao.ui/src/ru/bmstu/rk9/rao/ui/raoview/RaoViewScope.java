@@ -24,6 +24,11 @@ public class RaoViewScope {
 		plannedActions.get(simulatorId).plan(plannedAction, viewType);
 	}
 	
+	public static void applyAllCommandsTo(RaoView view, ViewType viewType, SimulatorId simulatorId) {
+		applyCommandsTo(view, viewType, null);
+		applyCommandsTo(view, viewType, simulatorId);
+	}
+	
 	public static void applyCommandsTo(RaoView view, ViewType viewType, SimulatorId simulatorId) {
 		plannedActions.get(simulatorId).applyCommandsTo(view, viewType);
 	}
