@@ -20,6 +20,10 @@ public class SimulatorId {
 	public static SimulatorId generateSimulatorId() {
 		return new SimulatorId(SimulatorIdManager.getInstance().getNewId());
 	}
+	
+	public static void cleanIds() {
+		SimulatorIdManager.getInstance().cleanCache();
+	}
 
 	public static SimulatorId createFrom(String string) {
 		Long id = Long.parseLong(string);
