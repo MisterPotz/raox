@@ -14,7 +14,7 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public interface ISimulator {
 
-	public void preinitilize(SimulatorPreinitializationInfo info);
+	public void preinitilize(SimulatorPreinitializationArguments preinitializationArgs);
 
 	public void initialize(SimulatorInitializationInfo initializationInfo);
 

@@ -24,11 +24,7 @@ public class SimulatorWrapper implements SimulatorDependent {
 		this.simulatorStateNotifier =  new Notifier<SimulatorState>(SimulatorState.class);
 	}
 
-	public synchronized void preinitialize() {
-		preinitialize(new SimulatorPreinitializationInfo());
-	}
-
-	public synchronized void preinitialize(SimulatorPreinitializationInfo preinitializationInfo) {
+	public synchronized void preinitialize(SimulatorPreinitializationArguments preinitializationArgs) {
 		if (isRunning)
 			throw new RaoLibException("Cannot start new simulation while previous one is still running");
 
@@ -38,7 +34,7 @@ public class SimulatorWrapper implements SimulatorDependent {
 		if (currentSimulatorState != SimulatorState.DEINITIALIZED)
 			throw new RaoLibException("Cannot start new simulation: simulator wasn't deinitialized");
 
-		currentSimulator.preinitilize(preinitializationInfo);
+		currentSimulator.preinitilize(preinitializationArgs);
 		setCurrentSimulatorState(SimulatorState.PREINITIALIZED);
 	}
 

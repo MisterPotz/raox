@@ -20,6 +20,7 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
 import ru.bmstu.rk9.rao.lib.simulator.ReflectionUtils;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorPreinitializationArguments;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.SimulationStopCode;
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
@@ -69,14 +70,24 @@ public class ExecutionJobProvider {
 				VarConstManager varconsts = new VarConstManager(parser.getVarConsts());
 				varconsts.generateCombinations();
 								
-				for (List<Double> iterable_element : varconsts.getCombinations().subList(0, Math.min(2, varconsts.getCombinations().size()))) {
-					IStatus runningResult = runSeparateSimulator(
-							varconsts.listToHashMap(iterable_element),
-							parser);
-					if (IStatus.ERROR == runningResult.getCode()) {
-						return runningResult;
+				List<List<Double>> varconstCombinations = varconsts.getCombinations();
+
+				if (varconstCombinations.isEmpty()) {
+					IStatus res = decideToLaunchSimulator(null, parser);
+					if (IStatus.ERROR == res.getCode()) {
+						return res;
+					}
+				} else {
+					for (List<Double> iterable_element : 
+							varconsts.getCombinations().subList(0, Math.min(2, varconsts.getCombinations().size()))) {
+						IStatus result = decideToLaunchSimulator(varconsts.listToHashMap(iterable_element), parser);
+						if (IStatus.ERROR == result.getCode()) {
+							return result;
+						}
+						
 					}
 				}
+				
 				SimulatorId.cleanIds();
 				return Status.OK_STATUS;
 			}
@@ -91,6 +102,13 @@ public class ExecutionJobProvider {
 		return executionJob;
 	}
 	
+	private IStatus decideToLaunchSimulator(HashMap<String, Double> combination,
+			ModelInternalsParser readyParser) {
+		return runSeparateSimulator(
+				combination,
+				readyParser);
+		}
+		
 	private IStatus runSeparateSimulator(
 			HashMap<String, Double> combination,
 			ModelInternalsParser readyParser
@@ -114,7 +132,12 @@ public class ExecutionJobProvider {
 			/**
 			 * change state of static context of model via running resourcePreinitializers
 			 */
-			simulatorWrapper.preinitialize(readyParser.getSimulatorPreinitializationInfo());
+			simulatorWrapper.preinitialize(
+				SimulatorPreinitializationArguments.preinitializationArgs()
+					.setPreinitializationInfo(readyParser.getSimulatorPreinitializationInfo())
+					.setVarConstArgs(combination)
+					.build()
+				);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new Status(IStatus.ERROR, "ru.bmstu.rk9.rao.ui", "Simulator preinitialization failed", e);
