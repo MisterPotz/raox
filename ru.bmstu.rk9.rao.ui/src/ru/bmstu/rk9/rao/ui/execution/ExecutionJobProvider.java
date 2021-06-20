@@ -80,6 +80,14 @@ public class ExecutionJobProvider {
 						return runningResult;
 					}
 				}
+				
+				PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {			
+					@Override
+					public void run() {
+						MonitorView.update();	
+					}
+				});
+				
 				return Status.OK_STATUS;
 			}
 

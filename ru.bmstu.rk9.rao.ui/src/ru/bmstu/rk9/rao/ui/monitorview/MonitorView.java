@@ -7,25 +7,28 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.xtext.builder.clustering.CurrentDescriptions;
 
 import ru.bmstu.rk9.rao.lib.notification.Subscriber;
 import ru.bmstu.rk9.rao.lib.simulator.Simulator;
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper;
 import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorManagerImpl;
-import ru.bmstu.rk9.rao.ui.UiContract;
 import ru.bmstu.rk9.rao.ui.animation.AnimationView;
 import ru.bmstu.rk9.rao.ui.console.ConsoleView;
 import ru.bmstu.rk9.rao.ui.execution.ExecutionJobProvider;
@@ -37,18 +40,13 @@ import ru.bmstu.rk9.rao.ui.simulation.StatusView;
 import ru.bmstu.rk9.rao.ui.trace.TraceView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import com.google.common.eventbus.Subscribe;
+import java.util.Map.Entry;
 
 public class MonitorView extends ViewPart {
-	public static final String ID = "ru.bmstu.rk9.rao.ui.MonitorView";
+	public static final String ID = "ru.bmstu.rk9.rao.ui.MonitorView1";
 	
-	private static TableViewer viewer;
-	private Table table;
+	private static TreeViewer treeViewer;
 	private List<ConditionalMenuItem> conditionalMenuItems = new ArrayList<ConditionalMenuItem>();
 	private FilterHelper filterHelper = new FilterHelper();
 
@@ -83,14 +81,17 @@ public class MonitorView extends ViewPart {
 		@Override
 		public void fireChange() {}
 	};
+	
+	public static void update() {
+		treeViewer.setInput(SimulatorManagerImpl.getInstance().getAvailableIds());
+	}
 
 	void onChange(SimulatorId simulatorId) {
 		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 			
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				viewer.update(simulatorId, null);
+				treeViewer.update(simulatorId, null);
 			}
 		});
 	}
@@ -134,7 +135,7 @@ public class MonitorView extends ViewPart {
 		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 			@Override
 			public void run() {
-				viewer.getTable().removeAll();
+				treeViewer.getTree().removeAll();
 			}
 		});
 	}
@@ -143,23 +144,94 @@ public class MonitorView extends ViewPart {
 		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 			@Override
 			public void run() {
-				viewer.add(simulatorId);
+				treeViewer.add(new SimulatorId[] {simulatorId});
 			}
 		});
 	}
 	
 	private void createViewer(Composite parent) {
-		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+		treeViewer = new TreeViewer(parent, SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		
-		createColumns(viewer);
+		createColumns(treeViewer);
 
-		table = viewer.getTable();
-		createMenu(table);
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
+		Tree tree = (Tree) treeViewer.getControl();
 		
-		viewer.setContentProvider(new ArrayContentProvider());
-		getSite().setSelectionProvider(viewer);
+		tree.addSelectionListener(new SelectionListener() {		
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+			      TreeItem  item = (TreeItem) e.item;
+			        if (item.getItemCount() > 0) {
+			            item.setExpanded(!item.getExpanded());
+			            // update the viewer
+			            treeViewer.refresh();
+			        }
+			}
+			
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {}
+		});
+		
+		Listener listener = new Listener() {
+			@Override
+			public void handleEvent(org.eclipse.swt.widgets.Event event) {
+			      TreeItem treeItem = (TreeItem) event.item;
+			      final TreeColumn[] treeColumns = treeItem.getParent().getColumns();
+			      PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+	
+			         @Override
+			         public void run() {
+			            for (TreeColumn treeColumn : treeColumns)
+			                 treeColumn.pack();
+			         }
+			      });
+			}
+		};
+
+		tree.addListener(SWT.Expand, listener);
+				
+		createMenu(tree);
+		tree.setHeaderVisible(true);
+		tree.setLinesVisible(true);
+		
+		treeViewer.setContentProvider(new ITreeContentProvider() {
+			
+			@Override
+			public boolean hasChildren(Object element) {
+				if (element instanceof SimulatorId) {
+					SimulatorId simulatorId = (SimulatorId) element;
+					if (SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getVarConstSet() != null)
+						return true;
+				}
+				return false;
+			}
+			
+			@Override
+			public Object getParent(Object element) {
+				SimulatorWrapper simulatorWrapper = (SimulatorWrapper) element;
+				return simulatorWrapper.getSimulatorId();
+			}
+			
+			@Override
+			public Object[] getElements(Object inputElement) {
+				return ArrayContentProvider.getInstance().getElements(inputElement);
+			}
+			
+			@Override
+			public Object[] getChildren(Object parentElement) {
+				SimulatorId simulatorId = (SimulatorId) parentElement;
+				
+				ArrayList<String []> rowsArrayStrings = new ArrayList<>();
+				
+				for (Entry<String, Double> entry : SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getVarConstSet().entrySet()) {
+					String[] row = new String[] {"", "", entry.getKey(), entry.getValue().toString()}; 
+					rowsArrayStrings.add(row);
+				}
+				
+				return rowsArrayStrings.toArray();
+			}
+		});
+		
+		getSite().setSelectionProvider(treeViewer);
 		
 		GridData gridData = new GridData();
         gridData.verticalAlignment = GridData.FILL;
@@ -167,60 +239,87 @@ public class MonitorView extends ViewPart {
         gridData.grabExcessHorizontalSpace = true;
         gridData.grabExcessVerticalSpace = true;
         gridData.horizontalAlignment = GridData.FILL;
-        viewer.getControl().setLayoutData(gridData);
+        treeViewer.getControl().setLayoutData(gridData);
 	}
 	
-	private void createColumns(TableViewer viewer) {
-		String[] titles = {"Simulation ID", "Simulation Status"};
-		int[] bounds = {110, 150};
+	private void createColumns(TreeViewer viewer) {
+		String[] titles = {"Simulation", "Status", "Parameter", "Value"};
+		int[] bounds = {90, 90, 100, 80};
 		
 //		First column creation
-		TableViewerColumn column = createTableViewerColumn(viewer, titles[0], bounds[0], 0);
-		column.setLabelProvider(new ColumnLabelProvider() {
+		TreeViewerColumn simulationViewerColumn = createTreeViewerColumn(viewer, titles[0], bounds[0], 0);
+		simulationViewerColumn.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				SimulatorId simulatorId = (SimulatorId) element;
-				
-				return String.valueOf(simulatorId);
+				if (element instanceof SimulatorId) {
+					SimulatorId simulatorId = (SimulatorId) element;
+					
+					return simulatorId.toString();
+				}
+				return ((String []) element)[0];
 			}
 		});
 		
 //		Second column creation
-		column = createTableViewerColumn(viewer, titles[1], bounds[1], 1);
-		column.setLabelProvider(new ColumnLabelProvider() {
+		TreeViewerColumn statusViewerColumn = createTreeViewerColumn(viewer, titles[1], bounds[1], 1);
+		statusViewerColumn.setLabelProvider(new ColumnLabelProvider() {
 			@Override
 			public String getText(Object element) {
-				SimulatorId simulatorId = (SimulatorId) element;
-				
-				return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getExecutionState().toString();
+				if (element instanceof SimulatorId) {
+					SimulatorId simulatorId = (SimulatorId) element;
+					
+					return SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId).getExecutionState().toString();
+				}
+				return ((String []) element)[1];
 			}
 		});		
+		
+//		Third column creation
+		TreeViewerColumn parameterViewerColumn = createTreeViewerColumn(viewer, titles[2], bounds[2], 2);
+		parameterViewerColumn.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				if (element instanceof SimulatorId)
+					return "";
+				return ((String []) element)[2];
+			}
+		});		
+
+//		Fourth column creation
+		TreeViewerColumn valueViewerColumn = createTreeViewerColumn(viewer, titles[3], bounds[3], 3);
+		valueViewerColumn.setLabelProvider(new ColumnLabelProvider() {
+			@Override
+			public String getText(Object element) {
+				if (element instanceof SimulatorId)
+					return "";
+				return ((String []) element)[3];
+			}
+		});	
+		
 	}
 
 	// TODO #refactor-0003 where do i choose column place? colIndex isnt used anywhere
-	private TableViewerColumn createTableViewerColumn(TableViewer viewer, String title, int bound, int colIndex) {
-		TableViewerColumn viewerColumn = new TableViewerColumn(viewer, SWT.None);
-		TableColumn column = viewerColumn.getColumn();
+	private TreeViewerColumn createTreeViewerColumn(TreeViewer treeViewer, String title, int bound, int colIndex) {
+		TreeViewerColumn treeViewerColumn = new TreeViewerColumn(treeViewer, SWT.None);
+		TreeColumn treeColumn = treeViewerColumn.getColumn();
 		
-		column.setText(title);
-		column.setWidth(bound);
-		column.setResizable(true);
-		column.setMoveable(true);
+		treeColumn.setText(title);
+		treeColumn.setWidth(bound);
 		
-		return viewerColumn;
+		return treeViewerColumn;
 	}
 	
-	private void createMenu(Table table) {
-		Menu menu = new Menu(table);
+	private void createMenu(Tree tree) {
+		Menu menu = new Menu(tree);
 
-		conditionalMenuItems.add(ResultsView.createConditionalMenuItem(viewer, menu, ViewType.RESULTS));
-		conditionalMenuItems.add(TraceView.createConditionalMenuItem(viewer,  menu, ViewType.TRACE));
-		conditionalMenuItems.add(SerializedObjectsView.createConditionalMenuItem(viewer, menu, ViewType.SERIALIZED));
-		conditionalMenuItems.add(AnimationView.createConditionalMenuItem(viewer, menu, ViewType.ANIMATION));
-		conditionalMenuItems.add(StatusView.createConditionalMenuItem(viewer, menu, ViewType.STATUS));
-		conditionalMenuItems.add(ConsoleView.createConditionalMenuItem(viewer, menu, ViewType.CONSOLE));
+		conditionalMenuItems.add(ResultsView.createConditionalMenuItem(treeViewer, menu, ViewType.RESULTS));
+		conditionalMenuItems.add(TraceView.createConditionalMenuItem(treeViewer,  menu, ViewType.TRACE));
+		conditionalMenuItems.add(SerializedObjectsView.createConditionalMenuItem(treeViewer, menu, ViewType.SERIALIZED));
+		conditionalMenuItems.add(AnimationView.createConditionalMenuItem(treeViewer, menu, ViewType.ANIMATION));
+		conditionalMenuItems.add(StatusView.createConditionalMenuItem(treeViewer, menu, ViewType.STATUS));
+		conditionalMenuItems.add(ConsoleView.createConditionalMenuItem(treeViewer, menu, ViewType.CONSOLE));
 		
-		table.setMenu(menu);
+		tree.setMenu(menu);
 	}
 	
 	class FilterHelper {
@@ -229,7 +328,7 @@ public class MonitorView extends ViewPart {
 		
 		final void openDialog() {
 			if (dialogState == DialogState.CLOSED) {
-				currentDialog = new MonitorFilterDialog(viewer.getTable().getShell(), filterHelper);
+//				currentDialog = new MonitorFilterDialog(treeViewer.getTree().getShell(), filterHelper);
 				currentDialog.setBlockOnOpen(false);
 				currentDialog.open();
 				dialogState = DialogState.OPENED;
@@ -256,7 +355,7 @@ public class MonitorView extends ViewPart {
 					filteredSimulatorIds.add(simulatorId);
 			}
 			
-			viewer.setInput(filteredSimulatorIds);
+			treeViewer.setInput(filteredSimulatorIds);
 			if (filteredSimulatorIds.size() == 0)
 				return FilterResult.NOT_FOUND;
 			
@@ -267,6 +366,6 @@ public class MonitorView extends ViewPart {
 		
 	@Override
 	public void setFocus() {
-		viewer.getControl().setFocus();
+		treeViewer.getControl().setFocus();
 	}
 }

@@ -3,6 +3,7 @@ package ru.bmstu.rk9.rao.ui.raoview;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IWorkbenchPage;
@@ -81,7 +82,7 @@ public abstract class RaoView extends ViewPart {
 	private static class ConditionalMenuItemImpl extends ConditionalMenuItem {
 		private final ViewType viewType;
 		
-		public ConditionalMenuItemImpl(ViewType viewType, TableViewer viewer, Menu parent) {
+		public ConditionalMenuItemImpl(ViewType viewType, TreeViewer viewer, Menu parent) {
 			super(viewer, parent, viewType.getId().substring(viewType.getId().lastIndexOf('.') + 1, viewType.getId().lastIndexOf('V')));
 			this.viewType = viewType;
 		}
@@ -111,7 +112,7 @@ public abstract class RaoView extends ViewPart {
 		}
 	}
 	
-	public static ConditionalMenuItem createConditionalMenuItem(TableViewer viewer, Menu parent, ViewType viewType) {
+	public static ConditionalMenuItem createConditionalMenuItem(TreeViewer viewer, Menu parent, ViewType viewType) {
 		return new ConditionalMenuItemImpl(viewType, viewer, parent);
 	}
 	

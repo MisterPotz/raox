@@ -238,8 +238,7 @@ public class ResultsView extends RaoView {
 			}
 
 			@Override
-			public void controlMoved(ControlEvent e) {
-			}
+			public void controlMoved(ControlEvent e) {}
 		});
 
 		TreeColumn valueCol = new TreeColumn(tree, SWT.NONE);

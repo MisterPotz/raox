@@ -12,7 +12,7 @@ import ru.bmstu.rk9.rao.ui.raoview.ViewManager.ViewType;
 public class RaoViewScope {
 	private final static HashMap<SimulatorId, SimulatorActions> plannedActions = new HashMap<>();
 	
-	/*
+	/**
 	 * if simulatorId == null we think its commmon actions for all simulators
 	 */
 	public static void plan(Action plannedAction, ViewType viewType, SimulatorId simulatorId) {
@@ -24,6 +24,9 @@ public class RaoViewScope {
 		plannedActions.get(simulatorId).plan(plannedAction, viewType);
 	}
 	
+	/**
+	 * applies commands that are either non-relative to definite simulatorId, or relative to it
+	 */
 	public static void applyAllCommandsTo(RaoView view, ViewType viewType, SimulatorId simulatorId) {
 		applyCommandsTo(view, viewType, null);
 		applyCommandsTo(view, viewType, simulatorId);
@@ -36,7 +39,6 @@ public class RaoViewScope {
 	public static class SimulatorActions {
 		private final HashMap<ViewType, ArrayList<Action>> plannedActions = new HashMap<>();
 		private final SimulatorId simulatorId;
-		
 		
 		public SimulatorActions(SimulatorId simulatorId) {
 			this.simulatorId = simulatorId;

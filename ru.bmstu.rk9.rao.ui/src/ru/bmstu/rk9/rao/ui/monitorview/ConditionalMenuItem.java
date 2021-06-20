@@ -1,6 +1,7 @@
 package ru.bmstu.rk9.rao.ui.monitorview;
 
 import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -13,14 +14,14 @@ import ru.bmstu.rk9.rao.lib.simulatormanager.SimulatorId;
 
 public abstract class ConditionalMenuItem extends MenuItem {
 
-	public ConditionalMenuItem(TableViewer viewer, Menu parent, String name) {
+	public ConditionalMenuItem(TreeViewer viewer, Menu parent, String name) {
 		super(parent, SWT.CASCADE);
 		setText(name);
 
 		parent.addListener(SWT.Show, new Listener() {
 			@Override
 			public void handleEvent(Event event) {
-				SimulatorId simulator = (SimulatorId) viewer.getTable().getSelection()[0]
+				SimulatorId simulator = (SimulatorId) viewer.getTree().getSelection()[0]
 						.getData();
 				setEnabled(isEnabled(simulator));
 			}
@@ -29,7 +30,7 @@ public abstract class ConditionalMenuItem extends MenuItem {
 		addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
-				SimulatorId simulatorId = SimulatorId.createFrom(viewer.getTable().getSelection()[0]
+				SimulatorId simulatorId = SimulatorId.createFrom(viewer.getTree().getSelection()[0]
 						.getData().toString());
 				show(simulatorId);
 			}
