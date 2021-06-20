@@ -25,7 +25,7 @@ public class SetSimulationScaleHandler extends AbstractHandler {
 	}
 	private static void updateStatusView() {
 		// TODO fix-0002
-		RaoViewScope.plan(view -> ((StatusView) view).setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale)), ViewType.STATUS);
+		RaoViewScope.plan(view -> ((StatusView) view).setValue("Simulation scale".intern(), 15, scaleFormatter.format(simulationScale)), ViewType.STATUS, null);
 	}
 	
 	@Override

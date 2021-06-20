@@ -3,6 +3,7 @@ package ru.bmstu.rk9.rao.lib.simulator;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import ru.bmstu.rk9.rao.lib.database.Database;
@@ -20,6 +21,17 @@ public class SimulatorWrapper implements SimulatorDependent {
 	private ISimulator currentSimulator = null;
 	private SimulatorState currentSimulatorState = SimulatorState.DEINITIALIZED;
 	private final Notifier<SimulatorState> simulatorStateNotifier;
+	
+	private HashMap<String, Double> set;
+	
+	public HashMap<String, Double> getVarConstSet() {
+		return set;
+	}
+	
+	public void setVarConstSet(HashMap<String, Double> set) {
+		this.set = set;
+	}
+	
 	
 	public SimulatorWrapper(ISimulator simulator) {
 		setCurrentSimulatorState(SimulatorState.DEINITIALIZED);

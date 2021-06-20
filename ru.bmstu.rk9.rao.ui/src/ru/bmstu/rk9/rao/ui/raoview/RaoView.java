@@ -104,7 +104,8 @@ public abstract class RaoView extends ViewPart {
 							.getActivePage()
 							.showView(getId(), simulatorId.toString(), IWorkbenchPage.VIEW_ACTIVATE);
 				newView.initialize(simulatorId, getId());
-				RaoViewScope.applyCommandsTo(newView, viewType);
+				RaoViewScope.applyCommandsTo(newView, viewType, null);
+				RaoViewScope.applyCommandsTo(newView, viewType, simulatorId);
 			} catch (PartInitException e) {
 				e.printStackTrace();
 			}

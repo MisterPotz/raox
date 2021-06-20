@@ -2,6 +2,7 @@ package ru.bmstu.rk9.rao.lib.simulator;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -31,7 +32,7 @@ public class Simulator implements ISimulator {
 	private Object modelInstance;
 	private Object initializationScopeInstance;
 	private SimulatorId simulatorId;
-
+	
 	public Simulator() {
 		this.simulatorId = SimulatorId.generateSimulatorId();
 		eventScheduler = new EventScheduler(simulatorId);
