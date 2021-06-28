@@ -60,7 +60,6 @@ public class MonitorView extends ViewPart {
 		public void fireChangeWithPayload(Object object) {
 			SimulatorId currenSimulatorId = (SimulatorId) object;
 
-//			TODO fix-0006 getExecutionStateNotified() returns null
 			SimulatorManagerImpl.getInstance().getSimulatorWrapper(currenSimulatorId).getExecutionStateNotifier().addSubscriber(new Subscriber(){
 
 				@Override
@@ -91,7 +90,7 @@ public class MonitorView extends ViewPart {
 			
 			@Override
 			public void run() {
-				treeViewer.update(simulatorId, null);
+				treeViewer.add(null, simulatorId);
 			}
 		});
 	}
@@ -128,7 +127,7 @@ public class MonitorView extends ViewPart {
 	}
 	
 	private final void showFilterDialog() {
-//		filterHelper.openDialog();
+		filterHelper.openDialog();
 	}
 	
 	public static void clear() {
@@ -328,7 +327,7 @@ public class MonitorView extends ViewPart {
 		
 		final void openDialog() {
 			if (dialogState == DialogState.CLOSED) {
-//				currentDialog = new MonitorFilterDialog(treeViewer.getTree().getShell(), filterHelper);
+				currentDialog = new MonitorFilterDialog(treeViewer.getTree().getShell(), filterHelper);
 				currentDialog.setBlockOnOpen(false);
 				currentDialog.open();
 				dialogState = DialogState.OPENED;
@@ -341,7 +340,7 @@ public class MonitorView extends ViewPart {
 			dialogState = DialogState.CLOSED;
 		}
 	
-		final FilterResult findStatus(/* SimulatorStatus */Integer status) {
+		final FilterResult findStatus(ExecutionState status) {
 			List<SimulatorId> simulatorIds = SimulatorManagerImpl.getInstance().getAvailableIds();
 			List<SimulatorId> filteredSimulatorIds = new ArrayList<>();
 			boolean showAll = (status == null);
@@ -350,8 +349,8 @@ public class MonitorView extends ViewPart {
 				return FilterResult.NOT_FOUND;
 			
 			for (SimulatorId simulatorId : simulatorIds) {
-				Simulator simulator = (Simulator) SimulatorManagerImpl.getInstance().getSimulator(simulatorId);
-				if (showAll || /* simulator.getStatus() == status */ true)
+				SimulatorWrapper simulatorWrapper = (SimulatorWrapper) SimulatorManagerImpl.getInstance().getSimulatorWrapper(simulatorId);
+				if (showAll || simulatorWrapper.getExecutionState() == status)
 					filteredSimulatorIds.add(simulatorId);
 			}
 			

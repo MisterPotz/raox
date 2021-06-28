@@ -17,6 +17,8 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
+import ru.bmstu.rk9.rao.lib.simulator.SimulatorWrapper.ExecutionState;
+
 class MonitorFilterDialog extends Dialog {
 	
 	private MonitorView.FilterHelper filterHelper;
@@ -25,17 +27,17 @@ class MonitorFilterDialog extends Dialog {
 	private Button filterButton;
 	private Label statusLabel;
 	// TODO fix-0003
-//	private ModelStatus filterStatus;
+	private ExecutionState filterStatus;
 	
 	private final void saveInputStatus() {
 		String status = statusCombo.getText();
 		// TODO fix-0003
-//		Optional<ModelStatus> selected = Arrays.asList(ModelStatus.values()).stream().filter(val -> val.toString().equals(status)).findAny();
-//		if (selected.isPresent()) {
-//			filterStatus = selected.get();
-//		} else {
-//			filterStatus = null;
-//		}
+		Optional<ExecutionState> selected = Arrays.asList(ExecutionState.values()).stream().filter(val -> val.toString().equals(status)).findAny();
+		if (selected.isPresent()) {
+			filterStatus = selected.get();
+		} else {
+			filterStatus = null;
+		}
 	}
 	
 	public MonitorFilterDialog(Shell parentShell, MonitorView.FilterHelper filterHelper) {
@@ -78,38 +80,39 @@ class MonitorFilterDialog extends Dialog {
 	}
 	
 	private final void createDialogContents(Composite parent) {
-//		Composite area = new Composite(parent, SWT.FILL);
-//		area.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-//		area.setLayout(new GridLayout(2, false));
-//
-//		Label comboTitle = new Label(area, SWT.NONE);
-//		comboTitle.setText("Select status: ");
-//		comboTitle.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, false));
-//		
-//		statusCombo = new Combo(area, SWT.NONE);
-//		statusCombo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-//		
-////		TODO fix-0003
-//		statusCombo.setItems(new String[] {"Not started", "In process", "Finished"});
-//		
-//		filterButton = new Button(area, SWT.PUSH);
-//		filterButton.setText("Filter");
-//		filterButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 2));
-//					
-//		statusLabel = new Label(area, SWT.NONE);
-//		statusLabel.setText("Wrapped search");
-//		statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 2));
-//		
-//		filterButton.addSelectionListener(new SelectionAdapter() {
-//			@Override
-//			public void widgetSelected(SelectionEvent e) {
-//				saveInputStatus();
-//				if (filterHelper.findStatus(filterStatus) == FilterResult.NOT_FOUND)
-//					statusLabel.setText("Models with chosen status not found");
-//				else
-//					statusLabel.setText("Wrapped search");
-//			}
-//		});
+		Composite area = new Composite(parent, SWT.FILL);
+		area.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		area.setLayout(new GridLayout(2, false));
+
+		Label comboTitle = new Label(area, SWT.NONE);
+		comboTitle.setText("Select status: ");
+		comboTitle.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, false));
+		
+		statusCombo = new Combo(area, SWT.NONE);
+		statusCombo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		
+//		TODO fix-0003
+		statusCombo.setItems(new String[] {"Not started", "In process", "Finished"});
+		
+		filterButton = new Button(area, SWT.PUSH);
+		filterButton.setText("Filter");
+		filterButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 2));
+					
+		statusLabel = new Label(area, SWT.NONE);
+		statusLabel.setText("Wrapped search");
+		statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 2));
+		
+		filterButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+	
+				saveInputStatus();
+				if (filterHelper.findStatus(filterStatus) == FilterResult.NOT_FOUND)
+					statusLabel.setText("Models with chosen status not found");
+				else
+					statusLabel.setText("Wrapped search");
+			}
+		});
 	}
 
 	
